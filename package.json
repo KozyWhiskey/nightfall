@@ -1,0 +1,17 @@
+{
+  "name": "nightfall",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node -e \"console.error('Prototype archived. Greenfield scaffold pending — see docs/product/tech-decision.md'); process.exit(1)\"",
+    "build": "node -e \"console.error('Prototype archived. Greenfield scaffold pending — see docs/product/tech-decision.md'); process.exit(1)\"",
+    "test": "node -e \"console.error('Prototype archived. Greenfield scaffold pending — see docs/product/tech-decision.md'); process.exit(1)\"",
+    "lint": "oxlint"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "oxlint": "^1.71.0",
+    "typescript": "~6.0.2"
+  }
+}
