@@ -1,126 +1,70 @@
-# Failure, Torches, and Legacy Scars
+# Failure, Pillars, and Haven Succession
 
-**Status:** Draft  
-**Last updated:** 2026-07-17  
-**Related:** [core-loop.md](core-loop.md), [../systems/haven-buildings.md](../systems/haven-buildings.md), [../systems/economy.md](../systems/economy.md), [../vision/tone-and-world.md](../vision/tone-and-world.md)
+**Status:** Accepted Build 1 failure contract
+**Last updated:** 2026-07-19
+**Related:** [Expedition State Machine](../systems/expedition-state-machine.md), [Gloom, Light, and Rest](../systems/gloom-and-stress.md), [First Haven Progression](../content/haven/first-haven-progression.md), [Future Compatibility Ledger](../product/future-compatibility-ledger.md)
 
-## Goal
+## Purpose
 
-Death must hurt **Haven**, not only the run. **Town pillars** are the settlement’s hit points and defense against the Gloom. **Waypoints** grow the procedural map separately. Permanent Haven failure is real. Progress can leave **Legacy Scars** when a Haven dies.
+Failure should be frightening without turning one lost settlement into a discarded campaign. A Haven is fragile, its people and material achievements can be lost, but exploration leaves a path for those who escape. The pillar ring measures the Haven's survival; waypoints measure the world's remembered routes. They are deliberately separate systems.
 
-## World frame
+| System | Meaning | Build 1 change rule |
+|---|---|---|
+| Haven pillars | The Haven's defense against Gloom; its health | Ten maximum; a wipe snuffs one; an Ember Shard relights one; zero causes Haven failure. |
+| Waypoints | Permanently discovered places and map growth | A boss victory claims one; a claim never automatically repairs a pillar. |
 
-- Each Haven sits in a **procedurally generated world** of expandable **segments** (not a single fixed endgame map).
-- There is **no required endgame** for must-ship. Future: reaching / founding a **new Haven**, or discovering **other towns that have gone dark**, along the path.
-- A **ring of 10 torch pillars** surrounds the town — core defense / HP, not path capacity.
-- **Waypoints** claimed by Segment Boss clears expand the world map. They do **not** automatically restore a town pillar. See [run-structure.md](run-structure.md) and [../systems/map-and-nodes.md](../systems/map-and-nodes.md).
+## Pillar rules
 
-## Two light systems (locked)
+- A newly founded first Haven begins with 10 lit pillars out of 10.
+- A full-party wipe or explicit in-world abandonment snuffs one currently lit pillar, to a minimum of zero.
+- A carried Ember Shard may be spent at a waypoint's remote rite, or from the Pillarhouse after Return, to relight one snuffed pillar, to a maximum of ten.
+- A remote rite is permanent at the moment it is spent. The party may still wipe afterwards, but the repair remains.
+- The tenth pillar is not a ten-wipe campaign clock. It is a recoverable health pool: repair, careful play, and hard choices determine when a Haven falls.
 
-| System | What it is | How it changes |
-|--------|------------|----------------|
-| **Town pillars** | Haven HP / defense (ring of 10) | Start full; wipe snuffs −1; Ember Shards can restore; 0 = Haven dies |
-| **Waypoints** | Map claims / path growth | Delve Segment Boss clear claims one; expands world; separate from pillars |
+## Haven failure
 
-Do not conflate them in UI or rules copy.
+When a wipe snuffs the final pillar, the Haven goes dark. The current expedition has already been lost under normal wipe rules; Haven failure adds a settlement transition after that resolution. It is not a conventional game-over screen and it never restores the lost party.
 
-## Town pillar fantasy (locked)
+### New-Haven procedure
 
-1. A fresh Haven starts with **all 10 pillars lit** (full defense).
-2. **Every party wipe** (or equivalent “lost to the Gloom”) **snuffs −1 pillar**. The party is lost; the town mourns.
-3. Soft abandon mid-expedition is **not allowed** — quitting is wipe-class (see [run-structure.md](run-structure.md)).
-4. At **0 lit pillars**, the town has no protection: **permanent Haven failure** (goes dark).
-5. **Relight** a snuffed pillar by spending an **Ember Shard** (`embershard`) — at **act/segment end** (remote rite restoring a pillar in town immediately) or later at Haven. See economy.
-6. Lit pillars also **keep the Gloom at bay** — see [../systems/gloom-and-stress.md](../systems/gloom-and-stress.md).
+1. Record the fallen Haven, its final pillar loss, and the expedition party in the permanent memorial.
+2. Select the furthest permanently claimed waypoint as the new Haven's founding location. If no waypoint was ever claimed, found at the **Cinder Refuge**, a minimal escape site outside the fallen Haven; it exists only as a fallback, not a new region or route.
+3. Create a new Haven instance with a new stable ID, 10-pillar capacity, **3 lit pillars, and 7 snuffed pillars**. Its initial Haven Gloom is therefore 7 and its next expedition begins at 28 Run Gloom. The pressure is deliberate recovery difficulty, not an unbuilt-pillar state.
+4. Create a small emergency cache: **3 Timber, 3 Stone, 0 Wick, and 0 Ember Shards**. This supports recovery without paying for a core building.
+5. Carry forward only the approved legacy package below. All other material state stays with the fallen Haven.
+6. Present an evacuation chronicle and return the player to the new Haven Hub. The next expedition starts from its founding location under ordinary Embark rules.
 
-### Ember Shards (risk / reward)
+## Legacy package
 
-| Rule | Decision |
-|------|----------|
-| ID / display | `embershard` / **Ember Shard** (not Emberglass) |
-| Dual use | Restore a town pillar **or** premium craft / powerful upgrade fuel |
-| Intro gift | On first leave-town mission, a settler gives **2 Ember Shards** (town intro beat) |
-| Act-end spend | Spend one to restore a pillar **immediately** (remote rite) |
-| Keep on person | If not spent / banked home, **lost on wipe** |
-| Waypoint chest | May be deposited in the waypoint chest (safe from wipe; still locked at waypoint until Return / reclaim) — see [map-and-nodes.md](../systems/map-and-nodes.md) |
+The campaign retains knowledge and paths, not the fallen settlement's power.
 
-Emberglass remains general craft fuel; Ember Shards are the scarce light/craft premium item. See [../systems/economy.md](../systems/economy.md).
+| Persists | Does not persist |
+|---|---|
+| Claimed waypoints and their settlement traces | Buildings, building levels, and building damage |
+| Blueprint knowledge and permanently unlocked class, school, item, and affix families | Timber, Stone, Wick, Emberglass, Salvage, Rations, currency, and Ember Shards beyond the emergency cache |
+| World-discovery and event-history flags that describe the frontier | Haven inventory: gear, supplies, physical scrolls, and waypoint-chest contents |
+| Fallen-Haven and fallen-hero memorial records | Heroes, personal decks, Leadership attributes, injuries, and temporary expedition state |
+| The new Haven's location and 3/10 pillar state | A free reconstruction, automatic pillar repair, or a skip of the Band-1 recovery struggle |
 
-### Locked parameters
+Chest contents do not transfer into a successor Haven. They remain associated with their original, fallen-Haven waypoint record for future recovery design, but Build 1 exposes no reclaim expedition after Haven failure. They are therefore retained as durable data, not usable Build 1 stock.
 
-| Rule | Decision |
-|------|----------|
-| Pillar ring size | **10** (max lit = full HP) |
-| Fresh Haven start | **10 / 10 lit** |
-| Wipe / lost to Gloom | **−1** pillar (floor at 0); party lost |
-| Haven death | **0** lit pillars → permanent failure |
-| Waypoint claim | Expands map; **does not** +1 pillar |
-| Relight | **1 Ember Shard** → +1 pillar (cap 10) |
-| Band completion | Soft memorial-like **record** only — not a fail streak |
-| Endgame | None required; dark towns / new Haven = future hooks |
-| World | Procedural segments; expands via waypoints |
+## Implementation ownership
 
-### Design intent
+- `campaignWorld` owns permanent waypoint/discovery/blueprint facts and memorials.
+- `haven` owns a specific settlement's pillars, buildings, resources, holdings, survivors, and Gloom.
+- A failure creates a new `haven` record; it must not mutate the old one into a replacement.
+- Every permanent and lost asset must carry a stable location/owner ID so terminal resolution can be replayed without duplication.
+- The succession transaction is a terminal extension of the wipe transaction in the [Expedition State Machine](../systems/expedition-state-machine.md). It is idempotent: reload cannot create two successor Havens or duplicate the emergency cache.
 
-Wipes bleed the town’s defenses. Embers create a greed choice: mend the ring now, craft power, or risk carrying shards home. Claiming waypoints grows the frontier without automatically healing the town. Band clears are remembered like memorials — a record of how far you’ve pushed, not a streak clock.
+## Future compatibility, not Build 1
 
-## Permanent Haven failure
-
-When pillars reach **0** (town goes dark):
-
-1. Town name, buildings, and current pillar / waypoint campaign state are gone.
-2. Roster of living heroes is lost.
-3. **Legacy Scars** persist on the account for the next Haven.
-
-**Future:** players may find other settlements that once lived and have gone dark — exploration / content hook, not must-ship.
-
-## Soft records (not fail clocks)
-
-Haven (and account-facing memorial UI) may track:
-
-- **Bands / segments completed** — a quiet record of progress (like Memorial), not a core fail mechanic.
-- Fallen heroes and fallen Havens (Memorial / Scars).
-
-There is **no** “N consecutive deaths without a Band-1 claim → Haven dies” rule.
-
-## Legacy Scars
-
-Scars are account-level remnants — memories of towns that fell.
-
-### What may persist (proposed)
-
-| Scar type | Example |
-|-----------|---------|
-| Knowledge | A class/subclass unlock already earned |
-| Craft memory | One learned scroll recipe tag |
-| Memorial | Name of a fallen hero or fallen Haven (flavor; optional buffs later) |
-| Soft starting resource | Small cache toward first building |
-| Path memory | Future: faint map knowledge of the procedural world |
-
-### What does **not** persist
-
-- Building levels and layout
-- Stockpiled expedition resources beyond scar grants
-- A free skip of Chapter 1 struggle
-- Full pillar ring or Ember Shard stockpile (except scar grants)
-
-## Player modes (optional later)
-
-Must-ship can be **iron Haven** only. Nice later: a casual mode where Haven cannot permanently die. Track in horizon if added.
+- Selecting from several evacuation destinations, transporting specific townsfolk, and carrying survivor-linked scars.
+- Reclaim expeditions into a fallen Haven's locked waypoint chest.
+- Casual/non-permadeath modes, legacy bonuses, and alternate pillar-ring sizes.
 
 ## Acceptance criteria
 
-- [ ] Haven UI shows the ring of 10 and current lit count as town HP / defense
-- [ ] Wipe UI shows −1 pillar and memorial / mourning beat
-- [ ] Waypoint / Segment Boss victory expands the map without implying a free pillar
-- [ ] Ember Shard spend at act end clearly restores a pillar vs keep-for-craft risk
-- [ ] Intro settler gift of 2 Ember Shards is taught on first leave
-- [ ] New Haven after failure grants at least one meaningful Scar
-
-## Domain-tunable / deferred
-
-- Exact Ember Shard drop rates and craft power when spent as fuel
-- Must-ship scope of “travel to new location” / dark-town discovery when the frontier is deep
-- Waypoint chest slot count (see map-and-nodes)
-
-See [../product/open-questions.md](../product/open-questions.md) for any remaining parking-lot items.
+- [ ] A final-pillar wipe loses the committed party and settlement materials, creates exactly one successor Haven, and never deletes campaign world facts.
+- [ ] A Haven that falls after at least one boss clear is founded at its furthest claimed waypoint with three lit pillars.
+- [ ] A Haven that falls before any boss clear uses Cinder Refuge and remains playable.
+- [ ] Blueprints and discovered content families remain unlocked, while stored gear, scrolls, buildings, and hero growth do not.

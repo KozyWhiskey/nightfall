@@ -1,6 +1,7 @@
 # Vanguard
 
 **Status:** Draft (name locked for must-ship)  
+**Vertical-slice note:** Use [Vanguard + Aether Weaver starter kits](vertical-slice-starter-kits.md) for playable cards and stats. Subclasses here are future content.
 **Type:** Class  
 **Last updated:** 2026-07-16
 
@@ -31,8 +32,8 @@ You spend AP on blocks, taunts, and lantern wards; your deck is heavy with Iron/
 
 ## Progression / unlocks
 
-- Unlocked by default on fresh Haven (proposal)
-- Subclasses via Training Hall + expedition milestones (opens third school)
+- Available on a fresh Haven
+- Subclasses via The Wardyard + expedition milestones (opens third school)
 
 ## Content checklist
 

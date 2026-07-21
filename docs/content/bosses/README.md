@@ -15,7 +15,7 @@ Bosses belong on the **Delve** leg — not on Approach or the Return leg.
 
 | Band | Working boss fantasy | Status |
 |------|----------------------|--------|
-| 1 — Frontier | Lantern-Smother (prototype name) — mist that eats light | Stub |
+| 1 — Frontier | [**Lantern-Smother**](lantern-smother.md) — mist intelligence nesting around a fallen Way-lantern; teaches response to a powerful telegraphed intent | Initial vertical-slice brief |
 | 2 — Mid | March-Warden / caravan horror | Stub |
 | 3 — Deep | Umbrafall manifestation / Gloom avatar | Stub |
 

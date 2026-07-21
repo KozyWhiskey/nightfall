@@ -6,6 +6,8 @@
 
 ## Goal
 
+**Vertical-slice scope override:** the current loop uses the fixed Vanguard + Aether Weaver pair, The Unlit Road, and one Band-1 boss. Broader 2–3 hero party selection, recruiting, multiple Gates, and extended cross-school reactions remain future direction.
+
 Bind every session to a dual loop: **expedition** (tactical fun) and **Haven** (long-term identity and stakes).
 
 ## Dual loop
@@ -26,7 +28,7 @@ Haven (build, recruit, pick Gate, embark)
 1. Name / view Haven; see **pillar** state (town HP), waypoints, and buildings.
 2. Manage roster (heal, train, recruit if available).
 3. Spend expedition resources on buildings / upgrades; optionally spend Ember Shards to restore pillars.
-4. Select 2–3 heroes, choose a **Gate** (level band; fresh Haven has one path), and embark.
+4. Vertical slice: embark the fixed Vanguard + Aether Weaver pair through the one available Frontier Gate.
 
 ### Expedition phase (run)
 

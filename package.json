@@ -1,17 +1,32 @@
 {
   "name": "nightfall",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": ">=22 <23"
+  },
   "scripts": {
-    "dev": "node -e \"console.error('Prototype archived. Greenfield scaffold pending — see docs/product/tech-decision.md'); process.exit(1)\"",
-    "build": "node -e \"console.error('Prototype archived. Greenfield scaffold pending — see docs/product/tech-decision.md'); process.exit(1)\"",
-    "test": "node -e \"console.error('Prototype archived. Greenfield scaffold pending — see docs/product/tech-decision.md'); process.exit(1)\"",
-    "lint": "oxlint"
+    "build": "pnpm -r --if-present build",
+    "check": "pnpm typecheck && pnpm lint && pnpm test && pnpm build",
+    "check:boundaries": "node scripts/check-boundaries.mjs",
+    "dev": "pnpm build:libs && concurrently -k -n host,client -c yellow,cyan \"pnpm --filter @nightfall/local-host dev\" \"pnpm --filter @nightfall/client dev\"",
+    "build:libs": "pnpm --filter @nightfall/contracts --filter @nightfall/content --filter @nightfall/sim --filter @nightfall/persistence --filter @nightfall/host build",
+    "lint": "oxlint . && pnpm check:boundaries",
+    "start": "pnpm --filter @nightfall/local-host start",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "pnpm -r --if-present typecheck"
   },
   "devDependencies": {
-    "@types/node": "^24.13.3",
+    "@types/node": "^22.15.0",
+    "concurrently": "^9.2.0",
+    "cross-env": "^7.0.3",
+    "drizzle-kit": "^0.31.0",
     "oxlint": "^1.71.0",
-    "typescript": "~6.0.2"
+    "tsx": "^4.20.0",
+    "typescript": "~6.0.2",
+    "vitest": "^4.0.0"
   }
 }

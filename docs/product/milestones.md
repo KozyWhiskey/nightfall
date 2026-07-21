@@ -25,13 +25,16 @@
 
 Prove the new fantasy in one playable loop:
 
-- Haven (name, pillars at 10/10, 2–3 buildings, roster of 3)
-- Embark party of 2; intro settler gift of 2 Ember Shards
-- One Frontier Gate: Approach → Delve (boss / waypoint + chest) → short Return leg
+**Implementation boundary:** Phase 2 explicitly excludes co-op, accounts, and async Haven lists. Its state and ownership model must remain safe for the later authoritative-host phase, but the playable deliverable is solo and saveable.
+
+- Haven (name, pillars at 10/10, built Pillarhouse; Cinder Forge, Quiet House, and Wardyard constructible; roster of 3 core classes)
+- First fully playable class kits: **Vanguard + Aether Weaver**; Shadowblade remains a core-class follow-on
+- Embark recommended Vanguard + Aether Weaver party of 2; free party choice follows the first return; intro settler gift of 2 Ember Shards
+- One Frontier Gate: Approach → Delve (boss / waypoint + chest + ruined-settlement trace) → short Return leg
 - Combat / event / craft nodes on the path
 - Per-hero decks (attacks + abilities + spells)
 - Initiative + AP
-- One Safe and one Risky craft
+- One Safe and one Risky craft; starter deck cores are fixed, with one or two randomized starter cards/items per hero
 - Wipe snuffs a **town pillar**; banking / Return deposits resources; chested goods survive wipe at waypoint
 
 ## Phase 3 — Content fill

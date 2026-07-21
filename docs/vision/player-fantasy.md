@@ -32,9 +32,11 @@ In solo play they command the whole party. In co-op, friends share the expeditio
 
 ## Party fantasy
 
+**Vertical-slice scope:** Build 1 uses the fixed Vanguard + Aether Weaver pair. The broader two-to-three-hero vision in this section is future-facing.
+
 Default party size: **2–3**. Small enough to read every turn; large enough for roles (tank, striker, support/weaver).
 
-Recruits, tavern strangers, and rescued survivors feed the roster fantasy: not every face is permanent, but some become legends of the Haven.
+Recruits, Wayfarer strangers, and rescued survivors feed the roster fantasy: not every face is permanent, but some become legends of the Haven.
 
 ## Tone of the hero
 

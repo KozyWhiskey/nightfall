@@ -6,6 +6,8 @@
 
 ## Goal
 
+Vertical-slice material income, core-building costs, and continuing Timber/Stone sinks: [First Haven Progression](../content/haven/first-haven-progression.md).
+
 Fund Haven growth and in-run decisions without commercial monetization. Currencies should be few, readable, and themed for a **mature, dark** audience (see tone doc). Names below are **working locks** — IDs stay stable even if display copy gets a darker pass later.
 
 ## Dual economy (locked working names)
@@ -14,11 +16,11 @@ Fund Haven growth and in-run decisions without commercial monetization. Currenci
 |-------|-----|-------------------|------|
 | Run | `salvage` | Salvage | Shops, general expedition spend |
 | Run | `emberglass` | Emberglass | Craft / fuse / reroll fuel (general) |
-| Run | `rations` | Rations | Rest, escort, fatigue costs |
+| Run | `rations` | Rations | Escort, fatigue, and selected event costs |
 | Run (item) | `embershard` | Ember Shard | **Premium:** restore a town pillar **or** powerful craft/upgrade fuel |
 | Haven | `timber` | Timber | Building construction |
 | Haven | `stone` | Stone | Building construction |
-| Haven | `wick` | Wick | Lantern Keep, light rites, light upkeep |
+| Haven | `wick` | Wick | Pillarhouse, light rites, light upkeep |
 
 **Not currencies:** scrolls and gear are items (see [spellcraft.md](spellcraft.md)). Ember Shards are tracked as **scarce run items** (stackable), not a third soft currency — but listed here so agents never confuse them with Emberglass.
 
@@ -46,14 +48,14 @@ Copy, icons, and tooltips should feel **adult and grim** (soot, bone, ash, debt 
 3. Craft greed sinks Emberglass (+ scrolls); Ember Shards are a **greed fork** (mend Haven vs power).
 4. Avoid infinite disenchant → rebuild loops that erase scarcity.
 5. **Scrolls are always valuable** — trade, craft fuel, upgrade fuel, or extract to Haven.
-6. **Hoarding Emberglass** can feed the **Gloom meter** — spending is sometimes survival, not just power (see [gloom-and-stress.md](gloom-and-stress.md)).
+6. Gloom changes only through explicit travel, combat, event, Rest, item, and Haven-light rules; Emberglass never creates a hidden hoarding penalty (see [gloom-and-stress.md](gloom-and-stress.md)).
 
 ## Sinks
 
 | Sink | Spend |
 |------|-------|
 | Construct / upgrade building | Timber, Stone, (Wick for light buildings) |
-| Soft-curse cleanse / scriptorium rites | Wick + Emberglass (tunable) |
+| Soft-curse cleanse / Ember Vault rites | Wick + Emberglass (tunable) |
 | Heal / recruit / train | Haven mats + Rations as flavor costs |
 | Shop prices | Salvage |
 | Craft / reroll / fuse | Emberglass (+ scrolls as components) |
@@ -65,6 +67,7 @@ Copy, icons, and tooltips should feel **adult and grim** (soot, bone, ash, debt 
 
 Exact costs live in data tables. Intent:
 
+- A solid Frontier (Band 1) return should support **one meaningful Haven decision**: a building step, a crafted starter item, a preserved scroll, or a pillar repair.
 - One solid Frontier (Band 1) return with a waypoint claim ≈ progress toward **one** building tier or a meaningful upgrade.
 - Ember Shard spend is a visible **mend vs power** decision after a boss or at Haven.
 - Wick stays scarcer than Timber/Stone so light feels costly.

@@ -1,64 +1,61 @@
 # Haven Buildings
 
-**Status:** Draft  
-**Last updated:** 2026-07-16  
-**Related:** [../loops/core-loop.md](../loops/core-loop.md), [economy.md](economy.md), [progression.md](progression.md)
+**Status:** Draft — vertical-slice availability locked; first-tier details in design review
+**Last updated:** 2026-07-18
+**Related:** [Current Product Scope](../product/current-scope.md), [Vertical-Slice Handoff](../product/vertical-slice-handoff.md), [Economy](economy.md), [Progression](progression.md)
 
 ## Goal
 
-The named Haven is a **resource sink with identity**: players choose which buildings to unlock first; each building changes future expeditions.
+The named Haven is a resource sink with identity. A successful early expedition should present several valuable needs but fund only one meaningful answer. Building order is a buildcraft choice, not a hidden progression gate.
 
-## Player-facing rules
+## Vertical-slice rules
 
-- Fresh account names a Haven.
-- **Starting built:** **Lantern Keep only** (tier 1). All other buildings start locked — first real investment is the player’s choice.
-- Expeditions return resources used to construct / upgrade buildings.
-- Buildings are never all free at once — **order is a buildcraft choice**.
-- When Haven permanently fails, buildings are lost; scars may remember fragments.
+- **Pillarhouse** is built at founding.
+- **Cinder Forge**, **The Quiet House**, and **The Wardyard** are visible and constructible from a fresh Haven. The player begins without enough resources to build any of them.
+- The first successful Return should make roughly one of those three constructions affordable, not all of them.
+- The first boss grants the **Ember Vault blueprint**; the second boss grants **The Wayfarer blueprint**. Blueprint discovery is in scope, while their full functional tiers are deferred.
+- Buildings are not all free at once. The player chooses which need to address and postpones the others.
+- When a Haven permanently fails, buildings are lost; a later new Haven may retain only the limited Legacy-Scar inheritance defined in [Failure and Torches](../loops/failure-and-torches.md).
 
-## Must-ship building web (v1 — locked count: 6)
+## Building web
 
-Start with **6** buildings; expand the web later without rewriting the system.
+| ID | Building | Vertical-slice status | Primary role |
+|---|---|---|---|
+| `pillarhouse` | **Pillarhouse** | Built at founding | Pillar ring, Haven Gloom, memorial, Ember-Shard light rites, embark context |
+| `cinder_forge` | **Cinder Forge** | Constructible from start | Gear crafting, starter equipment direction, Safe Imprint |
+| `quiet_house` | **The Quiet House** | Constructible from start | Treat temporary downed-hero injuries and support survivors |
+| `wardyard` | **The Wardyard** | Constructible from start | Assign earned permanent level points; future drills/subclass rites |
+| `ember_vault` | **Ember Vault** | Blueprint from first boss | Future: returned scroll catalogue, spellcraft, curse care |
+| `wayfarer` | **The Wayfarer** | Blueprint from second boss | Future: rumors, settlement leads, recruit/class offers |
 
-| ID | Building | Primary benefit |
-|----|----------|-----------------|
-| `lantern_keep` | **Lantern Keep** | Torch / light related; Haven heart |
-| `training_hall` | **Training Hall** | Unlock classes, subclasses, drills |
-| `tavern` | **Tavern** | Rumors, map hints, passing strangers / unique one-run classes |
-| `forge` | **Forge** | Gear craft, rerolls, salvage |
-| `scriptorium` | **Scriptorium** | Spell study, safer fuse tiers, scroll catalogue / extracted stock, soft-curse cleanse |
-| `stores` | **Stores** | Resource cap, embark supplies |
+## Deferred buildings
 
-Each building: **2–3 upgrade tiers** (tunable domain data).
+| Building | Later role |
+|---|---|
+| **The Stockhouse** | Resource capacity and embark supplies |
+| **The Cartographer's Table** | Route intelligence, Gate/waypoint context, map discovery support |
+| **The Names Wall** | Dedicated memorial and fallen-Haven history presentation |
 
-### Expand-later (not v1)
+## Construction philosophy
 
-| Building | Primary benefit |
-|----------|-----------------|
-| **Wardhouse** | Permanent minor embark buffs / resists |
-| Others | As content demands |
+First-tier costs, material income, operations, and leadership rules: [First Haven Progression](../content/haven/first-haven-progression.md).
 
-Building defs should be data-driven so new IDs can be added without architecture changes.
+- Construction costs use Timber, Stone, and Wick. Wick is intentionally scarcer because it represents light, care, and magical civic infrastructure.
+- Exact first-tier costs and actions are being designed in the Haven progression package; they must preserve the one-meaningful-decision early economy.
+- Cinder Forge owns gear shaping. Ember Vault owns spell knowledge and advanced scrollcraft. Quiet House owns injury care. Wardyard owns permanent hero development.
+- Future upgrades may expand each building, but the vertical slice should prove one clear benefit per active core building before tier depth is added.
 
-## Unlock order fantasy
+## Future identity examples
 
-Example divergent Havens:
-
-- Training-first → more class variety early.
-- Forge-first → stronger gear loops.
-- Tavern-first → map knowledge and wild recruits.
+- Forge-first Haven: gear shaping and equipment-led builds.
+- Quiet-House-first Haven: preserves an injured, valued survivor.
+- Wardyard-first Haven: turns survival into permanent stat direction.
+- Ember-Vault-first Haven: expands spellcraft after the first blueprint is made functional.
+- Wayfarer-first Haven: converts settlement discoveries into wider-world opportunities.
 
 ## Acceptance criteria
 
-- [ ] Two players can describe their Havens differently after 5 expeditions
-- [ ] Every building has a benefit felt on the next embark
-- [ ] Building UI shows opportunity cost (what you’re postponing)
-
-## Unlock graph (v1 default)
-
-- **Free pick** among remaining locked buildings (no deep prerequisite tree) once you can afford them — identity comes from *order*, not gates.
-- Optional soft gates later via domain data (e.g. Tavern tier 2 needs Training Hall tier 1) without changing the system.
-
-## Open questions
-
-- None blocking for start state — see economy for costs.
+- [ ] The Haven UI shows all three available early construction choices and what each postpones.
+- [ ] A player can describe why their first building choice changes the next expedition.
+- [ ] A successful Return cannot fund every visible major need.
+- [ ] Blueprint discovery is concrete even before the later building is affordable.

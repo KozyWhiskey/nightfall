@@ -1,6 +1,7 @@
 # Shadowblade
 
 **Status:** Draft (name locked for must-ship)  
+**Scope note:** Shadowblade is a canonical future class. It is not playable in the solo vertical slice.
 **Type:** Class  
 **Last updated:** 2026-07-16
 
@@ -30,7 +31,7 @@ High DEX, act early on the timeline, chain Iron attacks, use Veil Mist/Dodge abi
 
 ## Progression / unlocks
 
-- Training Hall unlock (proposal: not free at start — gives Haven a goal)
+- Available on a fresh Haven
 - Subclasses after N successful returns with class
 
 ## Content checklist
@@ -42,4 +43,4 @@ High DEX, act early on the timeline, chain Iron attacks, use Veil Mist/Dodge abi
 
 ## Open questions
 
-- Unlock gate story beat?
+- Future class / survivor discovery beats unlocked by waypoint or settlement discovery

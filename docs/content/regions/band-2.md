@@ -24,7 +24,7 @@ Collapsed caravans, Gloom storms, marching horrors. Name pick shifts emphasis (A
 
 ## Progression / unlocks
 
-- Gate: early waypoint claim **or** Tavern rumor (proposal)
+- Gate: early waypoint claim **or** The Wayfarer rumor (proposal)
 
 ## Content checklist
 

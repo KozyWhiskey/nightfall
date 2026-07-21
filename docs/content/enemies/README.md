@@ -20,9 +20,19 @@
 | `tank` | Soak / protect |
 | `disruptor` (optional) | Discard / AP tax / curse |
 
+## Band-1 ecology families
+
+Whisperwood / Frontier content should distribute enemies across three readable families:
+
+| Family | Fantasy | Typical combat role |
+|--------|---------|---------------------|
+| **Frayed beasts** | Gloom-corrupted wildlife such as Gloomfang Hounds; fur and bodies fray like smoke | Fast DPS, pack pressure |
+| **Sorrowful remnants** | Shattered Husks and memory echoes of those lost to the Gloom | Tank, slow pressure, Strain / despair effects |
+| **Fear-born parasites** | Mire Imps and fungal whisper-things born from psychic residue | Disruptor, curse, intent manipulation |
+
 ## Prototype templates to reinterpret
 
-Gloomfang Pup, Mire Imp, Mist Chanter, Gloom Spore, Moss Bulwark, Shattered Husk — useful as Band 1 (Frontier) starting points, not locked names.
+Gloomfang Hound, Mire Imp, Mist Chanter, Gloom Spore, Moss Bulwark, Shattered Husk — useful as Band 1 (Frontier) starting points, not locked names.
 
 ## Pack guidelines
 
@@ -35,6 +45,7 @@ Gloomfang Pup, Mire Imp, Mist Chanter, Gloom Spore, Moss Bulwark, Shattered Husk
 
 ## Content checklist
 
-- [ ] Band 1 (Frontier) roster (≥6 templates)
+- [x] Initial Band-1 (Frontier) vertical-slice roster: [band-1-frontier.md](band-1-frontier.md) (5 templates)
+- [ ] Broader Band-1 roster (≥6 templates)
 - [ ] Band 2–3 (Mid / Deep) distinct templates
 - [ ] Intent art language shared with UX readability doc

@@ -1,6 +1,7 @@
 # Aether Weaver
 
 **Status:** Draft (name locked for must-ship)  
+**Vertical-slice note:** Use [Vanguard + Aether Weaver starter kits](vertical-slice-starter-kits.md) for playable cards and stats. Subclasses here are future content.
 **Type:** Class  
 **Last updated:** 2026-07-17
 
@@ -33,8 +34,8 @@ Stretch subclass (not must-ship): `storm_tongue` → `storm` for the textbook Ti
 
 ## Progression / unlocks
 
-- Unlocked by default or early Training Hall (proposal: default)
-- Subclasses via Training Hall + spellcraft milestones
+- Available on a fresh Haven
+- Subclasses via The Wardyard + spellcraft milestones
 
 ## Content checklist
 

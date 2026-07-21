@@ -8,22 +8,22 @@ Game design lives in **[`docs/`](docs/README.md)** — north star, loops, system
 - Vision: [`docs/vision/north-star.md`](docs/vision/north-star.md)
 - Product horizon: [`docs/product/horizon.md`](docs/product/horizon.md)
 - Open questions: [`docs/product/open-questions.md`](docs/product/open-questions.md)
-- **Tech stack (locked):** [`docs/product/tech-decision.md`](docs/product/tech-decision.md)
+- **Build 1 architecture (locked):** [`docs/architecture/build-1-architecture.md`](docs/architecture/build-1-architecture.md)
 
 Design authority is `docs/`. The old Vite one-shot lives under [`docs/_archive/prototype-src/`](docs/_archive/prototype-src/) — reference only; do not extend it.
 
 ## Project Overview
 - **Name**: Nightfall
 - **Type**: browser-based turn-based roguelite RPG (party expedition + Haven meta)
-- **Status**: design bible in progress; tech decision locked; greenfield monorepo scaffold pending
+- **Status**: Build 1 design and architecture locked; greenfield monorepo scaffold pending
 - **Setting**: Vesper after the Nightfall cataclysm; antagonist is The Gloom
 - **Horizon**: friends-hosted on N100/LAN (not commercial); solo first; async Havens + co-op PvE later; authoritative host
 
 ## Tech Stack (locked)
 
-See [`docs/product/tech-decision.md`](docs/product/tech-decision.md). Summary:
+See [`docs/architecture/build-1-architecture.md`](docs/architecture/build-1-architecture.md). The prior tech-decision note is historical rationale. Summary:
 
-- **Language**: TypeScript (workspaces: `client` / `sim` / `server` / `content`)
+- **Runtime / language**: Node 22 LTS + TypeScript strict; pnpm workspaces
 - **Client**: Vite + React 19; Zustand over sim snapshots only
 - **Rules**: Pure `sim` package (no React/DOM/network)
 - **Combat UI**: DOM/React first; optional canvas VFX later
@@ -59,13 +59,13 @@ nightfall/
 
 ## Development Workflow
 1. Design: edit `docs/` first.
-2. Implementation: scaffold workspaces per tech decision (not yet present).
+2. Implementation: scaffold workspaces per Build 1 architecture decision (not yet present).
 3. Until scaffold exists, `npm run dev` / `npm test` will fail — expected.
 4. Persistence default is SQLite; archived Supabase is reference only (see `_archive/prototype-supabase/`).
 
 ## Notes for Agents
 - **Design authority:** `docs/`
-- **Stack authority:** `docs/product/tech-decision.md`
+- **Stack authority:** `docs/architecture/build-1-architecture.md`
 - **Archived prototype:** steal kernels listed in the tech decision / prototype-slice-notes only
 - Theme motifs: named Haven, Gloom, pillar/failure stakes
 - Solo play must go through the host/sim path so co-op is not a rewrite

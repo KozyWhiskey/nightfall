@@ -8,6 +8,11 @@
 
 PoE- / Diablo-flavored uniqueness: every drop can reshape how a hero plays — via stats, resistances, attack modifiers, **and cards injected into the deck**. Item instances are **creation-rolled** so two “same” base items are rarely identical (see [cards-and-decks.md](cards-and-decks.md) instance rolls).
 
+Weapons use medieval/fantasy forms, but the meaningful power is the unstable magic bound into them. Items are vessels for wards, school effects, card changes, and curses—not a modern-gun or mundane-weapon power fantasy. See [../content/content-direction.md](../content/content-direction.md).
+
+Generated-item grammar, affix budgets, and AI-content guardrails: [../content/items/procedural-forge.md](../content/items/procedural-forge.md).
+First authored base/affix seed pool: [../content/items/vertical-slice-affix-pool.md](../content/items/vertical-slice-affix-pool.md).
+
 Enemies **carry their pre-rolled drops into combat** (see [combat.md](combat.md) initiative). Beating a monster that holds a legendary should feel earned because that item helped make the fight harder.
 
 ## Player-facing rules
@@ -19,11 +24,21 @@ Enemies **carry their pre-rolled drops into combat** (see [combat.md](combat.md)
 3. Applicable combat affixes (including initiative/speed) apply while they live.
 4. On death, the carried instance is the drop — no re-roll that could downgrade what you fought for.
 
+An enemy carrying an exceptional / unique item is visibly marked before and during the fight. Players can see that a valuable item is at stake, but do **not** see its exact effects until it drops. The item's applicable combat benefits still affect that enemy, so the displayed risk and eventual reward are honestly linked.
+
 Elite/boss tables bias higher rarity so “scary timeline + big loot” line up.
 
-### Slots (proposed)
+### Equipment layout (locked)
 
-Weapon, offhand, armor, helmet, boots, accessory — same skeleton as the archived prototype unless content demands change.
+Every hero has nine equipment slots, grouped into weapons, armor, and relics:
+
+| Group | Slots | Intended identity |
+|---|---|---|
+| Weapons | Main Hand, Offhand | Injected attacks/spells, direct combat identity, defense and utility. |
+| Armor | Head, Body, Gloves, Legs, Feet | Protection, attributes, resource capacity, initiative, and conditional defense. |
+| Relics | Relic I, Relic II | Catchall magical finds: jewelry, charms, lenses, fetishes, icons, bound objects, and other build-defining curios. |
+
+Empty slots are valid. The first slice deliberately seeds few armor categories, but the full sheet is visible from the beginning so an unfamiliar item has an obvious home. No slot has weight, durability, or a capacity minigame.
 
 ### What gear can do
 
@@ -35,7 +50,7 @@ Weapon, offhand, armor, helmet, boots, accessory — same skeleton as the archiv
 
 ### Rarity and budgets
 
-Keep a **budget/rarity** mental model (common → magic → rare → legendary): higher rarity spends more affix budget. Exact numbers TBD during balance.
+Use the procedural-forge tiers **Salvaged → Imbued → Rare → Legendary**. Higher tiers spend more affix budget; a Legendary item adds a signature rule. Exact weights and pools live in content data, not game code. `Relic` is reserved for the catchall equipment-slot category, avoiding ambiguous UI such as “Relic Relic.”
 
 ### Creation rolls (locked shape)
 
@@ -49,7 +64,7 @@ Fairness for hero kits (offsetting strong rolls) lives in cards-and-decks; gear 
 
 ### Crafting gear
 
-Haven **Forge** and in-run craft nodes can:
+The Haven **Cinder Forge** and in-run craft nodes can:
 
 - Reroll / combine / disenchant (names TBD with economy)
 - Push power at the cost of curses (align with spellcraft risk philosophy)
@@ -66,9 +81,24 @@ Characteristics that inject cards must list the card ID they add.
 
 ## Equip / trade rules (locked)
 
+**Vertical-slice override:** equip, unequip, and party trade are allowed only at Haven, post-combat reward, Rest, Safe Craft, and waypoint/post-boss reward. The broader legacy wording below is superseded by [Embark and Loadout](embark-and-loadout.md). During combat, ordinary movement, and Event resolution, loadouts are locked.
+
 - **Outside combat only:** equip, unequip, and **trade gear between party members** freely between nodes (map, rest, reward, Haven, etc.).
 - **During combat:** loadout is locked; no swaps, no trades.
 - Unequip removes that item’s injected cards from the hero’s deck before the next fight begins.
+
+## Expedition inventory (locked shape)
+
+- The vertical slice has **no carry-capacity system**. A party may commit any eligible Haven gear or scrolls to an expedition and retain all discoveries during it.
+- Valuable rewards are presented as fully identified choices, so choosing a reward is a deliberate build decision rather than a blind outcome.
+- All expedition-held gear, scrolls, currencies, and ordinary material resources are lost on a full-party wipe unless a rule explicitly protects them.
+
+Full reward and chest contract: [Vertical-Slice Rewards and Protection Rules](../content/expeditions/vertical-slice-rewards.md).
+
+## Persistence and loss (locked)
+
+- On a successful Return, recovered gear enters shared Haven inventory. Any surviving hero may equip it before a future expedition.
+- On a full-party wipe, all gear carried or equipped by that expedition party is lost with them unless it was protected in the waypoint chest.
 
 ## Edge cases
 

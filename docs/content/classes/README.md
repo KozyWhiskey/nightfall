@@ -1,17 +1,21 @@
 # Classes
 
 **Status:** Draft  
-**Must-ship:** 3 classes with ≥2 subclasses each  
-**Stretch:** 6 classes  
+**Vertical slice:** Vanguard + Aether Weaver only; no subclasses
+**Future:** Shadowblade and additional classes/subclasses
+**Future launch target:** 3 classes with ≥2 subclasses each
+**Future stretch:** 6 classes
 **Related:** [../../systems/progression.md](../../systems/progression.md), [../../systems/spellcraft.md](../../systems/spellcraft.md)
 
-**Locked must-ship trio** (archetypes + names):
+**Long-term canonical trio** (archetypes + names):
 
 | ID | Name | Role | Starting schools | Brief |
 |----|------|------|------------------|-------|
 | `vanguard` | Vanguard | Frontline / tank | Iron + Bastion | [vanguard.md](vanguard.md) |
 | `aether_weaver` | Aether Weaver | Ranged weave DPS | Aether + Ember | [aether-weaver.md](aether-weaver.md) |
 | `shadowblade` | Shadowblade | Melee striker | Veil + Iron | [shadowblade.md](shadowblade.md) |
+
+**Vertical-slice starter content:** [Vanguard + Aether Weaver starter kits](vertical-slice-starter-kits.md) (Draft for review).
 
 ## School law (locked)
 

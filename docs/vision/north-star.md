@@ -48,7 +48,7 @@ You are Haven’s expedition leaders — survivors who risk everything so the se
 
 | Keep | Open |
 |------|------|
-| Nightfall cataclysm / two suns / Gloom-darkened world | Currencies, class list, act names, combat model details |
+| Solar Concord; Umbra's shattering; Solas's extinction; Gloom-darkened world | Currencies, class list, act names, combat model details |
 | Friends-hosted horizon | Greenfield `sim` / `server` / `client` (archived prototype is not authority) |
 
 ## Non-goals

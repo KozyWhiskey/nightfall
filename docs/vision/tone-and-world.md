@@ -5,9 +5,9 @@
 
 ## Cataclysm (sacred)
 
-Two suns collided. The world of **Vesper** did not end cleanly — it **Nightfell**. Daylight shattered; the **Gloom** flooded the wounds. What remains is twilight, mist, and places where reality frays.
+Vesper once lived beneath Solas, the sun of physical life, and Umbra, the shadow sun whose light fed the Aetherial Weave. Umbra fractured and shattered; its falling anti-reality fragments extinguished Solas. The world **Nightfell** into permanent twilight, and the **Gloom** flooded the wounds.
 
-The Gloom is the antagonist force: corruption, predation, and the slow smothering of settlement light.
+The Gloom is the antagonist force: an entropic, semi-sentient contaminant that smothers light, corrodes memory, and twists life. Full canon: [canon-and-history.md](canon-and-history.md).
 
 ## Audience and tone (locked)
 
@@ -23,11 +23,11 @@ All content (events, buildings, currencies, enemy names) should pass a simple te
 ## World structure
 
 - Havens exist inside a **procedurally generated world** of expandable **segments** (not one fixed campaign map).
-- A ring of **10 torch pillars** around each Haven is the town’s **defense / HP** (starts full); wipes snuff pillars; Ember Shards can restore them; **0 pillars = the town goes dark**.
+- A ring of **10 pillar-lights** around each Haven is the town’s **defense / HP** (starts full); wipes snuff pillars; Ember Shards can restore them; **0 pillars = the town goes dark**. These are distinct from rare ancient **Way-lanterns**, which anchor settlements and waypoints.
 - **Waypoints** claimed by Segment Boss clears expand the frontier map — separate from the pillar ring. Future: find other towns that have gone dark.
 - Expeditions use **Approach → Delve → Return** legs; the Delve boss claims ground — Return is retreat pressure, not a second climax. See [../loops/run-structure.md](../loops/run-structure.md).
 - **Gates** from Haven open **level-banded** frontiers — MMO-style zones for different party strength. Fresh Haven has **one** path out. See [../systems/map-and-nodes.md](../systems/map-and-nodes.md).
-- Must-ship has **no required endgame**. Future: following the path to a **new Haven** (or dark towns) can unlock classes, spells, and wider content.
+- Must-ship has **no required endgame**. Rare ruined-settlement / waypoint discoveries can unlock recruit archetypes/classes, spell schools, building blueprints, and item/affix families; a full alternate-town hub is later content.
 - Pillar / failure rules: [../loops/failure-and-torches.md](../loops/failure-and-torches.md).
 
 ## Places

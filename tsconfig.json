@@ -1,7 +1,14 @@
 {
+  "extends": "./tsconfig.base.json",
   "files": [],
   "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
+    { "path": "./packages/contracts" },
+    { "path": "./packages/content" },
+    { "path": "./packages/sim" },
+    { "path": "./packages/persistence" },
+    { "path": "./packages/host" },
+    { "path": "./packages/client" },
+    { "path": "./packages/fixtures" },
+    { "path": "./apps/local-host" }
   ]
 }

@@ -1,6 +1,6 @@
 # Tech Decision
 
-**Status:** Locked  
+**Status:** Historical stack rationale; superseded for Build 1 by [Build 1 Architecture Decision](../architecture/build-1-architecture.md)
 **Last updated:** 2026-07-16
 
 ## Purpose

@@ -1,7 +1,9 @@
 # Readability
 
-**Status:** Draft  
-**Last updated:** 2026-07-16
+**Status:** Supporting presentation guidance
+**Last updated:** 2026-07-19
+
+**Build 1 authority:** [Interaction Contract](interaction-contract.md) owns required information and accessibility rules. This document supplies additional visual guidance only.
 
 ## Goal
 
@@ -32,6 +34,10 @@ Combat puzzles only work if information is honest and scannable — especially w
 - Color not the sole signal (intents use shape + label).
 - Scalable UI text where reasonable.
 - Full a11y audit is nice-later, not a blocker for private host.
+
+## Vertical-slice presentation bar
+
+Prioritize crisp, readable UI and intentional dark tone. Placeholder character/enemy art is acceptable if typography, color, icons, copy, and state feedback make combat and Haven decisions legible.
 
 ## Acceptance criteria
 
