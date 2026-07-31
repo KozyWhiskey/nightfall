@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 160" fill="none" role="img" aria-label="Card frame placeholder">
+  <rect x="1.5" y="1.5" width="189" height="157" stroke="#a98245" stroke-opacity=".55" stroke-width="3"/>
+  <rect x="8" y="8" width="176" height="144" stroke="#d99a4e" stroke-opacity=".22" stroke-width="1"/>
+  <path d="M16 20 H48" stroke="#a98245" stroke-opacity=".35" stroke-width="2"/>
+  <path d="M144 140 H176" stroke="#a98245" stroke-opacity=".35" stroke-width="2"/>
+</svg>

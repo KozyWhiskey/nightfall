@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 62 72" fill="none" role="img" aria-label="Vanguard placeholder">
+  <rect width="62" height="72" fill="#1a2420"/>
+  <path d="M31 8 L46 22 L50 68 L12 68 L16 22 Z" fill="#8d7a52" opacity=".72"/>
+  <path d="M31 8 L38 20 L31 24 L24 20 Z" fill="#d99a4e" opacity=".55"/>
+  <rect x="26" y="28" width="10" height="22" rx="1" fill="#5c4a2e" opacity=".8"/>
+</svg>

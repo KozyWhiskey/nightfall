@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 62 72" fill="none" role="img" aria-label="Aether Weaver placeholder">
+  <rect width="62" height="72" fill="#152028"/>
+  <path d="M31 6 L44 28 L40 68 L22 68 L18 28 Z" fill="#6f8b97" opacity=".7"/>
+  <circle cx="31" cy="22" r="7" fill="#7da9bd" opacity=".55"/>
+  <path d="M20 40 Q31 32 42 40" stroke="#7da9bd" stroke-width="2" opacity=".65"/>
+  <path d="M22 50 Q31 42 40 50" stroke="#7da9bd" stroke-width="1.5" opacity=".45"/>
+</svg>

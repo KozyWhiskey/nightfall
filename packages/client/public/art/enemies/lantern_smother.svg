@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 62 72" fill="none" role="img" aria-label="Lantern-Smother placeholder">
+  <rect width="62" height="72" fill="#141018"/>
+  <path d="M31 6 L52 28 L46 68 L16 68 L10 28 Z" fill="#5a4e6e" opacity=".75"/>
+  <ellipse cx="31" cy="30" rx="12" ry="14" fill="#2a2030" opacity=".9"/>
+  <path d="M26 26 L31 18 L36 26 L33 40 L29 40 Z" fill="#d99a4e" opacity=".35"/>
+  <circle cx="31" cy="28" r="3" fill="#d99a4e" opacity=".7"/>
+</svg>

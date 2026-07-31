@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 62 72" fill="none" role="img" aria-label="Mist Chanter placeholder">
+  <rect width="62" height="72" fill="#1a1822"/>
+  <path d="M31 10 L46 28 L42 68 L20 68 L16 28 Z" fill="#6d647e" opacity=".6"/>
+  <ellipse cx="31" cy="24" rx="10" ry="9" fill="#776c91" opacity=".75"/>
+  <path d="M14 34 Q31 26 48 34" stroke="#b5a8c9" stroke-width="1.5" opacity=".55"/>
+  <path d="M16 44 Q31 36 46 44" stroke="#b5a8c9" stroke-width="1.5" opacity=".4"/>
+</svg>
