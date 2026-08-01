@@ -1,7 +1,46 @@
-import { SNAPSHOT_SCHEMA_VERSION, type AcceptedCommandRecord, type CommandEnvelope, type CommandResult, type GameHost, type GameSnapshot, type RunRecord, type SnapshotListener, type Unsubscribe } from "@nightfall/contracts";
+import { SNAPSHOT_SCHEMA_VERSION, type AcceptedCommandRecord, type CommandEnvelope, type CommandResult, type GameHost, type GameSnapshot, type HeroSnapshot, type ItemInstance, type RunRecord, type SnapshotListener, type Unsubscribe } from "@nightfall/contracts";
 import type { ValidatedContentPack } from "@nightfall/content";
 import type { GameStore } from "@nightfall/persistence";
-import { applyCommand } from "@nightfall/sim";
+import { applyCommand, buildHeroDeckPreview, enrichItemDisplay } from "@nightfall/sim";
+
+function enrichHeroes<T extends { heroes: readonly HeroSnapshot[] }>(section: T, holdings: readonly ItemInstance[], pack: ValidatedContentPack): T {
+  return {
+    ...section,
+    heroes: section.heroes.map((hero) => ({
+      ...hero,
+      deckPreview: buildHeroDeckPreview(pack, hero, holdings)
+    }))
+  };
+}
+
+function enrichSnapshotDisplays(snapshot: GameSnapshot, pack: ValidatedContentPack): GameSnapshot {
+  const next = structuredClone(snapshot);
+  const havenHoldings = next.haven.holdings.map((item) => enrichItemDisplay(pack, item));
+  const haven = enrichHeroes(
+    { ...next.haven, holdings: havenHoldings },
+    havenHoldings,
+    pack
+  );
+  if (next.activeRun === undefined) return { ...next, haven };
+  const run = next.activeRun;
+  const runHoldings = run.holdings.map((item) => enrichItemDisplay(pack, item));
+  const pending = run.pendingDecision?.kind === "reward"
+    ? {
+        ...run.pendingDecision,
+        offers: run.pendingDecision.offers.map((offer) => ({ ...offer, item: enrichItemDisplay(pack, offer.item) }))
+      }
+    : run.pendingDecision;
+  return {
+    ...next,
+    haven,
+    activeRun: enrichHeroes({
+      ...run,
+      holdings: runHoldings,
+      waypointChest: run.waypointChest.map((item) => enrichItemDisplay(pack, item)),
+      ...(pending === undefined ? {} : { pendingDecision: pending })
+    }, runHoldings, pack)
+  };
+}
 
 function completedRun(snapshot: GameSnapshot, previousTerminal: string | undefined): RunRecord | undefined {
   const run = snapshot.activeRun;
@@ -39,7 +78,7 @@ export class LocalGameHost implements GameHost {
   }
 
   public async getSnapshot(): Promise<GameSnapshot> {
-    return structuredClone(this.#snapshot);
+    return enrichSnapshotDisplays(this.#snapshot, this.#pack);
   }
 
   public submit(command: CommandEnvelope): Promise<CommandResult> {
@@ -53,21 +92,22 @@ export class LocalGameHost implements GameHost {
     if (duplicate !== undefined) return structuredClone(duplicate.result);
     const beforeTerminal = this.#snapshot.activeRun?.terminalResult;
     const result = applyCommand(this.#snapshot, command, this.#pack);
-    if (result.status === "rejected") return { ...result, snapshot: structuredClone(this.#snapshot) };
+    if (result.status === "rejected") return { ...result, snapshot: enrichSnapshotDisplays(this.#snapshot, this.#pack) };
+    const enriched = { ...result, snapshot: enrichSnapshotDisplays(result.snapshot, this.#pack) };
     const record: AcceptedCommandRecord = {
       commandId: command.commandId,
-      sequence: result.revision,
+      sequence: enriched.revision,
       expectedRevision: command.expectedRevision,
-      resultingRevision: result.revision,
+      resultingRevision: enriched.revision,
       command: structuredClone(command),
-      result: structuredClone(result),
-      facts: structuredClone(result.facts),
-      resolvedEventHash: result.resolvedEventHash
+      result: structuredClone(enriched),
+      facts: structuredClone(enriched.facts),
+      resolvedEventHash: enriched.resolvedEventHash
     };
     await this.#store.commitAccepted(result.snapshot, record, completedRun(result.snapshot, beforeTerminal));
     this.#snapshot = result.snapshot;
-    for (const listener of this.#listeners) listener(structuredClone(this.#snapshot));
-    return structuredClone(result);
+    for (const listener of this.#listeners) listener(enrichSnapshotDisplays(this.#snapshot, this.#pack));
+    return structuredClone(enriched);
   }
 
   public subscribe(listener: SnapshotListener): Unsubscribe {

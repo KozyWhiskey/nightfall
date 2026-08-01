@@ -30,6 +30,7 @@ export const COMMAND_TYPES = [
   "chooseEventOption",
   "chooseRestOption",
   "chooseCraftRecipe",
+  "cancelCraft",
   "assignTemporaryStat",
   "equipItem",
   "unequipItem",
@@ -138,9 +139,21 @@ export type ItemLocation =
   | { kind: "consumed" }
   | { kind: "lost" };
 
+export type ItemEquipmentSlot =
+  | "mainHand"
+  | "offHand"
+  | "head"
+  | "body"
+  | "gloves"
+  | "legs"
+  | "feet"
+  | "relic";
+
 export interface ItemMechanicSnapshot {
   readonly modifiers: readonly string[];
   readonly grantedCardId?: string;
+  readonly equipmentSlot?: ItemEquipmentSlot;
+  readonly requiredSchools?: readonly string[];
   readonly school?: string;
   readonly secondaryCostDelta?: number;
   readonly damageDelta?: number;
@@ -170,6 +183,16 @@ export interface ItemInstance {
   readonly location: ItemLocation;
 }
 
+export interface DeckCardPreviewSnapshot {
+  readonly cardId: string;
+  readonly name: string;
+  readonly apCost: number;
+  readonly manaCost: number;
+  readonly staminaCost: number;
+  readonly summary: string;
+  readonly sourceLabel: string;
+}
+
 export interface HeroSnapshot {
   readonly id: string;
   readonly name: string;
@@ -189,6 +212,7 @@ export interface HeroSnapshot {
   readonly injuries: readonly string[];
   readonly pendingLeadership: number;
   readonly downed: boolean;
+  readonly deckPreview?: readonly DeckCardPreviewSnapshot[];
 }
 
 export interface BuildingState {
@@ -374,6 +398,7 @@ export interface CombatSnapshot {
   readonly intents: readonly EnemyIntentSnapshot[];
   readonly guards: readonly GuardLink[];
   readonly supplyUsed: boolean;
+  readonly retainRefillUsedHeroIds: readonly string[];
   readonly bossTurn: number;
   readonly outcome: "active" | "victory" | "wipe";
 }
@@ -398,6 +423,13 @@ export interface DecisionChoiceSnapshot {
   readonly id: string;
   readonly label: string;
   readonly detail: string;
+  /** Material / scroll / gear counts required to choose this option. */
+  readonly cost?: Readonly<Record<string, number>>;
+  /** Player must pick a living hero before the command is submitted. */
+  readonly needsHeroTarget?: boolean;
+  /** Player must pick an expedition equipment item before the command is submitted. */
+  readonly needsItemTarget?: boolean;
+  readonly riskTier?: "safe" | "risky" | "dire";
 }
 
 export interface ChronicleFacts {
@@ -410,6 +442,8 @@ export interface ChronicleFacts {
   readonly injuries: readonly string[];
   readonly claimedWaypointIds: readonly string[];
   readonly recoveredItemNames: readonly string[];
+  readonly sealedItemNames: readonly string[];
+  readonly lostItemNames: readonly string[];
   readonly terminalResult: "return" | "wipe" | "succession";
 }
 

@@ -2,7 +2,7 @@ import type { AcceptedCommandResult, CommandEnvelope, CommandResult, GameSnapsho
 import type { ValidatedContentPack } from "@nightfall/content";
 import { hashResolvedFacts } from "./facts.js";
 import { cloneSnapshot, createContext, emitFact, type ForcedStreams, type MutableSnapshot, type SimulationContext } from "./internal.js";
-import { assignTemporaryStat, buildingCommand, chooseCraft, chooseEvent, chooseMapEdge, chooseRest, chooseReward, combatCommand, commitEmbark, continueAfterTerminal, leaveReward, preparationCommand, waypointCommand, wipe } from "./expedition.js";
+import { assignTemporaryStat, buildingCommand, cancelCraft, chooseCraft, chooseEvent, chooseMapEdge, chooseRest, chooseReward, combatCommand, commitEmbark, continueAfterTerminal, leaveReward, preparationCommand, waypointCommand, wipe } from "./expedition.js";
 
 function reject(command: CommandEnvelope, revision: number, reasonCode: ReasonCode): CommandResult {
   return { status: "rejected", commandId: command.commandId, reasonCode, revision };
@@ -38,6 +38,7 @@ function dispatch(snapshot: MutableSnapshot, command: CommandEnvelope, pack: Val
   if (command.type === "chooseEventOption") return chooseEvent(snapshot, pack, command, context);
   if (command.type === "chooseRestOption") return chooseRest(snapshot, command, context);
   if (command.type === "chooseCraftRecipe") return chooseCraft(snapshot, pack, command, context);
+  if (command.type === "cancelCraft") return cancelCraft(snapshot, context);
   if (command.type === "assignTemporaryStat") return assignTemporaryStat(snapshot, pack, command, context);
   if (["spendEmberShardRite", "sealChestItem", "chooseReturnEdge"].includes(command.type)) return waypointCommand(snapshot, pack, command, context);
   if (["equipItem", "unequipItem", "learnScroll"].includes(command.type)) return preparationCommand(snapshot, pack, command, context);

@@ -1,17 +1,23 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import type { CardInstanceSnapshot, CommandType, DecisionChoiceSnapshot, EquipmentSlot, GameSnapshot, HeroSnapshot, ItemInstance } from "@nightfall/contracts";
+import type { CardInstanceSnapshot, CommandType, DecisionChoiceSnapshot, GameSnapshot, HeroSnapshot, ItemInstance } from "@nightfall/contracts";
 import { CombatPortrait, IntentGlyph } from "./art/ArtImage.js";
 import { combatantArtSrc, intentArtSrc, silhouetteForCombatant, silhouetteForHero, type IntentArtKind } from "./art/artMap.js";
+import {
+  affordability,
+  basicAffordability,
+  cardAffordability,
+  choiceRiskLabel,
+  costLabel,
+  gloomPressure,
+  humanizeEventChoice,
+  learnableScrolls,
+  materialLines,
+  titleCase
+} from "./decisionUi.js";
+import { RouteMapBoard } from "./map/RouteMapBoard.js";
+import { EQUIP_SLOTS, itemById } from "./party/inventoryUi.js";
+import { PartyInventory } from "./party/PartyInventory.js";
 import { useNightfall } from "./store.js";
-
-const titleCase = (value: string) => value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
-
-const EQUIP_SLOTS: readonly EquipmentSlot[] = ["mainHand", "offHand", "head", "body", "gloves", "legs", "feet", "relic1", "relic2"];
-
-function itemById(holdings: readonly ItemInstance[], instanceId: string | null): ItemInstance | undefined {
-  if (instanceId === null) return undefined;
-  return holdings.find((item) => item.instanceId === instanceId);
-}
 
 function PillarRail({ lit }: { lit: number }) {
   return <div className="pillar-rail" aria-label={`${lit} of 10 Haven pillars lit`}>
@@ -32,98 +38,6 @@ function HeroLedger({ hero }: { hero: HeroSnapshot }) {
   </article>;
 }
 
-function PartyHeroCard({ hero, holdings }: { hero: HeroSnapshot; holdings: readonly ItemInstance[] }) {
-  const equipped = EQUIP_SLOTS
-    .map((slot) => ({ slot, item: itemById(holdings, hero.equipment[slot]) }))
-    .filter((entry) => entry.item !== undefined) as { slot: EquipmentSlot; item: ItemInstance }[];
-  const learned = [...hero.learnedCardIds, ...hero.runLearnedCardIds];
-  return <article className="party-hero">
-    <header>
-      <div>
-        <small>{titleCase(hero.classId)}{hero.downed ? " · Downed" : ""}</small>
-        <h3>{hero.name}</h3>
-      </div>
-      {hero.temporaryAttribute !== undefined && <span className="party-chip">Temp +1 {hero.temporaryAttribute.toUpperCase()}</span>}
-    </header>
-    <div className="hero-meters">
-      <Meter label="HP" value={hero.hp} max={hero.maxHp} tone="blood" />
-      <Meter label="Mana" value={hero.mana} max={hero.maxMana} tone="aether" />
-      <Meter label="Stamina" value={hero.stamina} max={hero.maxStamina} tone="iron" />
-    </div>
-    <p className="stat-line">VIT {hero.attributes.vit} · DEX {hero.attributes.dex} · STR {hero.attributes.str} · INT {hero.attributes.int}</p>
-    {hero.injuries.length > 0 && <p className="warning">Injuries: {hero.injuries.map(titleCase).join(", ")}</p>}
-    <h4>Equipped</h4>
-    {equipped.length === 0 ? <p className="empty">No gear equipped.</p> : <ul className="party-gear">
-      {equipped.map(({ slot, item }) => <li key={item.instanceId}>
-        <div>
-          <small>{titleCase(slot)} · {titleCase(item.rarityId)}</small>
-          <strong>{item.displaySnapshot.name}</strong>
-          <ItemEffects description={item.displaySnapshot.description} />
-        </div>
-        {item.curseId !== undefined && <span className="warning">{titleCase(item.curseId)}</span>}
-      </li>)}
-    </ul>}
-    {learned.length > 0 && <>
-      <h4>Learned patterns</h4>
-      <p className="party-learned">{learned.map(titleCase).join(" · ")}</p>
-    </>}
-  </article>;
-}
-
-function PartyPanel({ snapshot, open, onClose }: { snapshot: GameSnapshot; open: boolean; onClose: () => void }) {
-  const run = snapshot.activeRun;
-  const heroes = run?.heroes ?? snapshot.haven.heroes;
-  const holdings = run?.holdings ?? snapshot.haven.holdings;
-  const packItems = run === undefined
-    ? holdings.filter((item) => item.location.kind === "haven")
-    : holdings.filter((item) => item.location.kind === "held_by_expedition");
-  const sealed = run?.waypointChest ?? [];
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); };
-    globalThis.addEventListener("keydown", onKey);
-    return () => globalThis.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
-
-  if (!open) return null;
-  return <>
-    <button type="button" className="party-backdrop" aria-label="Close party panel" onClick={onClose} />
-    <aside className="party-drawer" role="dialog" aria-modal="true" aria-label="Party and packs">
-      <header className="party-drawer-head">
-        <div>
-          <span>{run === undefined ? "Haven roster" : "Expedition roster"}</span>
-          <h2>Party & packs</h2>
-        </div>
-        <button type="button" className="quiet" onClick={onClose}>Close · Esc</button>
-      </header>
-      <div className="party-drawer-body">
-        <section className="party-section">
-          <h3>Survivors</h3>
-          <div className="party-hero-stack">{heroes.map((hero) => <PartyHeroCard key={hero.id} hero={hero} holdings={holdings} />)}</div>
-        </section>
-        <section className="party-section">
-          <h3>{run === undefined ? "Haven-held" : "Carried — at risk"}</h3>
-          <ItemList
-            items={packItems}
-            empty={run === undefined ? "No spare Haven holdings." : "No unsealed expedition holdings."}
-          />
-        </section>
-        {run !== undefined && <>
-          <section className="party-section">
-            <h3>Materials</h3>
-            <div className="party-materials">{Object.entries(run.materials).map(([id, amount]) => <div key={id}><span>{titleCase(id)}</span><strong>{amount}</strong></div>)}</div>
-          </section>
-          {sealed.length > 0 && <section className="party-section">
-            <h3>Sealed at waypoint</h3>
-            <ItemList items={sealed} empty="No sealed items." />
-          </section>}
-        </>}
-      </div>
-    </aside>
-  </>;
-}
-
 function Page({ eyebrow, title, intro, children, aside }: { eyebrow: string; title: string; intro?: string; children: ReactNode; aside?: ReactNode }) {
   return <main className="stage">
     <header className="stage-chrome">
@@ -140,63 +54,97 @@ function Page({ eyebrow, title, intro, children, aside }: { eyebrow: string; tit
 
 function HavenView({ snapshot, send }: ViewProps) {
   const [name, setName] = useState(snapshot.haven.name);
+  const [embarkOpen, setEmbarkOpen] = useState(false);
   const pendingLeadership = snapshot.haven.heroes.filter((hero) => hero.pendingLeadership > 0);
+  const wardyardBuilt = snapshot.haven.buildings.some((building) => building.id === "wardyard" && building.state === "built");
+  const waypoints = snapshot.campaign.claimedWaypointIds;
+  const wick = snapshot.haven.resources.wick;
+  const equipped = snapshot.haven.heroes.flatMap((hero) => EQUIP_SLOTS
+    .map((slot) => itemById(snapshot.haven.holdings, hero.equipment[slot]))
+    .filter((item): item is ItemInstance => item !== undefined)
+    .map((item) => ({ hero: hero.name, item })));
   return <Page
     eyebrow="Pillarhouse record"
     title={snapshot.haven.name}
     intro="Everything committed to an expedition can be lost until sealed or brought home."
-    aside={<button className="primary" onClick={() => { if (globalThis.confirm("Commit both heroes and all equipped Haven gear to wipe risk?")) void send("commitEmbark"); }}>Embark</button>}
+    aside={<button className="primary" onClick={() => setEmbarkOpen(true)}>Embark</button>}
   >
     {snapshot.view === "postReturn" && <section className="homecoming-callout"><div><span>Homecoming ledger</span><strong>Returned holdings are banked. Review the Haven, then close this expedition.</strong></div><button className="primary" onClick={() => void send("continueToHaven")}>Finish homecoming</button></section>}
     <section className="haven-status">
-      <div><PillarRail lit={snapshot.haven.litPillars} /><p><strong>{snapshot.haven.litPillars}/10 pillars</strong> · Haven Gloom {snapshot.haven.gloom} · Next embark {snapshot.haven.gloom * 4} Run Gloom</p></div>
+      <div>
+        <PillarRail lit={snapshot.haven.litPillars} />
+        <p><strong>{snapshot.haven.litPillars}/10 pillars</strong> · Haven Gloom {snapshot.haven.gloom} · Next embark {snapshot.haven.gloom * 4} Run Gloom · Torches (wick) {wick}</p>
+        <p className="stat-line">Claimed waypoints {waypoints.length}{waypoints.length > 0 ? `: ${waypoints.map(titleCase).join(", ")}` : ""}</p>
+      </div>
       <section className="rename-line"><label>Haven name<input value={name} maxLength={40} onChange={(event) => setName(event.target.value)} /></label><button onClick={() => void send("nameHaven", { name })}>Record name</button></section>
     </section>
-    <div className="two-column">
-      <section className="stage-panel"><h2>Expedition pair</h2><div className="hero-grid">{snapshot.haven.heroes.map((hero) => <HeroLedger hero={hero} key={hero.id} />)}</div></section>
+    <div className="haven-layout">
+      <div className="two-column">
+        <section className="stage-panel">
+          <h2>Expedition pair</h2>
+          <div className="hero-grid">{snapshot.haven.heroes.map((hero) => <HeroLedger hero={hero} key={hero.id} />)}</div>
+        </section>
+        <section className="stage-panel">
+          <h2>Stores</h2>
+          <div className="resource-grid">{Object.entries(snapshot.haven.resources).map(([id, amount]) => <div key={id}><span>{titleCase(id)}</span><strong>{amount}</strong></div>)}</div>
+          <h2>Haven works</h2>
+          <div className="building-list">{snapshot.haven.buildings.map((building) => <article key={building.id}><div><strong>{titleCase(building.id)}</strong><span>{titleCase(building.state)}</span></div>{building.state === "available" && ["cinder_forge", "quiet_house", "wardyard"].includes(building.id) && <button onClick={() => { if (globalThis.confirm(`Construct ${titleCase(building.id)} with returned materials?`)) void send("buildBuilding", { buildingId: building.id }); }}>Construct</button>}</article>)}</div>
+          {snapshot.haven.litPillars < 10 && snapshot.haven.resources.ember_shard > 0 && <button className="haven-inline-action" onClick={() => { if (globalThis.confirm("Spend one Ember Shard to relight a pillar permanently?")) void send("repairPillar"); }}>Relight one pillar</button>}
+        </section>
+      </div>
+      {pendingLeadership.length > 0 && !wardyardBuilt && <section className="stage-panel leadership-teaser"><h2>Leadership waiting</h2><p>{pendingLeadership.map((hero) => `${hero.name} (+${hero.pendingLeadership})`).join(" · ")} — construct the Wardyard to assign permanent attributes.</p></section>}
+      {pendingLeadership.length > 0 && wardyardBuilt && <section className="stage-panel"><h2>Wardyard Leadership</h2>{pendingLeadership.map((hero) => <div className="choice-row" key={hero.id}><strong>{hero.name}</strong>{(["vit", "dex", "str", "int"] as const).map((stat) => <button key={stat} onClick={() => { if (globalThis.confirm(`Permanently assign ${hero.name}'s Leadership Point to ${stat.toUpperCase()}?`)) void send("assignLeadership", { heroId: hero.id, stat }); }}>{stat.toUpperCase()}</button>)}</div>)}</section>}
       <section className="stage-panel">
-        <h2>Stores</h2>
-        <div className="resource-grid">{Object.entries(snapshot.haven.resources).map(([id, amount]) => <div key={id}><span>{titleCase(id)}</span><strong>{amount}</strong></div>)}</div>
-        <h2>Haven works</h2>
-        <div className="building-list">{snapshot.haven.buildings.map((building) => <article key={building.id}><div><strong>{titleCase(building.id)}</strong><span>{titleCase(building.state)}</span></div>{building.state === "available" && ["cinder_forge", "quiet_house", "wardyard"].includes(building.id) && <button onClick={() => { if (globalThis.confirm(`Construct ${titleCase(building.id)} with returned materials?`)) void send("buildBuilding", { buildingId: building.id }); }}>Construct</button>}</article>)}</div>
+        <h2>Haven-held gear and patterns</h2>
+        <ItemList items={snapshot.haven.holdings.filter((item) => item.location.kind === "haven" || item.location.kind === "equipped")} empty="No spare holdings. Equipped starter gear is listed in each hero's sheet." />
       </section>
     </div>
-    {snapshot.haven.litPillars < 10 && snapshot.haven.resources.ember_shard > 0 && <button onClick={() => { if (globalThis.confirm("Spend one Ember Shard to relight a pillar permanently?")) void send("repairPillar"); }}>Relight one pillar</button>}
-    {pendingLeadership.length > 0 && snapshot.haven.buildings.some((building) => building.id === "wardyard" && building.state === "built") && <section className="stage-panel"><h2>Wardyard Leadership</h2>{pendingLeadership.map((hero) => <div className="choice-row" key={hero.id}><strong>{hero.name}</strong>{(["vit", "dex", "str", "int"] as const).map((stat) => <button key={stat} onClick={() => { if (globalThis.confirm(`Permanently assign ${hero.name}'s Leadership Point to ${stat.toUpperCase()}?`)) void send("assignLeadership", { heroId: hero.id, stat }); }}>{stat.toUpperCase()}</button>)}</div>)}</section>}
-    <section className="stage-panel"><h2>Haven-held gear and patterns</h2><ItemList items={snapshot.haven.holdings} empty="No spare holdings. Equipped starter gear is listed in each hero's sheet." /></section>
+    {embarkOpen && <div className="embark-sheet" role="dialog" aria-modal="true" aria-label="Embark confirmation">
+      <div className="embark-sheet-card">
+        <header>
+          <span>Wipe-risk commitment</span>
+          <h2>Embark The Unlit Road</h2>
+          <p>Both survivors and all equipped Haven gear enter wipe risk until sealed at a waypoint or brought home.</p>
+        </header>
+        <section>
+          <h3>Committed pair</h3>
+          <ul>{snapshot.haven.heroes.map((hero) => <li key={hero.id}><strong>{hero.name}</strong> · {titleCase(hero.classId)} · HP {hero.hp}/{hero.maxHp}</li>)}</ul>
+        </section>
+        <section>
+          <h3>Equipped into risk</h3>
+          {equipped.length === 0 ? <p className="empty">No gear currently equipped.</p> : <ul>{equipped.map(({ hero, item }) => <li key={item.instanceId}><strong>{item.displaySnapshot.name}</strong> on {hero}</li>)}</ul>}
+        </section>
+        <section>
+          <h3>Starting Run Gloom</h3>
+          <p>{snapshot.haven.gloom * 4} (Haven Gloom × 4). Every road edge adds +5.</p>
+        </section>
+        <footer className="embark-actions">
+          <button type="button" className="quiet" onClick={() => setEmbarkOpen(false)}>Cancel</button>
+          <button type="button" className="primary" onClick={() => { setEmbarkOpen(false); void send("commitEmbark"); }}>Commit embark</button>
+        </footer>
+      </div>
+    </div>}
   </Page>;
 }
 
-function gloomBand(value: number) { return value < 40 ? "Held at Bay" : value < 70 ? "Encroaching" : value < 90 ? "Pressing" : "Overrun"; }
-
 function MapView({ snapshot, send }: ViewProps) {
   const run = snapshot.activeRun!;
-  const legal = run.edges.filter((edge) => edge.from === run.currentNodeId);
-  const byId = new Map(run.nodes.map((node) => [node.id, node]));
+  const pressure = gloomPressure(run.runGloom);
+  const boss = run.nodes.find((node) => node.type === "boss");
   return <Page
     eyebrow="Expedition leg"
     title="The Unlit Road"
-    intro="Event identity stays under fog until entered. Every edge adds exactly +5 Run Gloom."
+    intro="Walk the branching road. Event identity stays under fog until entered. Every edge adds exactly +5 Run Gloom."
     aside={<div className="stage-stat-row" aria-label="Run pressure">
       <div><span>Run Gloom</span><strong>{run.runGloom}</strong></div>
-      <div><span>Pressure</span><strong>{gloomBand(run.runGloom)}</strong></div>
+      <div><span>Pressure</span><strong>{pressure.band}</strong></div>
       <div><span>Next edge</span><strong>+5</strong></div>
     </div>}
   >
-    <section className="route-strip" aria-label="Visited route">{run.visitedNodeIds.map((id, index) => <span key={`${id}-${index}`}>{byId.get(id)?.label ?? titleCase(id)}</span>)}</section>
-    <div className="two-column map-layout">
-      <section className="stage-panel">
-        <h2>Choose the next road</h2>
-        <div className="road-choices">{legal.map((edge) => {
-          const node = byId.get(edge.to)!;
-          return <button key={edge.id} onClick={() => void send("chooseMapEdge", { edgeId: edge.id })}>
-            <span>{node.visibility === "hidden" ? "Unknown event" : titleCase(node.type)}</span>
-            <strong>{node.label}</strong>
-            <small>Travel · +5 Run Gloom</small>
-          </button>;
-        })}</div>
-      </section>
-      <section className="stage-panel">
+    <p className="gloom-next-line" role="status">{pressure.nextEffect}{boss !== undefined ? ` · Path continues toward ${boss.label}.` : ""}</p>
+    <div className="map-layout">
+      <RouteMapBoard run={run} onChooseEdge={(edgeId) => void send("chooseMapEdge", { edgeId })} />
+      <section className="stage-panel map-party-panel">
         <h2>Party state</h2>
         <div className="hero-grid">{run.heroes.map((hero) => <HeroLedger hero={hero} key={hero.id} />)}</div>
       </section>
@@ -221,14 +169,22 @@ function intentGlyphChar(kind: IntentArtKind): string {
   return kind === "attack" ? "▲" : kind === "defend" ? "◆" : kind === "buff" ? "✚" : "✦";
 }
 
+function intentEffectHint(intent: { label: string; targetLabel: string; magnitude: number }, kind: IntentArtKind): string {
+  if (intent.magnitude > 0) return `${intent.targetLabel} · ${intent.magnitude}`;
+  if (kind === "defend") return `${intent.targetLabel} · defensive setup`;
+  if (kind === "buff") return `${intent.targetLabel} · empowering allies`;
+  return intent.targetLabel;
+}
+
 function IntentBadge({ intent }: { intent: { label: string; targetLabel: string; magnitude: number } }) {
   const kind = intentKind(intent);
   const kindLabel = kind === "attack" ? "Attack" : kind === "defend" ? "Defend" : kind === "buff" ? "Buff" : "Special";
-  return <div className={`intent-badge intent-${kind}`} role="group" aria-label={`${kindLabel} intent: ${intent.label}, ${intent.targetLabel}${intent.magnitude > 0 ? `, magnitude ${intent.magnitude}` : ""}`}>
+  const hint = intentEffectHint(intent, kind);
+  return <div className={`intent-badge intent-${kind}`} role="group" aria-label={`${kindLabel} intent: ${intent.label}, ${hint}`}>
     <span className="intent-glyph" aria-hidden="true">
       <IntentGlyph src={intentArtSrc(kind)} textFallback={intentGlyphChar(kind)} />
     </span>
-    <span className="intent-copy"><strong>{intent.label}</strong><small>{intent.targetLabel}{intent.magnitude > 0 ? ` · ${intent.magnitude}` : ""}</small></span>
+    <span className="intent-copy"><strong>{intent.label}</strong><small>{kindLabel} · {hint}</small></span>
   </div>;
 }
 
@@ -274,7 +230,7 @@ function CombatView({ snapshot, send }: ViewProps) {
   };
 
   const onCardActivate = (card: CardInstanceSnapshot) => {
-    if (!heroTurn || active.id !== card.ownerId) return;
+    if (!heroTurn || active.id !== card.ownerId || !cardAffordability(activeResources, card).ok) return;
     const spec = card.presentation.targetSpec;
     if (spec === "enemy" || spec === "ally") {
       setPending({ kind: "card", cardInstanceId: card.cardInstanceId, targetSpec: spec, name: card.presentation.name });
@@ -326,9 +282,8 @@ function CombatView({ snapshot, send }: ViewProps) {
     <header className="combat-chrome">
       <div><span>Combat · round {combat.round}</span><h1>{encounterLabel}</h1></div>
       <div className="combat-chrome-stats" aria-label="Turn status">
-        <div><span>Actor</span><strong>{active.name}</strong></div>
-        <div><span>AP</span><strong>{heroTurn ? activeResources?.ap ?? "—" : "—"}</strong></div>
         <div><span>Run Gloom</span><strong>{run.runGloom}</strong></div>
+        <div><span>{heroTurn ? "Your turn" : "Resolving"}</span><strong>{active.name}{heroTurn && activeResources !== undefined ? ` · ${activeResources.ap} AP` : ""}</strong></div>
       </div>
     </header>
 
@@ -343,11 +298,12 @@ function CombatView({ snapshot, send }: ViewProps) {
         const block = enemy.blockLayers.reduce((sum, layer) => sum + layer.amount, 0);
         const isActive = enemy.id === active.id;
         const canTarget = targetMode === "enemy" && enemy.targetable;
+        const carrier = enemy.carriedItemId === undefined ? undefined : run.holdings.find((item) => item.instanceId === enemy.carriedItemId);
         const Tag = canTarget ? "button" : "article";
         return <Tag
           key={enemy.id}
           type={canTarget ? "button" : undefined}
-          className={`hostile-card${isActive ? " is-active" : ""}${enemy.kind === "entity" ? " is-entity" : ""}${canTarget ? " is-targetable" : ""}`}
+          className={`hostile-card${isActive ? " is-active" : ""}${enemy.kind === "entity" ? " is-entity" : ""}${canTarget ? " is-targetable" : ""}${carrier !== undefined ? " is-carrier" : ""}`}
           onClick={canTarget ? () => onCombatantActivate(enemy.id, "enemies", enemy.targetable) : undefined}
           aria-label={canTarget ? `Target ${enemy.name}` : undefined}
         >
@@ -357,11 +313,12 @@ function CombatView({ snapshot, send }: ViewProps) {
           />
           <div className="hostile-body">
             <div className="hostile-head">
-              <small>{enemy.kind === "entity" ? "Urgent target" : "Hostile"}</small>
+              <small>{enemy.kind === "entity" ? "Urgent target" : carrier !== undefined ? "Marked carrier" : "Hostile"}</small>
               <h2>{enemy.name}</h2>
             </div>
             <CompactMeter label="HP" value={enemy.hp} max={enemy.maxHp} tone="gloom" />
             {block > 0 && <p className="block-chip">Block {block}</p>}
+            {carrier !== undefined && <p className="carrier-chip" title={carrier.displaySnapshot.description}>Wielding unknown exceptional · {titleCase(carrier.rarityId)}</p>}
             {enemy.conditions.length > 0 && <p className="condition-line">{enemy.conditions.map((entry) => titleCase(entry.id)).join(" · ")}</p>}
             {intent !== undefined ? <IntentBadge intent={intent} /> : <p className="intent-pending">Intent pending</p>}
           </div>
@@ -389,7 +346,7 @@ function CombatView({ snapshot, send }: ViewProps) {
           <div className="party-body">
             <div className="party-head">
               <div>
-                <small>{hero !== undefined ? titleCase(hero.classId) : "Hero"}{isActive ? " · acting" : ""}</small>
+                <small>{hero !== undefined ? titleCase(hero.classId) : "Hero"}</small>
                 <h2>{combatant.name}</h2>
               </div>
               {isActive && resources !== undefined && <div className="ap-chip" aria-label={`${resources.ap} action points`}><span>AP</span><strong>{resources.ap}</strong></div>}
@@ -430,19 +387,23 @@ function CombatView({ snapshot, send }: ViewProps) {
       })}
     </ol>
 
-    <div className="combat-field" aria-hidden="true" />
-
     <footer className={`combat-dock${!heroTurn ? " is-waiting" : ""}`}>
       {!heroTurn ? <p className="waiting-line">{active.name} is resolving…</p> : <>
         <div className="dock-controls">
-          <div className="basic-row">
+          <div className="basic-row" aria-label="Basics and end turn">
             {basics !== undefined && <>
               <button
-                className={pending?.kind === "basicAttack" ? "is-armed" : ""}
+                className={pending?.kind === "basicAttack" ? "is-armed" : "quiet"}
                 onClick={() => setPending({ kind: "basicAttack", name: basics.attack.name })}
-                disabled={enemies.length === 0}
+                disabled={enemies.length === 0 || !basicAffordability(activeResources, basics.attack.apCost).ok}
+                title={basicAffordability(activeResources, basics.attack.apCost).reason}
               >{basics.attack.name} · {basics.attack.apCost} AP</button>
-              <button onClick={() => { setPending(null); void send("useBasicBlock", {}, active.id); }}>{basics.block.name} · {basics.block.apCost} AP</button>
+              <button
+                className="quiet"
+                onClick={() => { setPending(null); void send("useBasicBlock", {}, active.id); }}
+                disabled={!basicAffordability(activeResources, basics.block.apCost).ok}
+                title={basicAffordability(activeResources, basics.block.apCost).reason}
+              >{basics.block.name} · {basics.block.apCost} AP</button>
             </>}
             <button
               className={heroTurn && (activeResources?.ap ?? 0) === 0 ? "end-turn is-urgent" : "quiet"}
@@ -456,7 +417,7 @@ function CombatView({ snapshot, send }: ViewProps) {
               </select>
             </label>
             <button
-              className={pending?.kind === "supply" ? "is-armed" : ""}
+              className={pending?.kind === "supply" ? "is-armed" : "quiet"}
               disabled={combat.supplyUsed || selectedSupplyId === ""}
               onClick={beginSupply}
             >{combat.supplyUsed ? "Supply spent" : "Use · 1 AP"}</button>
@@ -465,22 +426,28 @@ function CombatView({ snapshot, send }: ViewProps) {
         </div>
         <div className="hand-rail" aria-label={`${active.name}'s hand`}>
           {hand.length === 0 ? <p className="empty">No cards in hand.</p> : hand.map((card) => {
+            const afford = cardAffordability(activeResources, card);
+            const playable = active.id === card.ownerId && afford.ok;
             const needsTarget = card.presentation.targetSpec === "ally" || card.presentation.targetSpec === "enemy";
             const selected = pending?.kind === "card" && pending.cardInstanceId === card.cardInstanceId;
             const tags = [
               card.exhaust ? "Exhaust" : undefined,
               card.selfDamage > 0 ? `Self ${card.selfDamage}` : undefined,
-              card.retain ? "Retain" : undefined,
-              needsTarget ? (card.presentation.targetSpec === "ally" ? "Ally" : "Enemy") : undefined
+              card.retain ? "Retain" : undefined
             ].filter(Boolean) as string[];
+            const targetWord = card.presentation.targetSpec === "ally" ? "Ally" : "Enemy";
+            const actionHint = selected ? "Click a target"
+              : needsTarget ? `${targetWord} · then target`
+                : "Play";
             return <button
               type="button"
               key={card.cardInstanceId}
-              className={`hand-card${selected ? " is-selected" : ""}`}
-              disabled={active.id !== card.ownerId}
+              className={`hand-card${selected ? " is-selected" : ""}${!playable ? " is-disabled" : ""}`}
+              disabled={!playable}
+              title={afford.reason}
               onClick={() => onCardActivate(card)}
               aria-pressed={selected}
-              aria-label={`${card.presentation.name}, ${card.presentation.apCost} AP${needsTarget ? `, needs ${card.presentation.targetSpec} target` : ""}`}
+              aria-label={`${card.presentation.name}, ${card.presentation.apCost} AP${needsTarget ? `, needs ${card.presentation.targetSpec} target` : ""}${afford.reason !== undefined ? `, ${afford.reason}` : ""}`}
             >
               <header>
                 <small>{card.presentation.apCost} AP{card.presentation.manaCost > 0 ? ` · ${card.presentation.manaCost} Mana` : ""}{card.presentation.staminaCost > 0 ? ` · ${card.presentation.staminaCost} Stam` : ""}</small>
@@ -488,7 +455,7 @@ function CombatView({ snapshot, send }: ViewProps) {
               </header>
               <p>{card.presentation.summary}</p>
               {tags.length > 0 && <ul className="card-tags">{tags.map((tag) => <li key={tag}>{tag}</li>)}</ul>}
-              <span className="card-action-hint">{selected ? "Click a target" : needsTarget ? "Select · then target" : "Play"}</span>
+              <span className="card-action-hint">{actionHint}</span>
             </button>;
           })}
         </div>
@@ -514,43 +481,121 @@ function ItemList({ items, empty }: { items: readonly ItemInstance[]; empty: str
 }
 
 function RewardView({ snapshot, send }: ViewProps) {
-  const decision = snapshot.activeRun!.pendingDecision; if (decision?.kind !== "reward") return null;
+  const run = snapshot.activeRun!;
+  const decision = run.pendingDecision; if (decision?.kind !== "reward") return null;
+  const hasRareOrBetter = decision.offers.some((offer) => offer.item.rarityId === "rare" || offer.item.rarityId === "imbued");
+  const heroes = run.heroes;
+  const leave = () => {
+    if (hasRareOrBetter && !globalThis.confirm("Leave these offers? A Rare-or-better item will be gone for this expedition.")) return;
+    void send("leaveReward");
+  };
   return <Page
     eyebrow="Recovered opportunity"
     title="Choose what the road gives back"
-    intro="The automatic bundle is already secured—but still carried at risk. Choose one fully identified offer."
+    intro="The automatic bundle is already secured—but still carried at risk. Choose one fully identified offer, or equip from Party & packs after taking it."
   >
     <section className="bundle"><strong>Automatic bundle</strong><span>{Object.entries(decision.automatic).map(([id, amount]) => `${amount} ${titleCase(id)}`).join(" · ")}</span></section>
+    {decision.carrierItemId !== undefined && <p className="carrier-note">A marked carrier dropped an exceptional item into the expedition pack.</p>}
     <div className="reward-grid">{decision.offers.map((offer) => <article key={offer.id} className="offer-card">
       <small>{titleCase(offer.item.rarityId)} · {titleCase(offer.kind)}</small>
       <h2>{offer.item.displaySnapshot.name}</h2>
       <ItemEffects description={offer.item.displaySnapshot.description} />
       <p className="ownership-tag">Carried — at risk until Return or chest sealing.</p>
       <button onClick={() => void send("chooseReward", { offerId: offer.id })}>Take {offer.item.displaySnapshot.name}</button>
+      {offer.kind === "item" && <div className="reward-equip-row">{heroes.map((hero) => <button key={hero.id} type="button" className="quiet" onClick={() => {
+        void (async () => {
+          await send("chooseReward", { offerId: offer.id });
+          await send("equipItem", { heroId: hero.id, itemId: offer.item.instanceId });
+        })();
+      }}>Take & equip on {hero.name}</button>)}</div>}
     </article>)}</div>
-    {decision.sourceId !== "lantern_smother" && <button className="quiet leave-action" onClick={() => void send("leaveReward")}>Leave both offers</button>}
+    {decision.sourceId !== "lantern_smother" && <button className="quiet leave-action" onClick={leave}>Leave both offers</button>}
   </Page>;
 }
 
 function ChoiceView({ snapshot, send, kind }: ViewProps & { kind: "event" | "rest" | "craft" }) {
-  const decision = snapshot.activeRun!.pendingDecision; if (decision?.kind !== kind) return null;
-  const heading = decision.kind === "event" ? titleCase(decision.eventId) : decision.kind === "rest" ? "Rest at the last light" : "Safe craft";
+  const run = snapshot.activeRun!;
+  const decision = run.pendingDecision; if (decision?.kind !== kind) return null;
+  const heading = decision.kind === "event"
+    ? titleCase(decision.eventId)
+    : decision.kind === "rest"
+      ? "Rest at the last light"
+      : "Ruined forge";
+  const effectiveRest = decision.kind === "rest" ? decision.baseGloomReduction - decision.modifier : 0;
   const intro = decision.kind === "rest"
-    ? `Base −12 Gloom · modifier ${decision.modifier >= 0 ? "+" : ""}${decision.modifier} · effective −${decision.baseGloomReduction - decision.modifier}`
-    : "Every cost and probability below is resolved by the host's named stream.";
-  const firstGear = snapshot.activeRun!.holdings.find((item) => item.itemKind === "equipment" && item.location.kind !== "lost" && item.location.kind !== "consumed");
-  const heroId = snapshot.activeRun!.heroes[0]?.id;
+    ? `Run Gloom ${run.runGloom} → ${Math.max(0, run.runGloom - effectiveRest)} · base −${decision.baseGloomReduction} · modifier ${decision.modifier >= 0 ? "+" : ""}${decision.modifier}`
+    : decision.kind === "craft"
+      ? "Costs and odds below are fixed before you confirm. Leaving the forge spends no inputs."
+      : "Each option lists its exact cost, consequence, and chance bands before you choose.";
+  const gearOptions = run.holdings.filter((item) => item.itemKind === "equipment" && item.location.kind !== "lost" && item.location.kind !== "consumed");
+  const [heroId, setHeroId] = useState(run.heroes[0]?.id ?? "");
+  const [itemId, setItemId] = useState(gearOptions[0]?.instanceId ?? "");
+
+  useEffect(() => {
+    if (!run.heroes.some((hero) => hero.id === heroId)) setHeroId(run.heroes[0]?.id ?? "");
+  }, [run.heroes, heroId]);
+  useEffect(() => {
+    if (!gearOptions.some((item) => item.instanceId === itemId)) setItemId(gearOptions[0]?.instanceId ?? "");
+  }, [gearOptions, itemId]);
+
   const choose = (choice: DecisionChoiceSnapshot) => {
-    if (decision.kind === "event") void send("chooseEventOption", { optionId: choice.id, ...(firstGear === undefined ? {} : { targetItemId: firstGear.instanceId }) });
-    else if (decision.kind === "rest") void send("chooseRestOption", { optionId: choice.id, heroId });
-    else if (globalThis.confirm(`Consume the disclosed inputs for ${choice.label}?`)) void send("chooseCraftRecipe", { recipeId: choice.id, heroId, ...(firstGear === undefined ? {} : { targetItemId: firstGear.instanceId }) });
+    const check = affordability(run, choice.cost);
+    if (!check.ok) return;
+    if (choice.needsHeroTarget && heroId === "") return;
+    if (choice.needsItemTarget && itemId === "") return;
+    if (decision.kind === "event") {
+      if (choice.riskTier === "risky" && !globalThis.confirm(`${choice.label}: ${choice.detail}. Proceed?`)) return;
+      void send("chooseEventOption", { optionId: choice.id, ...(choice.needsItemTarget ? { targetItemId: itemId } : {}) });
+      return;
+    }
+    if (decision.kind === "rest") {
+      void send("chooseRestOption", { optionId: choice.id, ...(choice.needsHeroTarget ? { heroId } : {}) });
+      return;
+    }
+    if (!globalThis.confirm(`Consume ${costLabel(choice.cost)} for ${choice.label}?`)) return;
+    void send("chooseCraftRecipe", {
+      recipeId: choice.id,
+      ...(choice.needsHeroTarget ? { heroId } : {}),
+      ...(choice.needsItemTarget ? { targetItemId: itemId } : {})
+    });
   };
+
+  const needsHero = decision.choices.some((choice) => choice.needsHeroTarget);
+  const needsItem = decision.choices.some((choice) => choice.needsItemTarget);
+
   return <Page eyebrow={kind === "event" ? "Unresolved memory" : "Preparation moment"} title={heading} intro={intro}>
-    <div className="choice-grid">{decision.choices.map((choice) => <article key={choice.id} className="offer-card">
-      <h2>{choice.label}</h2>
-      <p>{choice.detail}</p>
-      <button onClick={() => choose(choice)}>Choose {choice.label}</button>
-    </article>)}</div>
+    <section className="decision-context" aria-label="Current expedition resources">
+      <div className="party-materials">{materialLines(run).map(({ id, amount }) => <div key={id}><span>{titleCase(id)}</span><strong>{amount}</strong></div>)}</div>
+      <p className="stat-line">Scrolls carried {learnableScrolls(snapshot).length} · Gear available {gearOptions.length} · Run Gloom {run.runGloom}</p>
+      {(needsHero || needsItem) && <div className="decision-targets">
+        {needsHero && <label>Hero
+          <select value={heroId} onChange={(event) => setHeroId(event.target.value)}>
+            {run.heroes.map((hero) => <option key={hero.id} value={hero.id}>{hero.name} · HP {hero.hp}/{hero.maxHp}{hero.injuries.length > 0 ? ` · ${hero.injuries.map(titleCase).join(", ")}` : ""}</option>)}
+          </select>
+        </label>}
+        {needsItem && <label>Target gear
+          <select value={itemId} onChange={(event) => setItemId(event.target.value)}>
+            {gearOptions.length === 0 ? <option value="">No gear available</option> : gearOptions.map((item) => <option key={item.instanceId} value={item.instanceId}>{item.displaySnapshot.name}</option>)}
+          </select>
+        </label>}
+      </div>}
+    </section>
+    <div className="choice-grid">{decision.choices.map((choice) => {
+      const check = affordability(run, choice.cost);
+      const risk = choiceRiskLabel(choice);
+      const disabled = !check.ok || (choice.needsHeroTarget && heroId === "") || (choice.needsItemTarget && itemId === "");
+      return <article key={choice.id} className={`offer-card${disabled ? " is-disabled" : ""}`}>
+        <div className="offer-meta">
+          {risk !== undefined && <small className={`risk-tag is-${choice.riskTier}`}>{risk}</small>}
+          {choice.cost !== undefined && <small>{costLabel(choice.cost)}</small>}
+        </div>
+        <h2>{choice.label}</h2>
+        <p>{choice.detail}</p>
+        {!check.ok && <p className="warning">{check.missing.join(" · ")}</p>}
+        <button disabled={disabled} onClick={() => choose(choice)}>Choose {choice.label}</button>
+      </article>;
+    })}</div>
+    {kind === "craft" && <button className="quiet leave-action" onClick={() => void send("cancelCraft")}>Leave forge without crafting</button>}
   </Page>;
 }
 
@@ -598,22 +643,29 @@ function WaypointView({ snapshot, send }: ViewProps) {
 function TerminalView({ snapshot, send }: ViewProps) {
   const run = snapshot.activeRun!;
   const result = run.terminalResult!;
+  const facts = run.chronicleFacts;
   const title = result === "return" ? "They came home" : result === "succession" ? "A new light is named" : "The road kept their names";
   return <Page
     eyebrow={titleCase(result)}
     title={title}
-    intro={result === "return" ? "Recovered holdings are banked once. Temporary growth faded; Leadership now waits at the Wardyard." : "Unsealed expedition holdings and the committed party are lost. Protected and permanent world facts remain."}
+    intro={result === "return" ? "Recovered holdings are banked once. Temporary growth faded; Leadership now waits at the Wardyard." : "Unsealed expedition holdings and the committed party are lost. Protected chest contents and permanent world facts remain."}
     aside={<button className="primary" onClick={() => void send("continueToHaven")}>{snapshot.view === "returnResults" ? "Review Haven" : "Continue to Haven"}</button>}
   >
     <section className="terminal-ledger stage-panel">
       <PillarRail lit={snapshot.haven.litPillars} />
       <h2>{snapshot.haven.name}</h2>
-      <p>{snapshot.haven.litPillars}/10 pillars lit · Haven Gloom {snapshot.haven.gloom}</p>
-      {run.chronicleFacts !== undefined && <>
-        <h3>Chronicle facts</h3>
-        <p>Road: {run.chronicleFacts.visitedNodes.map(titleCase).join(" → ")}</p>
-        <p>Events: {run.chronicleFacts.eventChoices.map(titleCase).join(", ") || "None"}</p>
-        <p>Injuries: {run.chronicleFacts.injuries.join(", ") || "None"}</p>
+      <p>{snapshot.haven.litPillars}/10 pillars lit · Haven Gloom {snapshot.haven.gloom} · Torches (wick) {snapshot.haven.resources.wick}</p>
+      {facts !== undefined && <>
+        <h3>Ownership ledger</h3>
+        <p><strong>Sealed at waypoint:</strong> {facts.sealedItemNames.join(", ") || "None"}</p>
+        <p><strong>{result === "return" ? "Recovered and banked" : "Would have been recovered"}:</strong> {facts.recoveredItemNames.join(", ") || "None"}</p>
+        <p><strong>Lost on the road:</strong> {facts.lostItemNames.join(", ") || "None"}</p>
+        <p><strong>Survivors:</strong> {facts.heroNames.join(", ")}</p>
+        <h3>Chronicle</h3>
+        <p>Road: {facts.visitedNodes.map(titleCase).join(" → ")}</p>
+        <p>Events: {facts.eventChoices.map(humanizeEventChoice).join("; ") || "None"}</p>
+        <p>Injuries: {facts.injuries.join(", ") || "None"}</p>
+        <p>Waypoints claimed: {facts.claimedWaypointIds.map(titleCase).join(", ") || "None"}</p>
       </>}
     </section>
   </Page>;
@@ -685,7 +737,7 @@ export function App() {
       </div>}
     </aside>
     <div className="content"><CurrentView snapshot={snapshot} send={submit} /></div>
-    <PartyPanel snapshot={snapshot} open={partyOpen} onClose={() => setPartyOpen(false)} />
+    <PartyInventory snapshot={snapshot} open={partyOpen} onClose={() => setPartyOpen(false)} send={submit} />
     {error !== undefined && <div className="error-toast" role="alert"><span>{titleCase(error)}</span><button onClick={clearError} aria-label="Dismiss error">×</button></div>}
   </div>;
 }

@@ -100,12 +100,33 @@ function eventPack(pack: ValidatedContentPack, eventId: string): EventDefinition
   return event;
 }
 
+function effectLabel(effect: EffectDefinition): string {
+  if (effect.kind === "changeRunGloom") return `${effect.amount > 0 ? "+" : ""}${effect.amount} Run Gloom`;
+  if (effect.kind === "grantMaterial") return `+${effect.amount} ${effect.materialId.replaceAll("_", " ")}`;
+  if (effect.kind === "addExpeditionFlag") return `gain ${effect.flagId.replaceAll("_", " ")}`;
+  if (effect.kind === "dealDirectDamage") return `${effect.amount} damage to the party`;
+  if (effect.kind === "heal") return effect.percentMax ? `heal ${Math.round(effect.amount * 100)}% max HP` : `heal ${effect.amount}`;
+  return effect.kind.replaceAll(/([A-Z])/g, " $1").trim();
+}
+
 function eventChoices(event: EventDefinition) {
   return event.options.map((option) => {
-    const costs = Object.entries(option.cost).filter(([, amount]) => amount > 0).map(([id, amount]) => `${amount} ${id.replaceAll("_", " ")}`).join(", ") || "No cost";
-    const outcomes = option.outcomes.length === 0 ? "Guaranteed result" : option.outcomes.map((outcome) => `${outcome.weight}% ${outcome.id.replaceAll("_", " ")}`).join(" · ");
-    const effects = option.effects.map((effect) => effect.kind === "changeRunGloom" ? `${effect.amount > 0 ? "+" : ""}${effect.amount} Run Gloom` : effect.kind === "grantMaterial" ? `+${effect.amount} ${effect.materialId}` : effect.kind.replaceAll(/([A-Z])/g, " $1")).join(" · ");
-    return { id: option.id, label: option.label, detail: [costs, effects, outcomes].filter(Boolean).join(" · ") };
+    const costEntries = Object.entries(option.cost).filter(([, amount]) => amount > 0);
+    const costs = costEntries.map(([id, amount]) => `${amount} ${id.replaceAll("_", " ")}`).join(", ") || "No cost";
+    const outcomes = option.outcomes.length === 0
+      ? "Guaranteed result"
+      : option.outcomes.map((outcome) => `${outcome.weight}% ${outcome.id.replaceAll("_", " ")}`).join(" · ");
+    const effects = option.effects.map(effectLabel).join(" · ");
+    const needsItemTarget = option.id === "toss_scroll" || (option.cost.target ?? 0) > 0 || (option.cost.gear ?? 0) > 0;
+    const risky = option.outcomes.length > 0;
+    return {
+      id: option.id,
+      label: option.label,
+      detail: [costs, effects, outcomes].filter(Boolean).join(" · "),
+      ...(costEntries.length > 0 ? { cost: Object.fromEntries(costEntries) } : {}),
+      ...(needsItemTarget ? { needsItemTarget: true } : {}),
+      ...(risky ? { riskTier: "risky" as const } : {})
+    };
   });
 }
 
@@ -123,10 +144,45 @@ function enterNode(snapshot: MutableSnapshot, pack: ValidatedContentPack, nodeId
   }
   if (node.type === "rest") {
     const modifier = run.flags.includes("courier_escorted") ? 6 : 0;
-    run.phase = "rest"; run.pendingDecision = { kind: "rest", baseGloomReduction: 12, modifier, optionIds: ["tend_wounds", "resupply", "keep_watch"], choices: [{ id: "tend_wounds", label: "Tend Wounds", detail: "Heal one hero for 40% of maximum HP." }, { id: "resupply", label: "Resupply", detail: "Fully restore both heroes' Mana and Stamina." }, { id: "keep_watch", label: "Keep Watch", detail: "Remove one temporary injury or Strain; both heroes start the next combat with 3 Block." }] }; snapshot.view = "rest"; return;
+    run.phase = "rest";
+    run.pendingDecision = {
+      kind: "rest",
+      baseGloomReduction: 12,
+      modifier,
+      optionIds: ["tend_wounds", "resupply", "keep_watch"],
+      choices: [
+        { id: "tend_wounds", label: "Tend Wounds", detail: "Heal one hero for 40% of maximum HP.", needsHeroTarget: true },
+        { id: "resupply", label: "Resupply", detail: "Fully restore both heroes' Mana and Stamina." },
+        { id: "keep_watch", label: "Keep Watch", detail: "Remove one temporary injury or Strain from one hero; both heroes start the next combat with 3 Block.", needsHeroTarget: true }
+      ]
+    };
+    snapshot.view = "rest";
+    return;
   }
   if (node.type === "safe_craft") {
-    run.phase = "craft"; run.pendingDecision = { kind: "craft", recipeIds: pack.recipes.map((entry) => entry.id), choices: pack.recipes.map((recipe) => ({ id: recipe.id, label: recipe.display.name, detail: `${Object.entries(recipe.inputs).map(([id, amount]) => `${amount} ${id.replaceAll("_", " ")}`).join(" + ")} · ${recipe.outcomes.map((outcome) => `${outcome.weight}% ${outcome.id.replaceAll("_", " ")}`).join(" · ")}` })) }; snapshot.view = "craft"; return;
+    run.phase = "craft";
+    run.pendingDecision = {
+      kind: "craft",
+      recipeIds: pack.recipes.map((entry) => entry.id),
+      choices: pack.recipes.map((recipe) => {
+        const inputs = { ...recipe.inputs };
+        if (recipe.id === "safe_fuse" && run.flags.includes("unstable_resin")) inputs.unlearned_scroll = 1;
+        if (recipe.id === "safe_fuse" && run.flags.includes("safe_fuse_voucher")) inputs.emberglass = 0;
+        const costEntries = Object.entries(inputs).filter(([, amount]) => amount > 0);
+        const riskTier = recipe.id === "risky_overbind" ? "risky" as const : "safe" as const;
+        return {
+          id: recipe.id,
+          label: recipe.display.name,
+          detail: `${costEntries.map(([id, amount]) => `${amount} ${id.replaceAll("_", " ")}`).join(" + ")} · ${recipe.outcomes.map((outcome) => `${outcome.weight}% ${outcome.id.replaceAll("_", " ")}`).join(" · ")}`,
+          cost: Object.fromEntries(costEntries),
+          needsItemTarget: recipe.id === "safe_imprint" || recipe.id === "risky_overbind",
+          needsHeroTarget: recipe.id === "safe_fuse",
+          riskTier
+        };
+      })
+    };
+    snapshot.view = "craft";
+    return;
   }
   if (node.type === "waypoint") { run.phase = "waypoint"; run.pendingDecision = { kind: "waypoint", maxChestSlots: 3 }; snapshot.view = "waypoint"; return; }
   if (node.id === "haven_return") successfulReturn(snapshot, pack, context);
@@ -372,6 +428,14 @@ export function chooseCraft(snapshot: MutableSnapshot, pack: ValidatedContentPac
   emitFact(context, snapshot.revision, "craft_resolved", `${recipe.display.name} produced ${outcome.id.replaceAll("_", " ")}.`, { recipeId, outcomeId: outcome.id, stabilized: stabilize, itemDeleted: false }); resolveCurrentNodeToMap(snapshot); return undefined;
 }
 
+export function cancelCraft(snapshot: MutableSnapshot, context: SimulationContext): ReasonCode | undefined {
+  const run = runOf(snapshot);
+  if (run.phase !== "craft" || run.pendingDecision?.kind !== "craft") return "invalid_phase";
+  emitFact(context, snapshot.revision, "craft_cancelled", "The party left the ruined forge without consuming inputs.", { nodeId: run.currentNodeId });
+  resolveCurrentNodeToMap(snapshot);
+  return undefined;
+}
+
 function recomputeHero(pack: ValidatedContentPack, hero: MutableHero, run: ReturnType<typeof runOf>): void {
   const definition = pack.classes.find((entry) => entry.id === hero.classId)!; const equipped = run.holdings.filter((item) => item.location.kind === "equipped" && item.location.heroId === hero.id); const pools = deriveHeroPools(definition, hero.attributes, equipped);
   hero.maxHp = pools.maxHp; hero.maxMana = pools.maxMana; hero.maxStamina = pools.maxStamina; hero.hp = Math.min(hero.hp, hero.maxHp); hero.mana = Math.min(hero.mana, hero.maxMana); hero.stamina = Math.min(hero.stamina, hero.maxStamina);
@@ -410,7 +474,25 @@ export function waypointCommand(snapshot: MutableSnapshot, pack: ValidatedConten
 function residualGloom(runGloom: number): number { return runGloom <= 24 ? -1 : runGloom <= 59 ? 0 : runGloom <= 79 ? 1 : 2; }
 
 function chronicle(run: ReturnType<typeof runOf>, result: "return" | "wipe" | "succession") {
-  return { runId: run.runId, seed: run.rootSeed, heroNames: run.heroes.map((hero) => hero.name), visitedNodes: [...run.visitedNodeIds], encounters: run.visitedNodeIds.filter((id) => id.startsWith("combat") || id === "boss" || id === "return_combat"), eventChoices: [...run.diagnostics.eventChoices], injuries: run.heroes.flatMap((hero) => hero.injuries.map((injury) => `${hero.name}:${injury}`)), claimedWaypointIds: run.waypointClaimed ? ["whisperwood_waypoint"] : [], recoveredItemNames: run.holdings.filter((item) => item.location.kind !== "lost" && item.location.kind !== "consumed").map((item) => item.displaySnapshot.name), terminalResult: result };
+  const sealedItemNames = run.waypointChest.map((item) => item.displaySnapshot.name);
+  const lostItemNames = run.holdings.filter((item) => item.location.kind === "lost").map((item) => item.displaySnapshot.name);
+  const recoveredItemNames = result === "return"
+    ? run.holdings.filter((item) => item.location.kind !== "lost" && item.location.kind !== "consumed").map((item) => item.displaySnapshot.name)
+    : [];
+  return {
+    runId: run.runId,
+    seed: run.rootSeed,
+    heroNames: run.heroes.map((hero) => hero.name),
+    visitedNodes: [...run.visitedNodeIds],
+    encounters: run.visitedNodeIds.filter((id) => id.startsWith("combat") || id === "boss" || id === "return_combat"),
+    eventChoices: [...run.diagnostics.eventChoices],
+    injuries: run.heroes.flatMap((hero) => hero.injuries.map((injury) => `${hero.name}:${injury}`)),
+    claimedWaypointIds: run.waypointClaimed ? ["whisperwood_waypoint"] : [],
+    recoveredItemNames,
+    sealedItemNames,
+    lostItemNames,
+    terminalResult: result
+  };
 }
 
 function successfulReturn(snapshot: MutableSnapshot, pack: ValidatedContentPack, context: SimulationContext): void {
@@ -482,17 +564,52 @@ export function buildingCommand(snapshot: MutableSnapshot, pack: ValidatedConten
 }
 
 export function preparationCommand(snapshot: MutableSnapshot, pack: ValidatedContentPack, command: CommandEnvelope, context: SimulationContext): ReasonCode | undefined {
-  const run = snapshot.activeRun; const atHaven = run === undefined && snapshot.view === "haven"; const preparation = run !== undefined && ["reward", "rest", "craft", "waypoint"].includes(run.phase); if (!atHaven && !preparation) return "invalid_phase";
-  const heroes = run?.heroes ?? snapshot.haven.heroes; const holdings = run?.holdings ?? snapshot.haven.holdings; const hero = heroes.find((entry) => entry.id === command.payload.heroId); if (hero === undefined) return "invalid_actor";
+  const run = snapshot.activeRun;
+  const atHaven = run === undefined && snapshot.view === "haven";
+  const preparation = run !== undefined && ["map", "reward", "rest", "craft", "waypoint", "event", "temporary_growth"].includes(run.phase);
+  if (!atHaven && !preparation) return "invalid_phase";
+  const heroes = run?.heroes ?? snapshot.haven.heroes;
+  const holdings = run?.holdings ?? snapshot.haven.holdings;
+  const hero = heroes.find((entry) => entry.id === command.payload.heroId);
+  if (hero === undefined) return "invalid_actor";
   if (command.type === "learnScroll") {
-    const item = holdings.find((entry) => entry.instanceId === command.payload.itemId && entry.itemKind === "scroll" && (entry.location.kind === "haven" || entry.location.kind === "held_by_expedition")); const definition = item === undefined ? undefined : pack.items.find((entry) => entry.id === item.definitionId); const cardId = definition?.grantedCardId; if (item === undefined || definition === undefined || cardId === undefined) return "item_unavailable";
-    if (definition.heldOnly || !definition.requiredSchools.some((school) => hero.schools.includes(school))) return "item_ineligible"; item.location = { kind: "consumed" }; if (run === undefined) uniquePush(hero.learnedCardIds, cardId); else uniquePush(hero.runLearnedCardIds, cardId); emitFact(context, snapshot.revision, "scroll_learned", `${hero.name} learned ${cardId.replaceAll("_", " ")}.`, { heroId: hero.id, cardId }); return undefined;
+    const item = holdings.find((entry) => entry.instanceId === command.payload.itemId && entry.itemKind === "scroll" && (entry.location.kind === "haven" || entry.location.kind === "held_by_expedition"));
+    const definition = item === undefined ? undefined : pack.items.find((entry) => entry.id === item.definitionId);
+    const cardId = definition?.grantedCardId;
+    if (item === undefined || definition === undefined || cardId === undefined) return "item_unavailable";
+    if (definition.heldOnly || !definition.requiredSchools.some((school) => hero.schools.includes(school))) return "item_ineligible";
+    item.location = { kind: "consumed" };
+    if (run === undefined) uniquePush(hero.learnedCardIds, cardId);
+    else uniquePush(hero.runLearnedCardIds, cardId);
+    emitFact(context, snapshot.revision, "scroll_learned", `${hero.name} learned ${cardId.replaceAll("_", " ")}. The pattern stays permanent only after a successful Return.`, { heroId: hero.id, cardId });
+    return undefined;
   }
   if (command.type === "equipItem") {
-    const item = holdings.find((entry) => entry.instanceId === command.payload.itemId && entry.itemKind === "equipment"); if (item === undefined) return "item_unavailable"; const definition = pack.items.find((entry) => entry.id === item.definitionId)!; if (definition.requiredSchools.length > 0 && !definition.requiredSchools.some((school) => hero.schools.includes(school))) return "item_ineligible"; let slot = itemSlotForDefinition(pack, item.definitionId); if (slot === "relic1" && hero.equipment.relic1 !== null) slot = "relic2"; if (slot === undefined || hero.equipment[slot] !== null) return "item_unavailable"; hero.equipment[slot] = item.instanceId; item.location = { kind: "equipped", heroId: hero.id, slotId: slot }; return undefined;
+    const item = holdings.find((entry) => entry.instanceId === command.payload.itemId && entry.itemKind === "equipment" && (entry.location.kind === "haven" || entry.location.kind === "held_by_expedition"));
+    if (item === undefined) return "item_unavailable";
+    const definition = pack.items.find((entry) => entry.id === item.definitionId)!;
+    if (definition.requiredSchools.length > 0 && !definition.requiredSchools.some((school) => hero.schools.includes(school))) return "item_ineligible";
+    let slot = itemSlotForDefinition(pack, item.definitionId);
+    if (slot === "relic1" && hero.equipment.relic1 !== null) slot = "relic2";
+    if (slot === undefined || hero.equipment[slot] !== null) return "item_unavailable";
+    hero.equipment[slot] = item.instanceId;
+    item.location = { kind: "equipped", heroId: hero.id, slotId: slot };
+    const grantedCardId = item.mechanicSnapshot.grantedCardId ?? definition.grantedCardId;
+    const cardHint = grantedCardId === undefined ? item.displaySnapshot.name : `${grantedCardId.replaceAll("_", " ")} added to deck`;
+    emitFact(context, snapshot.revision, "item_equipped", `${hero.name} equipped ${item.displaySnapshot.name}. ${cardHint}.`, { heroId: hero.id, itemId: item.instanceId, slotId: slot });
+    return undefined;
   }
   if (command.type === "unequipItem") {
-    const slot = command.payload.slotId as keyof typeof hero.equipment; if (!(slot in hero.equipment)) return "invalid_target"; const instanceId = hero.equipment[slot]; if (instanceId === null) return "item_unavailable"; const item = holdings.find((entry) => entry.instanceId === instanceId); if (item === undefined) return "item_unavailable"; hero.equipment[slot] = null; item.location = run === undefined ? { kind: "haven", havenId: snapshot.haven.id } : { kind: "held_by_expedition", runId: run.runId }; return undefined;
+    const slot = command.payload.slotId as keyof typeof hero.equipment;
+    if (!(slot in hero.equipment)) return "invalid_target";
+    const instanceId = hero.equipment[slot];
+    if (instanceId === null) return "item_unavailable";
+    const item = holdings.find((entry) => entry.instanceId === instanceId);
+    if (item === undefined) return "item_unavailable";
+    hero.equipment[slot] = null;
+    item.location = run === undefined ? { kind: "haven", havenId: snapshot.haven.id } : { kind: "held_by_expedition", runId: run.runId };
+    emitFact(context, snapshot.revision, "item_unequipped", `${hero.name} unequipped ${item.displaySnapshot.name}.`, { heroId: hero.id, itemId: item.instanceId, slotId: String(slot) });
+    return undefined;
   }
   return "invalid_command";
 }

@@ -23,10 +23,16 @@ function itemInitiative(hero: HeroSnapshot, items: readonly ItemInstance[]): num
   return items.filter((item) => item.location.kind === "equipped" && item.location.heroId === hero.id).reduce((sum, item) => sum + (item.mechanicSnapshot.initiativeDelta ?? 0), 0);
 }
 
-function effectSummary(definition: CardDefinition): string {
+export function effectSummary(definition: CardDefinition, stats?: { strength: number; intellect: number }, mods?: { damageDelta?: number; blockDelta?: number }): string {
+  const damageBonus = mods?.damageDelta ?? 0;
+  const blockBonus = mods?.blockDelta ?? 0;
   return definition.effects.map((effect) => {
-    if (effect.kind === "dealDamage") return `Deal ${effect.amount}${effect.scaling === "none" ? "" : ` + ${effect.scaling === "strength" ? "STR" : "INT"}`} ${effect.damageType} damage`;
-    if (effect.kind === "gainBlock") return `Gain ${effect.amount} Block`;
+    if (effect.kind === "dealDamage") {
+      const scaling = effect.scaling === "strength" ? (stats?.strength ?? 0) : effect.scaling === "intellect" ? (stats?.intellect ?? 0) : 0;
+      const total = Math.max(0, effect.amount + scaling + damageBonus);
+      return `Deal ${total} ${effect.damageType} damage`;
+    }
+    if (effect.kind === "gainBlock") return `Gain ${effect.amount + blockBonus} Block`;
     if (effect.kind === "applyCondition") return `Apply ${effect.stacks} ${effect.conditionId}`;
     if (effect.kind === "removeBlock") return `Remove ${effect.amount} Block`;
     if (effect.kind === "createGuard") return "Guard the chosen ally until your next turn";
@@ -62,7 +68,14 @@ function buildHeroCards(snapshot: MutableSnapshot, pack: ValidatedContentPack, h
     damageDelta: source.item?.mechanicSnapshot.damageDelta ?? 0,
     blockDelta: source.item?.mechanicSnapshot.blockDelta ?? 0,
     selfDamage: source.item?.mechanicSnapshot.selfDamage ?? 0,
-    presentation: { name: definition.display.name, apCost: definition.cost.ap, manaCost: definition.cost.mana > 0 ? definition.cost.mana + costDelta : 0, staminaCost: definition.cost.stamina > 0 ? definition.cost.stamina + costDelta : 0, targetSpec: definition.targetSpec, summary: effectSummary(definition) }
+    presentation: {
+      name: definition.display.name,
+      apCost: definition.cost.ap,
+      manaCost: definition.cost.mana > 0 ? definition.cost.mana + costDelta : 0,
+      staminaCost: definition.cost.stamina > 0 ? definition.cost.stamina + costDelta : 0,
+      targetSpec: definition.targetSpec,
+      summary: effectSummary(definition, { strength: hero.attributes.str, intellect: hero.attributes.int }, { damageDelta: source.item?.mechanicSnapshot.damageDelta ?? 0, blockDelta: source.item?.mechanicSnapshot.blockDelta ?? 0 })
+    }
   }); });
   const shuffled = shuffle(snapshot, "combatDeck", ordered, context);
   return shuffled.map((entry) => ({ ...entry, zone: "draw" }));
@@ -209,9 +222,22 @@ function drawOne(snapshot: MutableSnapshot, heroId: string, context: SimulationC
   draw[0]!.zone = "hand";
 }
 
+function heroHasRetainRefill(snapshot: MutableSnapshot, heroId: string): boolean {
+  return runOf(snapshot).holdings.some((item) => item.location.kind === "equipped" && item.location.heroId === heroId && item.mechanicSnapshot.modifiers.includes("retain_refill"));
+}
+
 function refillHand(snapshot: MutableSnapshot, heroId: string, pack: ValidatedContentPack, context: SimulationContext): void {
   const combat = combatOf(snapshot);
-  while (zoneCards(combat, heroId, "hand").length < pack.tuning.handSize) {
+  let target = pack.tuning.handSize;
+  if (heroHasRetainRefill(snapshot, heroId) && !combat.retainRefillUsedHeroIds.includes(heroId)) {
+    const retainedInHand = zoneCards(combat, heroId, "hand").filter((card) => card.retain).length;
+    if (retainedInHand > 0) {
+      target += 1;
+      combat.retainRefillUsedHeroIds.push(heroId);
+      emitFact(context, snapshot.revision, "item_passive", "A Retained card stayed in hand without reducing draw.", { heroId });
+    }
+  }
+  while (zoneCards(combat, heroId, "hand").length < target) {
     const before = zoneCards(combat, heroId, "hand").length;
     drawOne(snapshot, heroId, context);
     if (zoneCards(combat, heroId, "hand").length === before) break;
@@ -473,11 +499,16 @@ export function startCombat(snapshot: MutableSnapshot, pack: ValidatedContentPac
         const classDefinition = pack.classes.find((entry) => entry.id === hero.classId)!;
         const attack = pack.cards.find((entry) => entry.id === classDefinition.basicActionIds[0])!;
         const basicBlock = pack.cards.find((entry) => entry.id === classDefinition.basicActionIds[1])!;
-        return { heroId: hero.id, attack: { definitionId: attack.id, name: attack.display.name, apCost: attack.cost.ap, targetSpec: "enemy" as const, summary: effectSummary(attack) }, block: { definitionId: basicBlock.id, name: basicBlock.display.name, apCost: basicBlock.cost.ap, targetSpec: "self" as const, summary: effectSummary(basicBlock) } };
+        return {
+          heroId: hero.id,
+          attack: { definitionId: attack.id, name: attack.display.name, apCost: attack.cost.ap, targetSpec: "enemy" as const, summary: effectSummary(attack, { strength: hero.attributes.str, intellect: hero.attributes.int }) },
+          block: { definitionId: basicBlock.id, name: basicBlock.display.name, apCost: basicBlock.cost.ap, targetSpec: "self" as const, summary: effectSummary(basicBlock, { strength: hero.attributes.str, intellect: hero.attributes.int }) }
+        };
       }),
       intents: [],
       guards: [],
       supplyUsed: false,
+      retainRefillUsedHeroIds: [],
       bossTurn: 0,
       outcome: "active"
     };

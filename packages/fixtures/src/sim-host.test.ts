@@ -1,4 +1,6 @@
-import { existsSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { build1Pack } from "@nightfall/content";
 import { LocalGameHost, replayAcceptedCommands } from "@nightfall/host";
@@ -43,9 +45,9 @@ describe("SIM-16 reload, replay, and idempotence", () => {
   });
 
   it("persists and resumes the exact SQLite snapshot at successive autosave boundaries", async () => {
-    const path = `C:/tmp/nightfall-sim16-${process.pid}.sqlite`;
-    const cleanup = () => { for (const candidate of [path, `${path}-wal`, `${path}-shm`]) if (existsSync(candidate)) rmSync(candidate); };
-    cleanup();
+    const dir = mkdtempSync(join(tmpdir(), "nightfall-sim16-"));
+    const path = join(dir, "test.sqlite");
+    const cleanup = () => { if (existsSync(dir)) rmSync(dir, { recursive: true, force: true }); };
     try {
       const initial = createInitialSnapshot(build1Pack, 779);
       let store = new SQLiteGameStore(path);

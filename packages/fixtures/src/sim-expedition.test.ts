@@ -71,6 +71,18 @@ describe("Build 1 expedition acceptance", () => {
     }
   });
 
+  it("cancels Safe Craft without consuming inputs and returns to the map", () => {
+    const before = craftFixture();
+    const scrolls = before.activeRun!.holdings.filter((item) => item.itemKind === "scroll" && item.location.kind === "held_by_expedition").length;
+    const emberglass = before.activeRun!.materials.emberglass;
+    const after = accept(before, command(before, "cancelCraft"), build1Pack) as MutableSnapshot;
+    expect(after.view).toBe("map");
+    expect(after.activeRun!.phase).toBe("map");
+    expect(after.activeRun!.materials.emberglass).toBe(emberglass);
+    expect(after.activeRun!.holdings.filter((item) => item.itemKind === "scroll" && item.location.kind === "held_by_expedition").length).toBe(scrolls);
+    expect(after.latestFacts.some((fact) => fact.kind === "craft_cancelled")).toBe(true);
+  });
+
   it("SIM-08 resolves every Safe, Risky, and Ember-Pit craft outcome without deleting an item", () => {
     for (const roll of [0.1, 0.9]) {
       const fuse = craftFixture(); const heroId = fuse.activeRun!.heroes[0]!.id;
