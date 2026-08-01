@@ -1,0 +1,72 @@
+.art-review-page {
+  min-height: 100vh;
+  padding: clamp(1rem, 3vw, 3rem);
+  background: radial-gradient(circle at 70% 8%, rgba(119, 108, 145, .16), transparent 30rem), #0d171b;
+  color: #d8d7ca;
+}
+.art-review-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+  align-items: end;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(216, 215, 202, .16);
+}
+.art-review-header span,
+.art-review-anchor-title code,
+.art-review-item code {
+  font-family: Consolas, "Cascadia Mono", monospace;
+  color: #9ba8a1;
+}
+.art-review-header h1 { margin: .35rem 0 0; font-size: clamp(2rem, 5vw, 4.5rem); }
+.art-review-header p { max-width: 42rem; margin: 0; color: #9ba8a1; line-height: 1.55; }
+.art-review-section { margin-top: 2.5rem; }
+.art-review-section h2 { margin-bottom: 1rem; color: #d99a4e; }
+.art-review-anchor-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 1rem; }
+.art-review-anchor {
+  padding: 1rem;
+  border: 1px solid rgba(216, 215, 202, .16);
+  background: #122428;
+}
+.art-review-anchor:nth-child(even) { background: #0d171b; }
+.art-review-anchor-title { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; }
+.art-review-anchor-title code { font-size: .68rem; }
+.art-review-size-row { display: flex; align-items: end; gap: 1rem; min-height: 10rem; margin-top: 1rem; }
+.art-review-size-row > div { display: grid; justify-items: center; gap: .45rem; }
+.art-review-size-row small { color: #9ba8a1; font-family: Consolas, "Cascadia Mono", monospace; }
+.art-review-swatch { display: grid; place-items: end center; background: rgba(0, 0, 0, .18); border: 1px solid rgba(255, 255, 255, .08); }
+.art-review-swatch.is-desktop { width: 86px; height: 115px; }
+.art-review-swatch.is-narrow { width: 72px; height: 96px; }
+.art-review-swatch.is-timeline { width: 32px; height: 38px; }
+.art-review-swatch .art-portrait,
+.art-review-swatch .is-facing-left,
+.art-review-swatch .is-facing-right,
+.art-review-swatch .silhouette { width: 100%; height: 100%; border: 0; object-fit: cover; object-position: center top; }
+.art-review-state-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: 1rem; }
+.art-review-state {
+  min-height: 15rem;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: .75rem;
+  padding: .9rem;
+  overflow: hidden;
+  border: 1px solid rgba(216, 215, 202, .16);
+  background: #122428;
+}
+.art-review-state > small { color: #d99a4e; font-family: Consolas, "Cascadia Mono", monospace; text-transform: uppercase; }
+.art-review-state .combat-standee { min-width: 6.5rem; }
+.art-review-state .standee-panel { width: 8.5rem; }
+.art-review-item { display: flex; align-items: center; gap: 1.5rem; max-width: 34rem; padding: 1rem; border: 1px solid rgba(216, 215, 202, .16); background: #122428; }
+.art-review-item-image,
+.art-review-missing { width: 128px; height: 128px; flex: 0 0 128px; }
+.art-review-item-image { display: block; object-fit: contain; }
+.art-review-missing { display: grid; place-content: center; gap: .3rem; text-align: center; border: 1px dashed rgba(217, 154, 78, .4); color: #9ba8a1; }
+.art-review-missing strong { color: #d8d7ca; }
+.art-review-item > div:last-child { display: grid; gap: .35rem; }
+.art-review-item p { margin: 0; color: #9ba8a1; }
+.art-review-footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid rgba(216, 215, 202, .16); color: #9ba8a1; }
+@media (max-width: 700px) {
+  .art-review-header { display: grid; align-items: start; }
+  .art-review-size-row { gap: .65rem; }
+}

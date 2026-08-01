@@ -34,9 +34,9 @@ export function ArtImage({
   );
 }
 
-export function Silhouette({ variant }: { variant: SilhouetteVariant }) {
+export function Silhouette({ variant, className }: { variant: SilhouetteVariant; className?: string }) {
   return (
-    <div className={`silhouette silhouette-${variant}`} aria-hidden="true">
+    <div className={["silhouette", `silhouette-${variant}`, className].filter(Boolean).join(" ")} aria-hidden="true">
       <span />
     </div>
   );
@@ -46,17 +46,20 @@ export function Silhouette({ variant }: { variant: SilhouetteVariant }) {
 export function CombatPortrait({
   src,
   variant,
-  className
+  className,
+  facing = "right"
 }: {
   src: string;
   variant: SilhouetteVariant;
   className?: string;
+  facing?: "left" | "right";
 }) {
+  const facingClass = facing === "left" ? "is-facing-left" : "is-facing-right";
   return (
     <ArtImage
       src={src}
-      className={["art-portrait", className].filter(Boolean).join(" ")}
-      fallback={<Silhouette variant={variant} />}
+      className={["art-portrait", facingClass, className].filter(Boolean).join(" ")}
+      fallback={<Silhouette variant={variant} className={facingClass} />}
     />
   );
 }

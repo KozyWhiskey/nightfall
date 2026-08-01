@@ -76,6 +76,16 @@ In-repo source of truth for **what the game should be**. Implementation and tech
 | [screens-and-flows.md](ux/screens-and-flows.md) | Draft |
 | [readability.md](ux/readability.md) | Draft |
 
+### Art direction
+| Doc | Status |
+|-----|--------|
+| [art/README.md](art/README.md) | Build 1 art workflow |
+| [visual-style-bible.md](art/visual-style-bible.md) | Controlled draft pending anchor lock |
+| [technical-asset-contract.md](art/technical-asset-contract.md) | Accepted Phase 0 production contract |
+| [prompt-library.md](art/prompt-library.md) | Draft pending anchor validation |
+| [asset-manifest.md](art/asset-manifest.md) | Active production inventory |
+| [client-integration-reconciliation.md](art/client-integration-reconciliation.md) | Proposed implementation sequence |
+
 ### Product
 | Doc | Status |
 |-----|--------|
@@ -94,14 +104,11 @@ In-repo source of truth for **what the game should be**. Implementation and tech
 |-----|--------|
 | [build-1-architecture.md](architecture/build-1-architecture.md) | Accepted Build 1 architecture decision |
 
-### Templates & archive
+### Templates
 | Doc | Status |
 |-----|--------|
 | [templates/](templates/) | Locked structure |
-| [_archive/prototype-slice-notes.md](_archive/prototype-slice-notes.md) | Archive |
-| [_archive/prototype-src/](_archive/prototype-src/) | Archive (frozen one-shot code) |
-| [_archive/prototype-supabase/](_archive/prototype-supabase/) | Archive (old local Supabase config) |
 
 ## Writing order (spine)
 
-1. Vision → 2. Loops → 3. Party & combat → 4. Cards / gear / spellcraft → 5. Map & events → 6. Haven & economy → 7. Content → 8. UX → 9. Multiplayer → 10. Milestones → 11. Tech decision (**locked** — greenfield scaffold next)
+1. Vision → 2. Loops → 3. Party & combat → 4. Cards / gear / spellcraft → 5. Map & events → 6. Haven & economy → 7. Content → 8. UX and art direction → 9. Multiplayer horizon → 10. Milestones → 11. Architecture (**accepted** — Build 1 implementation underway)

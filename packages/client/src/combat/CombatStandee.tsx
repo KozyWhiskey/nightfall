@@ -87,6 +87,7 @@ export function CombatStandee({
         src={combatantArtSrc(portraitKind, combatant.definitionId)}
         variant={silhouette}
         className="standee-portrait"
+        facing={side === "enemies" ? "left" : "right"}
       />
       {targetable && canTarget && <span className="standee-target-ring" aria-hidden="true" />}
       {isActing && actingIntentLabel !== undefined && (

@@ -72,7 +72,11 @@ function TrackerRow({
   >
     <span className="initiative-queue-badge" aria-hidden="true">{queueIndex + 1}</span>
     <div className="initiative-portrait">
-      <CombatPortrait src={portrait.src} variant={portrait.variant} />
+      <CombatPortrait
+        src={portrait.src}
+        variant={portrait.variant}
+        facing={combatant.side === "enemies" ? "left" : "right"}
+      />
     </div>
     <div className="initiative-copy">
       <strong>{combatant.name}</strong>

@@ -1335,11 +1335,8 @@ button.standee-figure { cursor: pointer; }
   object-position: center top;
   transition: transform .32s ease, opacity .32s ease;
 }
-.combat-standee-enemies .standee-portrait,
-.combat-standee-enemies .standee-figure .art-portrait,
-.combat-standee-enemies .standee-figure .silhouette {
-  transform: scaleX(-1);
-}
+.art-portrait.is-facing-left,
+.silhouette.is-facing-left { transform: scaleX(-1); }
 .combat-standee.is-acting.combat-standee-heroes .standee-figure .art-portrait,
 .combat-standee.is-acting.combat-standee-heroes .standee-figure .silhouette {
   animation: standee-lunge-hero .92s ease;

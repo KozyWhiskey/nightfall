@@ -2,6 +2,10 @@
 
 DOM-only art slots for the combat board. **Art never encodes gameplay rules** — card text, costs, intent labels, and magnitudes remain authoritative. Missing files fall back to CSS silhouettes / text glyphs via `ArtImage`.
 
+Production direction and acceptance criteria live in [`docs/art/`](../../../../docs/art/README.md). This file describes the current runtime seam only.
+
+> **Current implementation:** `src/art/artMap.ts` explicitly maps approved IDs to runtime URLs, so individual assets may use SVG, PNG, or WebP. Unknown IDs retain the SVG convention and graceful fallback.
+
 ## Where to drop assets
 
 Serve from Vite `public/` (stable URL = path under this folder):
@@ -27,7 +31,9 @@ Client resolution lives in `src/art/artMap.ts` (`heroArtSrc`, `enemyArtSrc`, `en
 | Intent glyph | `intents/{kind}` | Presentation kind only: `attack`, `defend`, `buff`, `special` |
 | Card frame | `cards/frame` | Optional; all hand cards share one frame |
 
-Use lowercase snake_case ids matching content/sim. Prefer SVG or PNG/WebP. Keep fixed aspects so layout stays stable:
+Use lowercase snake_case ids matching content/sim. The explicit registry supports SVG, PNG, or WebP per asset; changing a runtime format requires updating its registry entry. Keep fixed aspects so layout stays stable:
+
+Open `/?artReview=anchors` on the client dev server to inspect anchor assets at desktop, narrow, timeline, and actual standee-treatment sizes.
 
 - Portraits: ~31∶36 (matches combat silhouette box)
 - Intent glyphs: 1∶1
