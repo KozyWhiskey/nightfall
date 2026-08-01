@@ -9,11 +9,18 @@ import {
   EQUIP_SLOTS,
   SLOT_GRID_AREA,
   SLOT_LABELS,
+  SLOT_SHORT_LABELS,
+  blockedEquipSlot,
   equipEligibility,
+  itemBlockedSlots,
   itemById,
+  itemFitsSlot,
   itemKindLabel,
   itemShortName,
+  itemTargetSlots,
+  itemUseSummary,
   learnEligibility,
+  packItemsForSlot,
   rarityClass,
   readDragPayload,
   slotAcceptsItem,
@@ -33,42 +40,58 @@ function ItemEffects({ description }: { description: string }) {
   return <ul className="inventory-detail-effects" aria-label="Item effects">{lines.map((line) => <li key={line}>{line}</li>)}</ul>;
 }
 
+function HeroSummary({ hero }: { hero: HeroSnapshot }) {
+  return <div className="inventory-hero-summary">
+    <div className="inventory-hero-summary-head">
+      <strong>{hero.name}</strong>
+      <span>{titleCase(hero.classId)}</span>
+    </div>
+    <div className="inventory-stat-row">
+      <span>HP</span><strong>{hero.hp}/{hero.maxHp}</strong>
+      <span>Mana</span><strong>{hero.mana}/{hero.maxMana}</strong>
+      <span>Stamina</span><strong>{hero.stamina}/{hero.maxStamina}</strong>
+    </div>
+    <p className="inventory-hero-attrs">VIT {hero.attributes.vit} · DEX {hero.attributes.dex} · STR {hero.attributes.str} · INT {hero.attributes.int}</p>
+    {hero.temporaryAttribute !== undefined && <p className="party-chip">Temp +1 {hero.temporaryAttribute.toUpperCase()}</p>}
+    {hero.injuries.length > 0 && <p className="warning">Injuries: {hero.injuries.map(titleCase).join(", ")}</p>}
+  </div>;
+}
+
 function InventoryCell({
   item,
-  hero,
   selected,
-  disabled,
   hint,
+  hintOk,
+  slotMatch,
+  slotMuted,
   draggable,
   onSelect,
-  onActivate,
   onDragStart
 }: {
   item: ItemInstance;
-  hero: HeroSnapshot;
   selected: boolean;
-  disabled: boolean;
-  hint?: string;
+  hint: string;
+  hintOk: boolean;
+  slotMatch: boolean;
+  slotMuted: boolean;
   draggable: boolean;
   onSelect: () => void;
-  onActivate: () => void;
   onDragStart: (event: DragEvent) => void;
 }) {
-  const Tag = disabled ? "div" : "button";
-  return <Tag
-    type={disabled ? undefined : "button"}
-    className={`inventory-cell ${rarityClass(item.rarityId)}${selected ? " is-selected" : ""}${disabled ? " is-disabled" : ""}${draggable ? " is-draggable" : ""}`}
-    title={hint ?? item.displaySnapshot.name}
-    aria-label={`${item.displaySnapshot.name}, ${itemKindLabel(item)}${hint !== undefined ? `, ${hint}` : ""}`}
-    aria-disabled={disabled || undefined}
+  return <button
+    type="button"
+    className={`inventory-cell ${rarityClass(item.rarityId)}${selected ? " is-selected" : ""}${slotMatch ? " is-slot-match" : ""}${slotMuted ? " is-slot-muted" : ""}${draggable ? " is-draggable" : ""}${hintOk ? " is-ready" : ""}`}
+    title={`${item.displaySnapshot.name} — ${hint}`}
+    aria-label={`${item.displaySnapshot.name}, ${itemKindLabel(item)}, ${hint}`}
+    aria-pressed={selected}
     draggable={draggable || undefined}
     onDragStart={draggable ? onDragStart : undefined}
-    onClick={disabled ? undefined : () => { onSelect(); onActivate(); }}
+    onClick={onSelect}
   >
     <ItemGlyph item={item} />
     <strong>{itemShortName(item.displaySnapshot.name)}</strong>
-    <small>{disabled && hint !== undefined ? hint : itemKindLabel(item)}</small>
-  </Tag>;
+    <small className={hintOk ? "is-destination" : ""}>{hintOk ? `→ ${hint}` : hint}</small>
+  </button>;
 }
 
 function EquipSlotCell({
@@ -76,9 +99,10 @@ function EquipSlotCell({
   item,
   canManage,
   selected,
+  itemTarget,
+  itemBlocked,
   dropHint,
   onSelect,
-  onUnequip,
   onDragStart,
   onDragOver,
   onDragLeave,
@@ -88,9 +112,10 @@ function EquipSlotCell({
   item: ItemInstance | undefined;
   canManage: boolean;
   selected: boolean;
+  itemTarget: boolean;
+  itemBlocked: boolean;
   dropHint?: "valid" | "invalid";
   onSelect: () => void;
-  onUnequip: (slot: EquipmentSlot) => void;
   onDragStart: (event: DragEvent) => void;
   onDragOver: (event: DragEvent) => void;
   onDragLeave: () => void;
@@ -100,22 +125,21 @@ function EquipSlotCell({
   const Tag = canManage ? "button" : "div";
   return <Tag
     type={canManage ? "button" : undefined}
-    className={`equip-slot ${rarityClass(item?.rarityId ?? "salvaged")}${filled ? " is-filled" : " is-empty"}${selected ? " is-selected" : ""}${dropHint === "valid" ? " is-drop-valid" : ""}${dropHint === "invalid" ? " is-drop-invalid" : ""}`}
+    className={`equip-slot ${rarityClass(item?.rarityId ?? "salvaged")}${filled ? " is-filled" : " is-empty"}${selected ? " is-selected" : ""}${itemTarget ? " is-item-target" : ""}${itemBlocked ? " is-item-blocked" : ""}${dropHint === "valid" ? " is-drop-valid" : ""}${dropHint === "invalid" ? " is-drop-invalid" : ""}`}
     style={{ gridArea: SLOT_GRID_AREA[slot] }}
     title={filled ? item.displaySnapshot.name : SLOT_LABELS[slot]}
-    aria-label={filled ? `${SLOT_LABELS[slot]}: ${item.displaySnapshot.name}${canManage ? ", drag or click to unequip" : ""}` : `${SLOT_LABELS[slot]}, empty${canManage ? ", drop gear here" : ""}`}
+    aria-label={filled ? `${SLOT_LABELS[slot]}: ${item.displaySnapshot.name}, click to inspect` : `${SLOT_LABELS[slot]}, empty, click to see compatible gear`}
+    aria-pressed={selected || undefined}
     draggable={filled && canManage}
     onDragStart={filled && canManage ? onDragStart : undefined}
     onDragOver={canManage ? onDragOver : undefined}
     onDragLeave={canManage ? onDragLeave : undefined}
     onDrop={canManage ? onDrop : undefined}
-    onClick={filled && canManage ? () => { onSelect(); onUnequip(slot); } : onSelect}
+    onClick={onSelect}
   >
-    <span className="equip-slot-label">{SLOT_LABELS[slot]}</span>
+    <span className="equip-slot-label">{SLOT_SHORT_LABELS[slot]}</span>
     {filled ? <>
-      <ItemGlyph item={item} />
       <strong>{itemShortName(item.displaySnapshot.name)}</strong>
-      <small>{titleCase(item.rarityId)}</small>
     </> : <span className="equip-slot-empty" aria-hidden="true">—</span>}
   </Tag>;
 }
@@ -141,6 +165,95 @@ function HeroTab({
   </button>;
 }
 
+function LoadoutDetailPane({
+  hero,
+  pack,
+  holdings,
+  focusItem,
+  focusSlot,
+  ownershipLabel,
+  onSelectItem
+}: {
+  hero: HeroSnapshot;
+  pack: readonly ItemInstance[];
+  holdings: readonly ItemInstance[];
+  focusItem: ItemInstance | undefined;
+  focusSlot: EquipmentSlot | null;
+  ownershipLabel: string;
+  onSelectItem: (itemId: string) => void;
+}) {
+  const equippedInSlot = focusSlot === null ? undefined : itemById(holdings, hero.equipment[focusSlot]);
+  const slotCandidates = focusSlot === null ? [] : packItemsForSlot(hero, pack, focusSlot);
+
+  if (focusItem === undefined && focusSlot === null) {
+    return <>
+      <HeroSummary hero={hero} />
+      <p className="empty">Select gear in the bag or a slot on the doll to inspect it.</p>
+    </>;
+  }
+
+  return <>
+    <HeroSummary hero={hero} />
+    {focusSlot !== null && <>
+      <small>Equipment slot · {ownershipLabel}</small>
+      <h3>{SLOT_LABELS[focusSlot]}</h3>
+      {equippedInSlot === undefined
+        ? <p className="inventory-hint">Empty — matching bag items are highlighted in green.</p>
+        : <>
+          <ItemGlyph item={equippedInSlot} large />
+          <p className="inventory-detail-item-name">{equippedInSlot.displaySnapshot.name}</p>
+          <ItemEffects description={equippedInSlot.displaySnapshot.description} />
+          {equippedInSlot.curseId !== undefined && <p className="warning">{titleCase(equippedInSlot.curseId)}</p>}
+          <p className="inventory-hint">Worn by {hero.name}. Use the action bar below to unequip.</p>
+        </>}
+      {slotCandidates.length > 0 && <>
+        <h4 className="inventory-detail-subhead">Can equip from bag</h4>
+        <ul className="inventory-candidate-list">
+          {slotCandidates.map((item) => <li key={item.instanceId}>
+            <button type="button" className="inventory-candidate" onClick={() => onSelectItem(item.instanceId)}>
+              <ItemGlyph item={item} />
+              <span>{item.displaySnapshot.name}</span>
+            </button>
+          </li>)}
+        </ul>
+      </>}
+      {focusSlot !== null && equippedInSlot !== undefined && slotCandidates.length === 0 && (
+        <p className="inventory-hint">Unequip the worn item to swap gear in this slot.</p>
+      )}
+      {focusSlot !== null && equippedInSlot === undefined && slotCandidates.length === 0 && (
+        <p className="inventory-hint">Nothing in your bag fits this slot for {hero.name}.</p>
+      )}
+    </>}
+
+    {focusItem !== undefined && <>
+      {focusSlot !== null && equippedInSlot?.instanceId === focusItem.instanceId && <hr className="inventory-detail-divider" />}
+      {(focusSlot === null || focusItem.instanceId !== equippedInSlot?.instanceId) && <>
+        <ItemGlyph item={focusItem} large />
+        <small>{itemKindLabel(focusItem)} · {ownershipLabel}</small>
+        <h3>{focusItem.displaySnapshot.name}</h3>
+        <ItemEffects description={focusItem.displaySnapshot.description} />
+        {focusItem.curseId !== undefined && <p className="warning">{titleCase(focusItem.curseId)}</p>}
+        {focusItem.itemKind === "equipment" && (() => {
+          const eligibility = equipEligibility(hero, focusItem);
+          return eligibility.ok && eligibility.targetSlot !== undefined
+            ? <p className="inventory-destination">Goes in <strong>{SLOT_LABELS[eligibility.targetSlot]}</strong></p>
+            : <p className="inventory-hint">{eligibility.reason}</p>;
+        })()}
+        {focusItem.itemKind === "scroll" && (() => {
+          const eligibility = learnEligibility(hero, focusItem);
+          const cardId = focusItem.mechanicSnapshot.grantedCardId;
+          const cardName = cardId !== undefined ? titleCase(cardId.replaceAll("_", " ")) : "unknown pattern";
+          return <>
+            <p className="inventory-destination">Teaches <strong>{cardName}</strong></p>
+            <p className="inventory-hint">Scroll is consumed on learn. Pattern becomes permanent only after a successful Return.</p>
+            {!eligibility.ok && <p className="inventory-hint">{eligibility.reason}</p>}
+          </>;
+        })()}
+      </>}
+    </>}
+  </>;
+}
+
 function CharacterSheet({
   hero,
   holdings,
@@ -148,10 +261,11 @@ function CharacterSheet({
   selectedSlot,
   dragOverSlot,
   onSelectSlot,
-  onUnequip,
   onEquipToSlot,
   onDragPayload,
   onDragOverSlot,
+  highlightTargetSlots,
+  highlightBlockedSlots,
   onDragLeaveSlot
 }: {
   hero: HeroSnapshot;
@@ -159,13 +273,15 @@ function CharacterSheet({
   canManage: boolean;
   selectedSlot: EquipmentSlot | null;
   dragOverSlot: EquipmentSlot | null;
+  highlightTargetSlots: ReadonlySet<EquipmentSlot>;
+  highlightBlockedSlots: ReadonlySet<EquipmentSlot>;
   onSelectSlot: (slot: EquipmentSlot) => void;
-  onUnequip: (slot: EquipmentSlot) => void;
   onEquipToSlot: (itemId: string) => void;
   onDragPayload: (payload: ReturnType<typeof readDragPayload>, slot?: EquipmentSlot) => void;
   onDragOverSlot: (slot: EquipmentSlot | null) => void;
   onDragLeaveSlot: () => void;
 }) {
+  const crossHighlight = selectedSlot !== null || highlightTargetSlots.size > 0 || highlightBlockedSlots.size > 0;
   const equipped = useMemo(() => Object.fromEntries(
     EQUIP_SLOTS.map((slot) => [slot, itemById(holdings, hero.equipment[slot])])
   ) as Record<EquipmentSlot, ItemInstance | undefined>, [holdings, hero.equipment]);
@@ -216,7 +332,12 @@ function CharacterSheet({
   };
 
   return <section className="inventory-character" aria-label={`${hero.name} equipment`}>
-    <div className="inventory-doll">
+    <header className="inventory-column-head">
+      <h3>Equipment</h3>
+      <p>Click a slot or bag item to inspect.</p>
+    </header>
+    <div className="inventory-doll-wrap">
+      <div className={`inventory-doll${crossHighlight ? " has-cross-highlight" : ""}`}>
       <div className="inventory-portrait" aria-hidden="true">
         <CombatPortrait src={combatantArtSrc("hero", hero.classId)} variant={silhouetteForHero(hero.classId)} />
       </div>
@@ -226,9 +347,10 @@ function CharacterSheet({
         item={equipped[slot]}
         canManage={canManage}
         selected={selectedSlot === slot}
+        itemTarget={highlightTargetSlots.has(slot)}
+        itemBlocked={highlightBlockedSlots.has(slot)}
         dropHint={slotDropHint(slot)}
         onSelect={() => onSelectSlot(slot)}
-        onUnequip={onUnequip}
         onDragStart={(event) => {
           const itemId = hero.equipment[slot];
           if (itemId === null) return;
@@ -238,20 +360,7 @@ function CharacterSheet({
         onDragLeave={onDragLeaveSlot}
         onDrop={(event) => handleDrop(event, slot)}
       />)}
-    </div>
-    <div className="inventory-stats">
-      <div className="inventory-stat-row">
-        <span>HP</span><strong>{hero.hp}/{hero.maxHp}</strong>
-        <span>Mana</span><strong>{hero.mana}/{hero.maxMana}</strong>
-        <span>Stamina</span><strong>{hero.stamina}/{hero.maxStamina}</strong>
       </div>
-      <p className="stat-line">VIT {hero.attributes.vit} · DEX {hero.attributes.dex} · STR {hero.attributes.str} · INT {hero.attributes.int}</p>
-      {hero.temporaryAttribute !== undefined && <p className="party-chip">Temp +1 {hero.temporaryAttribute.toUpperCase()}</p>}
-      {hero.injuries.length > 0 && <p className="warning">Injuries: {hero.injuries.map(titleCase).join(", ")}</p>}
-      {[...hero.learnedCardIds, ...hero.runLearnedCardIds].length > 0 && <>
-        <h4>Learned patterns</h4>
-        <p className="inventory-learned">{[...hero.learnedCardIds, ...hero.runLearnedCardIds].map(titleCase).join(" · ")}</p>
-      </>}
     </div>
   </section>;
 }
@@ -289,6 +398,19 @@ export function PartyInventory({
   const focusItem = focusItemId === null ? undefined : holdings.find((item) => item.instanceId === focusItemId)
     ?? pack.find((item) => item.instanceId === focusItemId);
   const focusCard = hero?.deckPreview?.find((card) => card.cardId === focusCardId);
+  const focusBagItem = focusItem !== undefined && pack.some((item) => item.instanceId === focusItem.instanceId)
+    ? focusItem
+    : undefined;
+
+  const highlightTargetSlots = useMemo(() => {
+    if (hero === undefined || focusBagItem?.itemKind !== "equipment") return new Set<EquipmentSlot>();
+    return new Set(itemTargetSlots(hero, focusBagItem));
+  }, [hero, focusBagItem]);
+
+  const highlightBlockedSlots = useMemo(() => {
+    if (hero === undefined || focusBagItem?.itemKind !== "equipment") return new Set<EquipmentSlot>();
+    return new Set(itemBlockedSlots(hero, focusBagItem));
+  }, [hero, focusBagItem]);
 
   useEffect(() => {
     if (!open) return;
@@ -311,6 +433,23 @@ export function PartyInventory({
       setStashDropActive(false);
     }
   }, [open]);
+
+  const cellState = (item: ItemInstance): { hint: string; hintOk: boolean; draggable: boolean; slotMatch: boolean; slotMuted: boolean } => {
+    if (hero === undefined) return { hint: "", hintOk: false, draggable: false, slotMatch: false, slotMuted: false };
+    const summary = itemUseSummary(hero, item);
+    const eligibility = item.itemKind === "equipment" ? equipEligibility(hero, item) : undefined;
+    const fitsFocusedSlot = focusSlot !== null && itemFitsSlot(hero, item, focusSlot);
+    const slotFocusActive = focusSlot !== null;
+    return {
+      hint: summary.label,
+      hintOk: summary.ok,
+      draggable: canManage && eligibility?.ok === true,
+      slotMatch: fitsFocusedSlot,
+      slotMuted: slotFocusActive && item.itemKind === "equipment" && !fitsFocusedSlot
+    };
+  };
+
+  const stashCrossHighlight = focusSlot !== null || focusBagItem?.itemKind === "equipment";
 
   if (!open || hero === undefined) return null;
 
@@ -350,24 +489,64 @@ export function PartyInventory({
     handleDragPayload(readDragPayload(event));
   };
 
-  const cellState = (item: ItemInstance): { actionable: boolean; hint: string; draggable: boolean } => {
-    if (!canManage) return { actionable: false, hint: "View only", draggable: false };
-    if (item.itemKind === "equipment") {
-      const eligibility = equipEligibility(hero, item);
-      if (eligibility.ok) {
-        const slotLabel = eligibility.targetSlot !== undefined ? SLOT_LABELS[eligibility.targetSlot] : "slot";
-        return { actionable: true, hint: `Equip to ${slotLabel}`, draggable: true };
+  const slotCandidates = focusSlot === null ? [] : packItemsForSlot(hero, pack, focusSlot);
+
+  const loadoutAction = (() => {
+    if (!canManage || focusBagItem === undefined) return null;
+    if (focusBagItem.itemKind === "equipment") {
+      const eligibility = equipEligibility(hero, focusBagItem);
+      if (eligibility.ok && eligibility.targetSlot !== undefined) {
+        return {
+          kind: "equip" as const,
+          label: `Equip ${focusBagItem.displaySnapshot.name} → ${SLOT_LABELS[eligibility.targetSlot]}`,
+          onClick: () => equipItem(focusBagItem)
+        };
       }
-      return { actionable: false, hint: eligibility.reason ?? "Cannot equip", draggable: false };
+      const blocked = blockedEquipSlot(hero, focusBagItem);
+      if (blocked !== undefined) {
+        return {
+          kind: "unequip-first" as const,
+          label: `${SLOT_LABELS[blocked]} is full — open slot to unequip`,
+          onClick: () => { setFocusSlot(blocked); setFocusItemId(hero.equipment[blocked]); }
+        };
+      }
     }
-    if (item.itemKind === "scroll") {
-      const eligibility = learnEligibility(hero, item);
-      return eligibility.ok
-        ? { actionable: true, hint: "Click to learn", draggable: false }
-        : { actionable: false, hint: eligibility.reason ?? "Cannot learn", draggable: false };
+    if (focusBagItem.itemKind === "scroll" && learnEligibility(hero, focusBagItem).ok) {
+      return {
+        kind: "learn" as const,
+        label: `Learn ${focusBagItem.displaySnapshot.name} on ${hero.name}`,
+        onClick: () => learnScroll(focusBagItem)
+      };
     }
-    return { actionable: false, hint: "Cannot use", draggable: false };
-  };
+    return null;
+  })();
+
+  const slotQuickEquip = focusSlot !== null && slotCandidates.length === 1 && canManage
+    ? { item: slotCandidates[0]!, label: `Equip ${slotCandidates[0]!.displaySnapshot.name}` }
+    : null;
+
+  const slotUnequipAction = (() => {
+    if (!canManage || focusSlot === null || focusBagItem !== undefined) return null;
+    const itemId = hero.equipment[focusSlot];
+    if (itemId === null) return null;
+    const item = itemById(holdings, itemId);
+    if (item === undefined) return null;
+    return {
+      kind: "unequip" as const,
+      label: `Unequip ${item.displaySnapshot.name} to bag`,
+      onClick: () => unequipSlot(focusSlot)
+    };
+  })();
+
+  const dockAction: {
+    kind: "equip" | "unequip" | "unequip-first" | "learn";
+    label: string;
+    onClick: () => void;
+  } | null = loadoutAction ?? (slotQuickEquip !== null ? {
+    kind: "equip",
+    label: slotQuickEquip.label,
+    onClick: () => equipItem(slotQuickEquip.item)
+  } : slotUnequipAction);
 
   return <>
     <button type="button" className="party-backdrop" aria-label="Close party panel" onClick={onClose} />
@@ -388,11 +567,10 @@ export function PartyInventory({
           setFocusSlot(null);
           setFocusCardId(null);
         }} />)}
-      </div>
-
-      <div className="party-panel-tabs" role="tablist" aria-label="Panel mode">
-        <button type="button" role="tab" aria-selected={panelMode === "loadout"} className={panelMode === "loadout" ? "is-active" : ""} onClick={() => setPanelMode("loadout")}>Loadout</button>
-        <button type="button" role="tab" aria-selected={panelMode === "deck"} className={panelMode === "deck" ? "is-active" : ""} onClick={() => setPanelMode("deck")}>Deck preview</button>
+        <div className="party-panel-tabs" role="tablist" aria-label="Panel mode">
+          <button type="button" role="tab" aria-selected={panelMode === "loadout"} className={panelMode === "loadout" ? "is-active" : ""} onClick={() => setPanelMode("loadout")}>Loadout</button>
+          <button type="button" role="tab" aria-selected={panelMode === "deck"} className={panelMode === "deck" ? "is-active" : ""} onClick={() => setPanelMode("deck")}>Deck</button>
+        </div>
       </div>
 
       <div className={`party-screen-body${panelMode === "deck" ? " is-deck-mode" : ""}`}>
@@ -403,12 +581,16 @@ export function PartyInventory({
             canManage={canManage}
             selectedSlot={focusSlot}
             dragOverSlot={dragOverSlot}
-            onSelectSlot={(slot) => { setFocusSlot(slot); setFocusItemId(hero.equipment[slot]); }}
-            onUnequip={unequipSlot}
+            onSelectSlot={(slot) => {
+              setFocusSlot(slot);
+              setFocusItemId(hero.equipment[slot]);
+            }}
             onEquipToSlot={(itemId) => { void send("equipItem", { heroId: hero.id, itemId }); }}
             onDragPayload={handleDragPayload}
             onDragOverSlot={setDragOverSlot}
             onDragLeaveSlot={() => setDragOverSlot(null)}
+            highlightTargetSlots={highlightTargetSlots}
+            highlightBlockedSlots={highlightBlockedSlots}
           />
 
           <section
@@ -420,23 +602,23 @@ export function PartyInventory({
           >
             <header className="inventory-stash-head">
               <h3>{ownershipLabel}</h3>
-              <p>Drag gear between stash and slots, or click to equip. Drop worn gear here to unequip.</p>
+              <p>Select an item — use the action bar below to equip or learn.</p>
             </header>
             {pack.length === 0
               ? <p className="empty">{run === undefined ? "No spare Haven holdings." : "No unsealed expedition holdings."}</p>
-              : <div className="inventory-grid">
+              : <div className={`inventory-grid${stashCrossHighlight ? " has-cross-highlight" : ""}`}>
                 {pack.map((item) => {
                   const state = cellState(item);
                   return <InventoryCell
                     key={item.instanceId}
                     item={item}
-                    hero={hero}
                     selected={focusItemId === item.instanceId}
-                    disabled={!state.actionable}
                     hint={state.hint}
+                    hintOk={state.hintOk}
+                    slotMatch={state.slotMatch}
+                    slotMuted={state.slotMuted}
                     draggable={state.draggable}
-                    onSelect={() => setFocusItemId(item.instanceId)}
-                    onActivate={() => item.itemKind === "scroll" ? learnScroll(item) : equipItem(item)}
+                    onSelect={() => { setFocusItemId(item.instanceId); setFocusSlot(null); }}
                     onDragStart={(event) => writeDragPayload(event, { kind: "stash", itemId: item.instanceId })}
                   />;
                 })}
@@ -451,13 +633,13 @@ export function PartyInventory({
                 {sealed.map((item) => <InventoryCell
                   key={item.instanceId}
                   item={item}
-                  hero={hero}
                   selected={focusItemId === item.instanceId}
-                  disabled
                   hint="Sealed"
+                  hintOk={false}
+                  slotMatch={false}
+                  slotMuted={false}
                   draggable={false}
-                  onSelect={() => setFocusItemId(item.instanceId)}
-                  onActivate={() => undefined}
+                  onSelect={() => { setFocusItemId(item.instanceId); setFocusSlot(null); }}
                   onDragStart={() => undefined}
                 />)}
               </div>
@@ -465,25 +647,19 @@ export function PartyInventory({
           </section>
 
           <aside className="inventory-detail" aria-label="Item details">
-            {focusItem === undefined ? <p className="empty">Select an item or equipment slot to inspect it.</p> : <>
-              <ItemGlyph item={focusItem} large />
-              <small>{itemKindLabel(focusItem)} · {ownershipLabel}</small>
-              <h3>{focusItem.displaySnapshot.name}</h3>
-              <ItemEffects description={focusItem.displaySnapshot.description} />
-              {focusItem.curseId !== undefined && <p className="warning">{titleCase(focusItem.curseId)}</p>}
-              {canManage && focusItem.itemKind === "equipment" && pack.some((item) => item.instanceId === focusItem.instanceId) && (() => {
-                const eligibility = equipEligibility(hero, focusItem);
-                return eligibility.ok
-                  ? <button type="button" onClick={() => equipItem(focusItem)}>Equip on {hero.name} ({eligibility.targetSlot !== undefined ? SLOT_LABELS[eligibility.targetSlot] : "slot"})</button>
-                  : <p className="inventory-hint">{eligibility.reason}</p>;
-              })()}
-              {canManage && focusItem.itemKind === "scroll" && pack.some((item) => item.instanceId === focusItem.instanceId) && (() => {
-                const eligibility = learnEligibility(hero, focusItem);
-                return eligibility.ok
-                  ? <button type="button" onClick={() => learnScroll(focusItem)}>Learn on {hero.name}</button>
-                  : <p className="inventory-hint">{eligibility.reason}</p>;
-              })()}
-            </>}
+            <header className="inventory-detail-head">
+              <h3>Inspector</h3>
+              <p>Stats and item details for the selected hero.</p>
+            </header>
+            <LoadoutDetailPane
+              hero={hero}
+              pack={pack}
+              holdings={holdings}
+              focusItem={focusItem}
+              focusSlot={focusSlot}
+              ownershipLabel={ownershipLabel}
+              onSelectItem={(itemId) => setFocusItemId(itemId)}
+            />
           </aside>
         </> : <>
           <section className="inventory-deck-main" aria-label={`${hero.name} deck preview`}>
@@ -495,16 +671,23 @@ export function PartyInventory({
         </>}
       </div>
 
-      {run !== undefined && (
-        <footer className="inventory-footer">
-          <span className="inventory-footer-label">Materials</span>
-          <div className="inventory-materials">
-            {materialLines(run).filter(({ amount }) => amount > 0).map(({ id, amount }) => (
-              <span key={id}><b>{amount}</b> {titleCase(id)}</span>
-            ))}
-          </div>
+      {(panelMode === "loadout" && dockAction !== null) || run !== undefined ? (
+        <footer className="party-screen-dock">
+          {panelMode === "loadout" && dockAction !== null && <button
+            type="button"
+            className={dockAction.kind === "unequip-first" || dockAction.kind === "unequip" ? "dock-secondary" : "primary"}
+            onClick={dockAction.onClick}
+          >{dockAction.label}</button>}
+          {run !== undefined && (
+            <div className="inventory-materials">
+              <span className="inventory-footer-label">Materials</span>
+              {materialLines(run).filter(({ amount }) => amount > 0).map(({ id, amount }) => (
+                <span key={id}><b>{amount}</b> {titleCase(id)}</span>
+              ))}
+            </div>
+          )}
         </footer>
-      )}
+      ) : null}
     </div>
   </>;
 }

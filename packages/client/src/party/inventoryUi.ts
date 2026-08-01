@@ -26,6 +26,19 @@ export const SLOT_LABELS: Record<EquipmentSlot, string> = {
   relic2: "Relic II"
 };
 
+/** Compact labels for the paper-doll grid cells. */
+export const SLOT_SHORT_LABELS: Record<EquipmentSlot, string> = {
+  mainHand: "Main",
+  offHand: "Off",
+  head: "Head",
+  body: "Body",
+  gloves: "Gloves",
+  legs: "Legs",
+  feet: "Feet",
+  relic1: "Relic I",
+  relic2: "Relic II"
+};
+
 export const SLOT_GRID_AREA: Record<EquipmentSlot, string> = {
   head: "head",
   mainHand: "main",
@@ -88,6 +101,87 @@ export function equipEligibility(hero: HeroSnapshot, item: ItemInstance): { ok: 
     return { ok: false, reason: `${SLOT_LABELS[equipmentSlot as EquipmentSlot] ?? titleCase(equipmentSlot)} already filled` };
   }
   return { ok: true, targetSlot };
+}
+
+export function itemFitsSlot(hero: HeroSnapshot, item: ItemInstance, slot: EquipmentSlot): boolean {
+  if (item.itemKind !== "equipment") return false;
+  const equipmentSlot = item.mechanicSnapshot.equipmentSlot;
+  if (!slotAcceptsItem(slot, equipmentSlot)) return false;
+  const schools = item.mechanicSnapshot.requiredSchools ?? [];
+  if (schools.length > 0 && !schools.some((school) => hero.schools.includes(school))) return false;
+  return true;
+}
+
+export function blockedEquipSlot(hero: HeroSnapshot, item: ItemInstance): EquipmentSlot | undefined {
+  if (item.itemKind !== "equipment") return undefined;
+  const equipmentSlot = item.mechanicSnapshot.equipmentSlot;
+  if (equipmentSlot === undefined) return undefined;
+  const schools = item.mechanicSnapshot.requiredSchools ?? [];
+  if (schools.length > 0 && !schools.some((school) => hero.schools.includes(school))) return undefined;
+  if (resolveEquipSlot(hero, equipmentSlot) !== undefined) return undefined;
+
+  if (equipmentSlot === "relic") {
+    if (hero.equipment.relic1 !== null) return "relic1";
+    if (hero.equipment.relic2 !== null) return "relic2";
+    return undefined;
+  }
+  const slot = equipmentSlot as EquipmentSlot;
+  return hero.equipment[slot] !== null ? slot : undefined;
+}
+
+export function itemTargetSlots(hero: HeroSnapshot, item: ItemInstance): EquipmentSlot[] {
+  if (item.itemKind !== "equipment") return [];
+  const equipmentSlot = item.mechanicSnapshot.equipmentSlot;
+  if (equipmentSlot === undefined) return [];
+  const schools = item.mechanicSnapshot.requiredSchools ?? [];
+  if (schools.length > 0 && !schools.some((school) => hero.schools.includes(school))) return [];
+
+  if (equipmentSlot === "relic") {
+    return (["relic1", "relic2"] as const).filter((slot) => hero.equipment[slot] === null);
+  }
+  const slot = equipmentSlot as EquipmentSlot;
+  return hero.equipment[slot] === null && itemFitsSlot(hero, item, slot) ? [slot] : [];
+}
+
+export function itemBlockedSlots(hero: HeroSnapshot, item: ItemInstance): EquipmentSlot[] {
+  if (item.itemKind !== "equipment") return [];
+  const equipmentSlot = item.mechanicSnapshot.equipmentSlot;
+  if (equipmentSlot === undefined) return [];
+  const schools = item.mechanicSnapshot.requiredSchools ?? [];
+  if (schools.length > 0 && !schools.some((school) => hero.schools.includes(school))) return [];
+
+  if (equipmentSlot === "relic") {
+    return (["relic1", "relic2"] as const).filter((slot) => hero.equipment[slot] !== null);
+  }
+  const slot = equipmentSlot as EquipmentSlot;
+  return hero.equipment[slot] !== null && itemFitsSlot(hero, item, slot) ? [slot] : [];
+}
+
+export function packItemsForSlot(hero: HeroSnapshot, pack: readonly ItemInstance[], slot: EquipmentSlot): ItemInstance[] {
+  if (hero.equipment[slot] !== null) return [];
+  return pack.filter((item) => itemFitsSlot(hero, item, slot));
+}
+
+export function itemUseSummary(hero: HeroSnapshot, item: ItemInstance): { label: string; ok: boolean } {
+  if (item.itemKind === "equipment") {
+    const eligibility = equipEligibility(hero, item);
+    if (eligibility.ok && eligibility.targetSlot !== undefined) {
+      return { label: SLOT_SHORT_LABELS[eligibility.targetSlot], ok: true };
+    }
+    const reason = eligibility.reason ?? "Cannot equip";
+    if (reason.includes("school")) return { label: "Wrong school", ok: false };
+    if (reason.includes("already filled")) return { label: reason.replace(" already filled", " full"), ok: false };
+    if (reason.includes("Both relic")) return { label: "Relics full", ok: false };
+    return { label: reason, ok: false };
+  }
+  if (item.itemKind === "scroll") {
+    const eligibility = learnEligibility(hero, item);
+    const cardId = item.mechanicSnapshot.grantedCardId;
+    const cardName = cardId !== undefined ? titleCase(cardId.replaceAll("_", " ")) : "pattern";
+    if (eligibility.ok) return { label: `Learn ${cardName}`, ok: true };
+    return { label: eligibility.reason ?? "Cannot learn", ok: false };
+  }
+  return { label: "Cannot use", ok: false };
 }
 
 export function learnEligibility(hero: HeroSnapshot, item: ItemInstance): { ok: boolean; reason?: string } {
