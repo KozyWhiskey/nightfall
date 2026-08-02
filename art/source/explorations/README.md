@@ -1,10 +1,12 @@
-# Anchor Exploration Review — Pass 1
+# Anchor Exploration Review
 
 **Date:** 2026-08-01
 **Tool:** Built-in image generation
 **Status:** Exploration; no production asset approved or integrated
 
-Review the preferred variants together in [`anchor_contact_sheet_pass1.png`](anchor_contact_sheet_pass1.png). The bottom row shows the actual target-size reductions without sharpening or design correction.
+Review the original four anchors together in [`anchor_contact_sheet_pass1.png`](anchor_contact_sheet_pass1.png). The bottom row shows the actual target-size reductions without sharpening or design correction.
+
+The approved direction was extended to Mara, the fixed starter Aether Weaver, in [`aether_weaver/aether_weaver_contact_sheet_pass2.png`](aether_weaver/aether_weaver_contact_sheet_pass2.png). Mara is canonically presented as a woman by user direction; no prior visual identity was defined in the design bible or runtime content.
 
 ## Files and direction
 
@@ -14,11 +16,13 @@ Review the preferred variants together in [`anchor_contact_sheet_pass1.png`](anc
 | Gloomfang Hound | [`gloomfang_hound_anchor_v1.png`](gloomfang_hound/gloomfang_hound_anchor_v1.png) | 1163×1353 | Strong speed silhouette, memory cue, and smoke-fray; needs tighter crop and background cleanup |
 | Lantern-Smother + Shroud | [`lantern_smother_shroud_study_v1.png`](lantern_smother/lantern_smother_shroud_study_v1.png) | 1024×1536 | Strongest concept: boss is inseparable from failed civic lantern; split into separate simplified production silhouettes later |
 | Hewn Sword | [`hewn_sword_anchor_v2.png`](hewn_sword/hewn_sword_anchor_v2.png) | 1254×1254 | Improved one-handed proportion and repair logic; tip notch needs refinement and backdrop is not flat |
+| Aether Weaver (Mara) | [`aether_weaver_anchor_v2.png`](aether_weaver/aether_weaver_anchor_v2.png) | 1164×1351 | Preferred exploration: practical female field scholar, compact loadout, and broader painterly grouping; still needs midtone lift and background cleanup |
 
 Rejected-but-retained iterations:
 
 - `vanguard_anchor_v1.png`: too photorealistic, too much micro-detail, sword too ornate/long.
 - `hewn_sword_anchor_v1.png`: blade too slab-like; loose copper fastener read as an accident rather than competent repair.
+- `aether_weaver_anchor_v1.png`: identity and loadout were strong, but the buckler was shield-sized, the rod read too close to a staff, and dense straps/stitching repeated the rejected micro-detail problem.
 
 ## Cross-set findings
 
@@ -28,6 +32,7 @@ Rejected-but-retained iterations:
 - At `32×38`, Vanguard retains face/shield identity but loses the sword; the Hound retains its forward lean; the combined boss study becomes too dense and confirms that Smother and Shroud require separate production files.
 - Lantern-Smother establishes the most distinctive Nightfall idea. Future assets should match its “broken human purpose first, corruption second” logic without copying its shape.
 - None of these files should replace current placeholders yet.
+- Mara v2 retains her face and field-scholar identity while improving prop scale and painterly grouping. At `72×96`, the rod and buckler remain distinct; at `32×38`, their cool/warm contrast survives, but the body needs more midtone separation before production approval.
 
 ## Exact prompts
 
@@ -134,4 +139,62 @@ Required changes:
 6. Keep strong recognition at 32x32 through guard, grip, pommel, and blade separation.
 Scene/backdrop: perfectly flat solid #122428 with no gradient, vignette, halo, scenery, floor, shadow, reflection, border, or frame.
 Constraints: exactly one sword; no hand, character, shield, scabbard, second weapon, text, UI, badge, watermark, blood, skull, fire, aura, particles, ornate filigree, giant fantasy blade, pristine royal weapon, photorealism, glossy 3D, anime, or pixel art. Preserve all unmentioned visual decisions.
+```
+
+### Aether Weaver — Mara v1
+
+```text
+Use case: stylized-concept
+Asset type: NIGHTFALL game character anchor exploration; full-body combat standee concept
+
+Input images:
+- Image 1 is a rendering, palette, and human-construction reference only. Match its painterly brush-shaped planes, restrained dark palette, practical repaired gear, material weight, and simplified value grouping. Do not copy the person, armor, shield, sword, pose, or body proportions.
+- Image 2 is a world-language and magical-light reference only. Match its ashen relic-craft, cracked-lantern construction, confined warm light, and pale fractured energy discipline. Do not include its creature, mist entity, boss silhouette, or composition.
+
+Primary request: Create exactly one Mara, the fixed starter Aether Weaver for NIGHTFALL. Mara is a woman and a reckless field scholar who wields the chaotic Weave left after Nightfall. She is the ranged magical DPS counterpart to the Vanguard: intelligent, travel-worn, fragile, dangerous, and visibly accustomed to maintaining unstable instruments in the frontier.
+
+Subject and presentation: Adult woman with a narrow, agile silhouette and a tired, intent, clearly visible human face. Present her femininity naturally through face, build, and bearing—not exposed skin, sexualized armor, an exaggerated hourglass, impractical heels, or decorative costume shorthand. Her layered scholar-traveler clothing is practical, weathered, ash-stained, and competently repaired: a short asymmetric mantle, fitted field coat, wrapped forearms, sturdy boots, small document ties or one protected note case. Hair is practical and controlled for travel, with a few loose strands allowed; no enormous flowing hair mass.
+
+Accepted starter loadout: In her forward hand, a compact one-handed Aether Rod—not a long wizard staff—made from soot-dark iron, cracked pale crystal, aged copper clamps, and one interrupted circular stabilizer. In her off hand, a small Way-lantern Buckler: a practical forearm shield built around a repaired civic lantern lens, with soot-black cagework, copper braces, and a contained ember core. Both objects must be clearly separated from the torso by negative space and remain readable as distinct main-hand and offhand gear.
+
+Class and magic language: Aether appears as two or three restrained pale blue-white branching fractures that jump across deliberate gaps near the rod; asymmetric, unstable, visibly stabilized rather than decorative lightning. Ember remains confined to the buckler's lantern aperture as one small warm focal point. The magic suggests controlled risk and scholarly improvisation, not effortless elegance. No glowing eyes.
+
+Silhouette and focal read: Narrow torso, deliberate diagonal casting line through the rod arm, compact buckler held defensively, stable feet with a slight forward readiness. Two or three major value masses. Reduce surface micro-detail by roughly 25–35% compared with the reference character. The silhouette, rod line, and buckler must read at 72x96; face and contrasting rod/buckler cues should survive at 32x38. Use ash-value separation so the dark figure remains legible against near-black teal without a halo.
+
+Style/medium: Painterly-but-disciplined dark-fantasy character illustration; twilight gothic emotion, ashen relic-craft material culture, solemn mature roguelite tone. Tactile authored brushwork, simplified planes, bold game-readable silhouette. Not photorealistic, not glossy 3D.
+
+Composition/framing: Exactly one full-body character in a neutral combat-ready 3/4 stance, canonically facing screen-right. Tall approximately 31:36 standee composition, consistent ground line near the bottom, 6–8% clear side padding, clear space above the head, no dramatic foreshortening, no action lunge.
+
+Scene/backdrop: Perfectly flat solid dark teal-black backdrop close to #122428 for concept review only. No scenery, floor plane, gradient, vignette, fog bank, cast shadow, glow halo, frame, or decorative border.
+
+Lighting/mood: Soft top-left key light, cool twilight ambient fill, restrained warm reflection near the lantern-buckler. Hope is local and maintained; Aether is unstable but deliberately held.
+
+Color palette: soot-black iron, deep teal-black cloth, ash and muted-ash neutrals, worn leather, aged copper, sparse #7da9bd Aether and one confined #d99a4e Ember focal accent. Designed against #0d171b and #122428.
+
+Constraints: single adult woman only; anatomically coherent hands gripping rod and buckler; practical medieval/fantasy forms as vessels for bound magic; no text, nameplate, UI, badge, watermark, scenery, books floating in the air, extra weapon, extra character, familiar, staff, wand sparkle, wizard hat, floor-length robe, corset, cleavage, exposed midriff, high heels, ornate jewelry, crown, modern object, science-fiction machinery, steampunk excess, photorealism, glossy 3D, anime, pixel art, chibi proportions, pristine MMO armor, oversized pauldrons, neon bloom, glowing eyes, purple fog, excessive particles, or comedy pose.
+```
+
+### Aether Weaver — Mara v2
+
+```text
+Use case: precise-object-edit and style refinement
+Input image: Image 1 is the Mara Aether Weaver anchor exploration to revise.
+
+Primary request: Preserve the same adult woman, recognizable face and practical tied-back hair, screen-right-facing 3/4 stance, full-body framing, Aether Rod in her forward hand, Way-lantern Buckler on her off arm, dark ashen palette, pale Aether fractures, confined warm lantern core, and travel-worn field-scholar identity. Make only the following targeted production-direction corrections.
+
+Required changes:
+1. Replace the detailed realistic rendering with visibly painterly dark-fantasy illustration: broad brush-shaped planes, selective hard edges, two or three large value masses, and roughly 35% less internal micro-detail.
+2. Remove most tiny straps, stitch rows, buckles, layered edging, and repeated wrap lines. Keep a few competent repairs, one practical cross-body document strap, and one small protected note case so “field scholar” reads without ornament.
+3. Reduce the round Way-lantern Buckler diameter by about 35–40%. It must be a compact forearm buckler, not a full shield. Retain its repaired civic-lantern lens, simple cage, copper braces, and one contained ember core. Simplify it into three major construction planes.
+4. Shorten the Aether Rod by about 25–30% and simplify its shaft. It must read as a compact one-handed magical instrument, clearly not a staff. Retain the cracked pale crystal and one interrupted circular copper stabilizer.
+5. Limit Aether VFX to two or three short branching fractures near the rod head; do not let lightning dominate the silhouette.
+6. Increase ash-value separation in the face, mantle edge, forearms, and inner-leg gaps so the body remains readable against dark teal at 72x96. Do not add an outline or glow halo.
+7. Make her upper clothing less armor-like and more like a repaired expedition scholar’s field coat with a short asymmetric mantle. Keep it practical, modest, and nonsexualized.
+8. Make the backdrop perfectly flat solid #122428 with no vignette, gradient, floor, shadow, scenery, or halo.
+
+Composition invariants: exactly one adult woman; preserve the same identity and neutral combat-ready stance; full body visible; canonically facing screen-right; rod and buckler separated from the torso by clear negative space; generous padding; no dramatic foreshortening.
+
+Style: authored painterly twilight-gothic game standee, tactile but simplified, solemn and mature; not photorealistic, not glossy 3D.
+
+Constraints: no redesign into a different person; no extra character, extra weapon, familiar, long staff, wizard hat, floor-length robe, corset, cleavage, exposed midriff, high heels, ornate jewelry, modern object, science-fiction machinery, steampunk excess, text, UI, badge, watermark, glowing eyes, purple fog, neon bloom, excessive particles, anime, pixel art, chibi, or comedy pose. Preserve every unmentioned decision.
 ```

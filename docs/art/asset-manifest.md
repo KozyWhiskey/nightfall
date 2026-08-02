@@ -57,12 +57,14 @@ Pass-1 source files, exact prompts, and review notes live under [`art/source/exp
 
 | Group | IDs | Count | Current state |
 |---|---|---:|---|
-| Heroes | `vanguard`, `aether_weaver` | 2 | SVG placeholders |
+| Heroes | `vanguard`, `aether_weaver` | 2 | Preferred `v2` explorations recorded; SVG placeholders remain |
 | Standard enemies | `gloomfang_hound`, `shattered_husk`, `mire_imp`, `mist_chanter`, `gloom_spore` | 5 | SVG placeholders |
 | Boss | `lantern_smother` | 1 | SVG placeholder |
 | Boss entity | `smothering_shroud` | 1 | SVG placeholder |
 
 Total required combat standees: **9**.
+
+Mara's Aether Weaver exploration, exact prompts, and target-size comparison are recorded under [`art/source/explorations/aether_weaver/`](../../art/source/explorations/aether_weaver/). It is not a runtime candidate; the preferred `v2` still needs midtone separation and technical background cleanup.
 
 ## Phase 3 base-vessel illustrations
 
