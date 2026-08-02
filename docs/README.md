@@ -80,7 +80,7 @@ In-repo source of truth for **what the game should be**. Implementation and tech
 | Doc | Status |
 |-----|--------|
 | [art/README.md](art/README.md) | Build 1 art workflow |
-| [visual-style-bible.md](art/visual-style-bible.md) | Controlled draft pending anchor lock |
+| [visual-style-bible.md](art/visual-style-bible.md) | Locked visual direction; production assets pending |
 | [technical-asset-contract.md](art/technical-asset-contract.md) | Accepted Phase 0 production contract |
 | [prompt-library.md](art/prompt-library.md) | Draft pending anchor validation |
 | [asset-manifest.md](art/asset-manifest.md) | Active production inventory |

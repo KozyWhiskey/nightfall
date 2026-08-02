@@ -1,6 +1,6 @@
 # Visual Style Bible
 
-**Status:** Controlled draft — lock after anchor review  
+**Status:** Locked visual direction — production assets pending
 **Last updated:** 2026-08-01  
 **Authority:** Applies the locked [Content Direction](../content/content-direction.md) to Build 1 art. It does not define mechanics, content IDs, or UI behavior.
 
@@ -94,17 +94,27 @@ Build 1 should illustrate each base vessel once. Rarity and procedural affixes r
 - Gloom can erase edges, but never the edges required to understand target shape or combat role.
 - Transparent standees contain no painted backdrop, frame, floor rectangle, typography, rarity badge, intent symbol, or baked gameplay information.
 
+## Approved anchor findings
+
+The 2026-08-01 anchor review approved the shared material, tonal, silhouette, and lighting direction. The generated pass remains exploratory rather than runtime-ready. Production work must carry forward these corrections:
+
+- Reduce surface micro-detail by roughly 25–35% so shape and role survive before ornament.
+- Lift ash-value separation where dark figures meet the near-black UI; do not solve readability with a painted halo.
+- Treat clean background removal as a technical production step. Prompted flat backdrops are not accepted as reliable transparency.
+- Keep Lantern-Smother and Smothering Shroud as separate runtime assets. The relationship study validated their connection but was too dense at combat and initiative sizes.
+- Lead Lantern-Smother with the failed civic purpose of the Way-lantern; Gloom corruption is the consequence, not the whole concept.
+
 ## Exclusions
 
 Avoid modern guns, industrial science-fiction language, steampunk excess, bright heroic polish, candy color, chibi proportions, anime rendering, pristine plate armor, generic medieval loot, comedy poses, floating MMO particle clutter, and purple fog used as a substitute for an idea.
 
-## Anchor lock
+## Anchor validation record
 
-The style remains draft until these four assets work as a single family in the client context:
+These four subjects were reviewed as one family in the client context:
 
 1. `heroes/vanguard` — human construction and starter gear.
 2. `enemies/gloomfang_hound` — corrupted frontier anatomy.
 3. `enemies/lantern_smother` plus a Shroud relationship study — memory-horror boss language.
 4. `items/hewn_sword` — base-vessel and bound-magic language.
 
-Approval requires contact-sheet comparison at source size, battlefield size, initiative size where applicable, on the real UI background, and in grayscale.
+The 2026-08-01 review approved the visual direction, not the individual files. Contact-sheet testing at source, battlefield, and initiative sizes established the production corrections above. Every runtime asset still requires individual review on the real UI background and in grayscale under the [Technical Asset Contract](technical-asset-contract.md).

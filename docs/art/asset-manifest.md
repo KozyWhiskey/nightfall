@@ -42,12 +42,16 @@ Exact prompts are necessary but not sufficient for reproduction. References, cle
 
 | Asset ID | Runtime path stem | Purpose | Status |
 |---|---|---|---|
-| `vanguard` | `heroes/vanguard` | Human construction, hero rendering, starter loadout | `placeholder` |
-| `gloomfang_hound` | `enemies/gloomfang_hound` | Frayed-beast anatomy and Band-1 readability | `placeholder` |
-| `lantern_smother` | `enemies/lantern_smother` | Boss scale, memory horror, Way-lantern relationship | `placeholder` |
-| `hewn_sword` | `items/hewn_sword` | Salvaged base-vessel and bound-magic language | `planned` |
+| `vanguard` | `heroes/vanguard` | Human construction, hero rendering, starter loadout | `exploration` — prefer `v2` for comparison |
+| `gloomfang_hound` | `enemies/gloomfang_hound` | Frayed-beast anatomy and Band-1 readability | `exploration` — `v1` |
+| `lantern_smother` | `enemies/lantern_smother` | Boss scale, memory horror, Way-lantern relationship | `exploration` — relationship study `v1` |
+| `hewn_sword` | `items/hewn_sword` | Salvaged base-vessel and bound-magic language | `exploration` — prefer `v2` for comparison |
 
 The Lantern-Smother exploration must include a relationship study with `smothering_shroud`, but the Shroud remains a separately delivered runtime asset.
+
+Pass-1 source files, exact prompts, and review notes live under [`art/source/explorations/`](../../art/source/explorations/README.md). No exploration is approved for runtime use.
+
+**Direction review (2026-08-01):** The pass established and locked the shared visual language. This approval applies to the direction only; every file above remains an exploration pending cleanup, technical delivery, and individual runtime review.
 
 ## Phase 2 combat standees
 

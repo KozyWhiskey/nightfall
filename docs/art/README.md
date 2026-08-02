@@ -10,7 +10,7 @@ Build 1 visual direction and production guidance. These documents translate the 
 4. [Asset Manifest](asset-manifest.md) is the production inventory and approval record.
 5. [Client Integration Reconciliation](client-integration-reconciliation.md) records the implementation work required before generated assets replace placeholders.
 
-The first four anchor assets must be reviewed together before the style is considered locked. Until then, the visual bible is a controlled draft.
+The first four anchor explorations were reviewed together on 2026-08-01, locking the shared visual direction. They remain source studies, not approved runtime assets; individual production files still require manifest approval under the technical asset contract.
 
 ## Build 1 production decision
 
