@@ -13,7 +13,7 @@ export type CombatantArtKind = "hero" | "enemy" | "entity";
  */
 export const ART_ASSET_PATHS = {
   heroes: {
-    vanguard: `${ART_ROOT}/heroes/vanguard.svg`,
+    vanguard: `${ART_ROOT}/heroes/vanguard.webp`,
     aether_weaver: `${ART_ROOT}/heroes/aether_weaver.svg`
   },
   enemies: {

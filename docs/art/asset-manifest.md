@@ -42,7 +42,7 @@ Exact prompts are necessary but not sufficient for reproduction. References, cle
 
 | Asset ID | Runtime path stem | Purpose | Status |
 |---|---|---|---|
-| `vanguard` | `heroes/vanguard` | Human construction, hero rendering, starter loadout | `exploration` — prefer `v2` for comparison |
+| `vanguard` | `heroes/vanguard` | Human construction, hero rendering, starter loadout | `candidate` — production candidate `v1`; technical QA passed, reviewer approval pending |
 | `gloomfang_hound` | `enemies/gloomfang_hound` | Frayed-beast anatomy and Band-1 readability | `exploration` — `v1` |
 | `lantern_smother` | `enemies/lantern_smother` | Boss scale, memory horror, Way-lantern relationship | `exploration` — relationship study `v1` |
 | `hewn_sword` | `items/hewn_sword` | Salvaged base-vessel and bound-magic language | `candidate` — production candidate `v3`; contract review in progress |
@@ -71,11 +71,29 @@ Pass-1 source files, exact prompts, and review notes live under [`art/source/exp
 | QA | Transparent corners; alpha bbox `(117, 92)–(930, 950)`; checked at `128`, `64`, and `32` px in color and grayscale; live browser fixture passes with exact sizes, decoded `512 × 512` source, and no page overflow |
 | Approval | `candidate`; not an approved master or inventory-integrated asset |
 
+### Vanguard candidate v1
+
+| Field | Record |
+|---|---|
+| Asset ID | `vanguard` |
+| Runtime role | Full-body hero combat standee and current initiative source |
+| Content source | [`vanguard.md`](../content/classes/vanguard.md) and [`vertical-slice-starter-kits.md`](../content/classes/vertical-slice-starter-kits.md) |
+| Prompt ID/version | `vanguard_candidate_chroma_v1`; full text in the [candidate record](../../art/source/candidates/heroes/vanguard/README.md) |
+| Tool/model/date | Built-in image generation (model not surfaced), 2026-08-01 |
+| References | [`vanguard_anchor_v2.png`](../../art/source/explorations/vanguard/vanguard_anchor_v2.png) and [`hewn_sword.png`](../../art/masters/items/hewn_sword.png) |
+| Original source | [`vanguard_candidate_chroma_v1.png`](../../art/source/candidates/heroes/vanguard/vanguard_candidate_chroma_v1.png) |
+| Master | [`art/masters/heroes/vanguard.png`](../../art/masters/heroes/vanguard.png), transparent PNG, `992 × 1152` |
+| Runtime derivative | `packages/client/public/art/heroes/vanguard.webp`, lossless transparent WebP, `496 × 576` |
+| Post-processing | Chroma removal, despill, soft matte, alpha-bounds crop, proportional resize, exact master framing, Lanczos downsample |
+| Focal/orientation data | Canonically screen-right; alpha bbox `(123, 50)–(868, 1083)`; ground line `94.01%` |
+| QA | Transparent corners; 12.4%/12.5% side safe areas and 4.34% top safe area; no green-dominant visible pixels; source-sheet and live neutral/active/targetable/acting/downed/linked states pass; decoded `496 × 576` source; no review-page overflow |
+| Approval | `candidate`; registry-wired for in-context review, not yet an approved master |
+
 ## Phase 2 combat standees
 
 | Group | IDs | Count | Current state |
 |---|---|---:|---|
-| Heroes | `vanguard`, `aether_weaver` | 2 | Preferred `v2` explorations recorded; SVG placeholders remain |
+| Heroes | `vanguard`, `aether_weaver` | 2 | Vanguard candidate `v1` registry-wired; Aether Weaver `v2` remains exploration; SVG fallbacks retained |
 | Standard enemies | `gloomfang_hound`, `shattered_husk`, `mire_imp`, `mist_chanter`, `gloom_spore` | 5 | SVG placeholders |
 | Boss | `lantern_smother` | 1 | SVG placeholder |
 | Boss entity | `smothering_shroud` | 1 | SVG placeholder |
