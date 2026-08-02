@@ -57,9 +57,16 @@
 .art-review-state > small { color: #d99a4e; font-family: Consolas, "Cascadia Mono", monospace; text-transform: uppercase; }
 .art-review-state .combat-standee { min-width: 6.5rem; }
 .art-review-state .standee-panel { width: 8.5rem; }
-.art-review-item { display: flex; align-items: center; gap: 1.5rem; max-width: 34rem; padding: 1rem; border: 1px solid rgba(216, 215, 202, .16); background: #122428; }
+.art-review-item { display: flex; align-items: center; gap: 1.5rem; max-width: 48rem; padding: 1rem; border: 1px solid rgba(216, 215, 202, .16); background: #122428; }
+.art-review-item-sizes { display: flex; align-items: end; gap: 1rem; }
+.art-review-item-sizes > div { display: grid; justify-items: center; gap: .45rem; }
+.art-review-item-sizes small { color: #9ba8a1; font-family: Consolas, "Cascadia Mono", monospace; }
+.art-review-item-swatch { display: grid; place-items: center; }
+.art-review-item-swatch.is-size-128 { width: 128px; height: 128px; }
+.art-review-item-swatch.is-size-64 { width: 64px; height: 64px; }
+.art-review-item-swatch.is-size-32 { width: 32px; height: 32px; }
 .art-review-item-image,
-.art-review-missing { width: 128px; height: 128px; flex: 0 0 128px; }
+.art-review-missing { width: 100%; height: 100%; }
 .art-review-item-image { display: block; object-fit: contain; }
 .art-review-missing { display: grid; place-content: center; gap: .3rem; text-align: center; border: 1px dashed rgba(217, 154, 78, .4); color: #9ba8a1; }
 .art-review-missing strong { color: #d8d7ca; }
@@ -69,4 +76,6 @@
 @media (max-width: 700px) {
   .art-review-header { display: grid; align-items: start; }
   .art-review-size-row { gap: .65rem; }
+  .art-review-item { align-items: start; flex-direction: column; }
+  .art-review-item-sizes { gap: .65rem; }
 }

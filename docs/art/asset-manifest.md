@@ -45,13 +45,31 @@ Exact prompts are necessary but not sufficient for reproduction. References, cle
 | `vanguard` | `heroes/vanguard` | Human construction, hero rendering, starter loadout | `exploration` — prefer `v2` for comparison |
 | `gloomfang_hound` | `enemies/gloomfang_hound` | Frayed-beast anatomy and Band-1 readability | `exploration` — `v1` |
 | `lantern_smother` | `enemies/lantern_smother` | Boss scale, memory horror, Way-lantern relationship | `exploration` — relationship study `v1` |
-| `hewn_sword` | `items/hewn_sword` | Salvaged base-vessel and bound-magic language | `exploration` — prefer `v2` for comparison |
+| `hewn_sword` | `items/hewn_sword` | Salvaged base-vessel and bound-magic language | `candidate` — production candidate `v3`; contract review in progress |
 
 The Lantern-Smother exploration must include a relationship study with `smothering_shroud`, but the Shroud remains a separately delivered runtime asset.
 
 Pass-1 source files, exact prompts, and review notes live under [`art/source/explorations/`](../../art/source/explorations/README.md). No exploration is approved for runtime use.
 
-**Direction review (2026-08-01):** The pass established and locked the shared visual language. This approval applies to the direction only; every file above remains an exploration pending cleanup, technical delivery, and individual runtime review.
+**Direction review (2026-08-01):** The pass established and locked the shared visual language. That approval applied to direction only. Hewn Sword subsequently advanced through its own cleanup and technical review into the candidate recorded below; the other anchor files remain explorations.
+
+### Hewn Sword candidate v3
+
+| Field | Record |
+|---|---|
+| Asset ID | `hewn_sword` |
+| Runtime role | Base-vessel item illustration; review fixture only until ART-04 inventory integration |
+| Content source | [`vertical-slice-affix-pool.md`](../content/items/vertical-slice-affix-pool.md) |
+| Prompt ID/version | `hewn_sword_candidate_chroma_v1` + `hewn_sword_tip_fix_v2`; full text in the [candidate record](../../art/source/candidates/items/hewn_sword/README.md) |
+| Tool/model/date | Built-in image generation (model not surfaced), 2026-08-01 |
+| References | [`hewn_sword_anchor_v2.png`](../../art/source/explorations/hewn_sword/hewn_sword_anchor_v2.png) |
+| Original source | [`hewn_sword_candidate_chroma_v2.png`](../../art/source/candidates/items/hewn_sword/hewn_sword_candidate_chroma_v2.png) |
+| Master | [`art/masters/items/hewn_sword.png`](../../art/masters/items/hewn_sword.png), transparent PNG, `1024 × 1024` |
+| Runtime derivative | `packages/client/public/art/items/hewn_sword.webp`, lossless transparent WebP, `512 × 512` |
+| Post-processing | Chroma removal, despill, soft matte, 18% brightness lift, 4% contrast lift, occupancy normalization, Lanczos downsample |
+| Focal/orientation data | Diagonal lower-left grip to upper-right tip; 79.4% width and 83.8% height occupancy |
+| QA | Transparent corners; alpha bbox `(117, 92)–(930, 950)`; checked at `128`, `64`, and `32` px in color and grayscale; live browser fixture passes with exact sizes, decoded `512 × 512` source, and no page overflow |
+| Approval | `candidate`; not an approved master or inventory-integrated asset |
 
 ## Phase 2 combat standees
 

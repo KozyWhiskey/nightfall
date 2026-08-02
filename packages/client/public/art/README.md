@@ -16,6 +16,7 @@ packages/client/public/art/
   enemies/{definitionId}.svg|png|webp
   entities/{definitionId}.svg|png|webp
   intents/{kind}.svg|png|webp          # attack | defend | buff | special
+  items/{baseId}.svg|png|webp           # review seam; inventory integration remains ART-04
   cards/frame.svg|png|webp             # optional hand-card frame
 ```
 
@@ -57,6 +58,12 @@ Open `/?artReview=anchors` on the client dev server to inspect anchor assets at 
 | `intents/buff.svg` | Intent glyph |
 | `intents/special.svg` | Intent glyph |
 | `cards/frame.svg` | Optional hand frame |
+
+## Review candidates
+
+| Path | Role | Status |
+|---|---|---|
+| `items/hewn_sword.webp` | Hewn Sword base-vessel illustration | Candidate v3; visible only in the anchor review fixture pending inventory integration and approval |
 
 Unknown ids (new enemies, future classes) resolve to a path by convention; if the file is absent, `ArtImage` shows the existing silhouette / text glyph. Layout must not depend on the bitmap succeeding.
 

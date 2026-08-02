@@ -135,13 +135,20 @@ export function AnchorArtReview() {
     <section className="art-review-section">
       <h2>Item anchor</h2>
       <article className="art-review-item">
-        <ArtImage
-          src={reviewItemArtSrc("hewn_sword")}
-          className="art-review-item-image"
-          alt=""
-          fallback={<div className="art-review-missing"><strong>Hewn Sword</strong><span>Awaiting candidate WebP</span></div>}
-        />
-        <div><strong>Hewn Sword</strong><code>hewn_sword</code><p>Review at 128, 64, and 32 px after the first candidate is installed.</p></div>
+        <div className="art-review-item-sizes">
+          {([128, 64, 32] as const).map((size) => <div key={size}>
+            <div className={`art-review-item-swatch is-size-${size}`}>
+              <ArtImage
+                src={reviewItemArtSrc("hewn_sword")}
+                className="art-review-item-image"
+                alt=""
+                fallback={<div className="art-review-missing"><span>Missing</span></div>}
+              />
+            </div>
+            <small>{size} × {size}</small>
+          </div>)}
+        </div>
+        <div><strong>Hewn Sword</strong><code>hewn_sword</code><p>Candidate v3: verify silhouette, alpha edge, and Salvaged material read at all contract sizes.</p></div>
       </article>
     </section>
 
