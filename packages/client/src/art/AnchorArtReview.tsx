@@ -83,8 +83,10 @@ function ReviewPortrait({ combatant, size }: { combatant: CombatantSnapshot; siz
 
 function StandeeStateReview({ combatant }: { combatant: CombatantSnapshot }) {
   const isWeaver = combatant.definitionId === "aether_weaver";
+  const isEnemy = combatant.side === "enemies";
+  const classLabel = isEnemy ? "Band 1" : isWeaver ? "Aether Weaver" : "Vanguard";
   return <div className="art-review-state-set">
-    <h3>{combatant.name} · {isWeaver ? "Aether Weaver" : "Vanguard"}</h3>
+    <h3>{combatant.name} · {classLabel}</h3>
     <div className="art-review-state-grid">
       {reviewStates.map((state) => {
         const stateCombatant = { ...combatant, downed: state.downed };
@@ -92,18 +94,18 @@ function StandeeStateReview({ combatant }: { combatant: CombatantSnapshot }) {
           <small>{state.label}</small>
           <CombatStandee
             combatant={stateCombatant}
-            side="heroes"
-            classLabel={isWeaver ? "Aether Weaver" : "Vanguard"}
+            side={combatant.side}
+            classLabel={classLabel}
             isActive={state.active}
             isActing={state.acting}
-            actingIntentLabel={state.acting ? (isWeaver ? "Aether Bolt" : "Iron Cut") : undefined}
+            actingIntentLabel={state.acting ? (isEnemy ? "Maul" : isWeaver ? "Aether Bolt" : "Iron Cut") : undefined}
             canTarget={state.targetable}
             targetable={!state.downed}
             block={0}
             conditions={[]}
-            resources={{ ap: 3, mana: isWeaver ? 6 : 3, stamina: isWeaver ? 2 : 10 }}
-            maxMana={isWeaver ? 6 : 3}
-            maxStamina={isWeaver ? 2 : 10}
+            resources={isEnemy ? undefined : { ap: 3, mana: isWeaver ? 6 : 3, stamina: isWeaver ? 2 : 10 }}
+            maxMana={isEnemy ? undefined : isWeaver ? 6 : 3}
+            maxStamina={isEnemy ? undefined : isWeaver ? 2 : 10}
             queueLabel={state.linked ? "2nd in queue" : undefined}
             isLinked={state.linked}
           />
@@ -139,7 +141,7 @@ export function AnchorArtReview() {
 
     <section className="art-review-section">
       <h2>Actual standee treatments</h2>
-      {combatAnchors.filter((combatant) => combatant.side === "heroes").map((combatant) =>
+      {combatAnchors.filter((combatant) => combatant.side === "heroes" || combatant.definitionId === "gloomfang_hound").map((combatant) =>
         <StandeeStateReview combatant={combatant} key={combatant.definitionId} />
       )}
     </section>

@@ -43,7 +43,7 @@ Exact prompts are necessary but not sufficient for reproduction. References, cle
 | Asset ID | Runtime path stem | Purpose | Status |
 |---|---|---|---|
 | `vanguard` | `heroes/vanguard` | Human construction, hero rendering, starter loadout | `candidate` — production candidate `v1`; technical QA passed, reviewer approval pending |
-| `gloomfang_hound` | `enemies/gloomfang_hound` | Frayed-beast anatomy and Band-1 readability | `exploration` — `v1` |
+| `gloomfang_hound` | `enemies/gloomfang_hound` | Frayed-beast anatomy and Band-1 readability | `candidate` — production candidate `v1`; technical QA passed, reviewer approval pending |
 | `lantern_smother` | `enemies/lantern_smother` | Boss scale, memory horror, Way-lantern relationship | `exploration` — relationship study `v1` |
 | `hewn_sword` | `items/hewn_sword` | Salvaged base-vessel and bound-magic language | `candidate` — production candidate `v3`; contract review in progress |
 
@@ -107,12 +107,30 @@ Pass-1 source files, exact prompts, and review notes live under [`art/source/exp
 | QA | Transparent corners; 16.63% side safe areas and 4.34% top safe area; no visible matte contamination; source-sheet and live neutral/active/targetable/acting/downed/linked states pass; decoded `496 × 576` source; no review-page overflow |
 | Approval | `candidate`; registry-wired for in-context review, not yet an approved master |
 
+### Gloomfang Hound candidate v1
+
+| Field | Record |
+|---|---|
+| Asset ID | `gloomfang_hound` |
+| Runtime role | Band-1 enemy combat standee and current initiative source |
+| Content source | [`band-1-frontier.md`](../content/enemies/band-1-frontier.md) |
+| Prompt ID/version | `gloomfang_hound_candidate_chroma_v1`; full text in the [candidate record](../../art/source/candidates/enemies/gloomfang_hound/README.md) |
+| Tool/model/date | Built-in image generation (model not surfaced), 2026-08-01 |
+| References | [`gloomfang_hound_anchor_v1.png`](../../art/source/explorations/gloomfang_hound/gloomfang_hound_anchor_v1.png) |
+| Original source | [`gloomfang_hound_candidate_chroma_v1.png`](../../art/source/candidates/enemies/gloomfang_hound/gloomfang_hound_candidate_chroma_v1.png) |
+| Master | [`art/masters/enemies/gloomfang_hound.png`](../../art/masters/enemies/gloomfang_hound.png), transparent PNG, `992 × 1152` |
+| Runtime derivative | `packages/client/public/art/enemies/gloomfang_hound.webp`, lossless transparent WebP, `496 × 576` |
+| Post-processing | Chroma removal, despill, soft matte, alpha-bounds crop, proportional resize, exact width-limited master framing, Lanczos downsample |
+| Focal/orientation data | Canonically screen-right; alpha bbox `(60, 442)–(932, 1083)`; ground line `94.01%`; hostile presentation mirrors left in the client |
+| QA | Transparent corners; 6.05% side safe areas; source-sheet checks on both field colors, checker, runtime sizes, and grayscale passed; live hostile orientation plus neutral/active/targetable/acting/downed/linked states passed; decoded `496 × 576` source; no review-page overflow |
+| Approval | `candidate`; registry-wired for in-context review, not yet an approved master |
+
 ## Phase 2 combat standees
 
 | Group | IDs | Count | Current state |
 |---|---|---:|---|
 | Heroes | `vanguard`, `aether_weaver` | 2 | Both hero candidate `v1` derivatives registry-wired and technically passed; reviewer approval pending; SVG fallbacks retained |
-| Standard enemies | `gloomfang_hound`, `shattered_husk`, `mire_imp`, `mist_chanter`, `gloom_spore` | 5 | SVG placeholders |
+| Standard enemies | `gloomfang_hound`, `shattered_husk`, `mire_imp`, `mist_chanter`, `gloom_spore` | 5 | Gloomfang Hound candidate `v1` registry-wired and technically passed; remaining four use SVG placeholders |
 | Boss | `lantern_smother` | 1 | SVG placeholder |
 | Boss entity | `smothering_shroud` | 1 | SVG placeholder |
 

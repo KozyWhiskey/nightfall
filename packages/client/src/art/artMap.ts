@@ -17,7 +17,7 @@ export const ART_ASSET_PATHS = {
     aether_weaver: `${ART_ROOT}/heroes/aether_weaver.webp`
   },
   enemies: {
-    gloomfang_hound: `${ART_ROOT}/enemies/gloomfang_hound.svg`,
+    gloomfang_hound: `${ART_ROOT}/enemies/gloomfang_hound.webp`,
     shattered_husk: `${ART_ROOT}/enemies/shattered_husk.svg`,
     mire_imp: `${ART_ROOT}/enemies/mire_imp.svg`,
     mist_chanter: `${ART_ROOT}/enemies/mist_chanter.svg`,
