@@ -20,6 +20,7 @@ describe("art map", () => {
 
   it("supports mixed runtime formats without changing content IDs", () => {
     expect(heroArtSrc("vanguard")).toBe("/art/heroes/vanguard.webp");
+    expect(heroArtSrc("aether_weaver")).toBe("/art/heroes/aether_weaver.webp");
     expect(reviewItemArtSrc("hewn_sword")).toBe("/art/items/hewn_sword.webp");
   });
 

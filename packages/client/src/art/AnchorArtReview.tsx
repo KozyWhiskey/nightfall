@@ -45,9 +45,19 @@ function fixtureCombatant(
 
 const combatAnchors = [
   fixtureCombatant("vanguard", "Rook", "heroes", "hero", 34),
+  fixtureCombatant("aether_weaver", "Mara", "heroes", "hero", 24),
   fixtureCombatant("gloomfang_hound", "Gloomfang Hound", "enemies", "enemy", 20),
   fixtureCombatant("lantern_smother", "Lantern-Smother", "enemies", "enemy", 110),
   fixtureCombatant("smothering_shroud", "Smothering Shroud", "enemies", "entity", 18)
+] as const;
+
+const reviewStates = [
+  { label: "Neutral", active: false, acting: false, targetable: false, downed: false, linked: false },
+  { label: "Active", active: true, acting: false, targetable: false, downed: false, linked: false },
+  { label: "Targetable", active: false, acting: false, targetable: true, downed: false, linked: false },
+  { label: "Acting", active: false, acting: true, targetable: false, downed: false, linked: false },
+  { label: "Downed", active: false, acting: false, targetable: false, downed: true, linked: false },
+  { label: "Linked", active: false, acting: false, targetable: false, downed: false, linked: true }
 ] as const;
 
 function artKind(combatant: CombatantSnapshot): CombatantArtKind {
@@ -71,8 +81,39 @@ function ReviewPortrait({ combatant, size }: { combatant: CombatantSnapshot; siz
   </div>;
 }
 
+function StandeeStateReview({ combatant }: { combatant: CombatantSnapshot }) {
+  const isWeaver = combatant.definitionId === "aether_weaver";
+  return <div className="art-review-state-set">
+    <h3>{combatant.name} · {isWeaver ? "Aether Weaver" : "Vanguard"}</h3>
+    <div className="art-review-state-grid">
+      {reviewStates.map((state) => {
+        const stateCombatant = { ...combatant, downed: state.downed };
+        return <div className="art-review-state" key={state.label}>
+          <small>{state.label}</small>
+          <CombatStandee
+            combatant={stateCombatant}
+            side="heroes"
+            classLabel={isWeaver ? "Aether Weaver" : "Vanguard"}
+            isActive={state.active}
+            isActing={state.acting}
+            actingIntentLabel={state.acting ? (isWeaver ? "Aether Bolt" : "Iron Cut") : undefined}
+            canTarget={state.targetable}
+            targetable={!state.downed}
+            block={0}
+            conditions={[]}
+            resources={{ ap: 3, mana: isWeaver ? 6 : 3, stamina: isWeaver ? 2 : 10 }}
+            maxMana={isWeaver ? 6 : 3}
+            maxStamina={isWeaver ? 2 : 10}
+            queueLabel={state.linked ? "2nd in queue" : undefined}
+            isLinked={state.linked}
+          />
+        </div>;
+      })}
+    </div>
+  </div>;
+}
+
 export function AnchorArtReview() {
-  const vanguard = combatAnchors[0];
   return <main className="art-review-page">
     <header className="art-review-header">
       <div>
@@ -98,38 +139,9 @@ export function AnchorArtReview() {
 
     <section className="art-review-section">
       <h2>Actual standee treatments</h2>
-      <div className="art-review-state-grid">
-        {([
-          { label: "Neutral", active: false, acting: false, targetable: false, downed: false, linked: false },
-          { label: "Active", active: true, acting: false, targetable: false, downed: false, linked: false },
-          { label: "Targetable", active: false, acting: false, targetable: true, downed: false, linked: false },
-          { label: "Acting", active: false, acting: true, targetable: false, downed: false, linked: false },
-          { label: "Downed", active: false, acting: false, targetable: false, downed: true, linked: false },
-          { label: "Linked", active: false, acting: false, targetable: false, downed: false, linked: true }
-        ] as const).map((state) => {
-          const combatant = { ...vanguard, downed: state.downed };
-          return <div className="art-review-state" key={state.label}>
-            <small>{state.label}</small>
-            <CombatStandee
-              combatant={combatant}
-              side="heroes"
-              classLabel="Vanguard"
-              isActive={state.active}
-              isActing={state.acting}
-              actingIntentLabel={state.acting ? "Iron Cut" : undefined}
-              canTarget={state.targetable}
-              targetable={!state.downed}
-              block={0}
-              conditions={[]}
-              resources={{ ap: 3, mana: 3, stamina: 10 }}
-              maxMana={3}
-              maxStamina={10}
-              queueLabel={state.linked ? "2nd in queue" : undefined}
-              isLinked={state.linked}
-            />
-          </div>;
-        })}
-      </div>
+      {combatAnchors.filter((combatant) => combatant.side === "heroes").map((combatant) =>
+        <StandeeStateReview combatant={combatant} key={combatant.definitionId} />
+      )}
     </section>
 
     <section className="art-review-section">

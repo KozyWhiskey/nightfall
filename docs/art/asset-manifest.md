@@ -89,11 +89,29 @@ Pass-1 source files, exact prompts, and review notes live under [`art/source/exp
 | QA | Transparent corners; 12.4%/12.5% side safe areas and 4.34% top safe area; no green-dominant visible pixels; source-sheet and live neutral/active/targetable/acting/downed/linked states pass; decoded `496 × 576` source; no review-page overflow |
 | Approval | `candidate`; registry-wired for in-context review, not yet an approved master |
 
+### Aether Weaver candidate v1
+
+| Field | Record |
+|---|---|
+| Asset ID | `aether_weaver` |
+| Runtime role | Full-body hero combat standee and current initiative source |
+| Content source | [`aether-weaver.md`](../content/classes/aether-weaver.md) and [`vertical-slice-starter-kits.md`](../content/classes/vertical-slice-starter-kits.md) |
+| Prompt ID/version | `aether_weaver_candidate_chroma_v1`; full text in the [candidate record](../../art/source/candidates/heroes/aether_weaver/README.md) |
+| Tool/model/date | Built-in image generation (model not surfaced), 2026-08-01 |
+| References | [`aether_weaver_anchor_v2.png`](../../art/source/explorations/aether_weaver/aether_weaver_anchor_v2.png) and [`vanguard.png`](../../art/masters/heroes/vanguard.png) |
+| Original source | [`aether_weaver_candidate_chroma_v1.png`](../../art/source/candidates/heroes/aether_weaver/aether_weaver_candidate_chroma_v1.png) |
+| Master | [`art/masters/heroes/aether_weaver.png`](../../art/masters/heroes/aether_weaver.png), transparent PNG, `992 × 1152` |
+| Runtime derivative | `packages/client/public/art/heroes/aether_weaver.webp`, lossless transparent WebP, `496 × 576` |
+| Post-processing | Chroma removal, despill, soft matte, alpha-bounds crop, proportional resize, exact master framing, Lanczos downsample |
+| Focal/orientation data | Canonically screen-right; alpha bbox `(165, 50)–(827, 1083)`; ground line `94.01%` |
+| QA | Transparent corners; 16.63% side safe areas and 4.34% top safe area; no visible matte contamination; source-sheet and live neutral/active/targetable/acting/downed/linked states pass; decoded `496 × 576` source; no review-page overflow |
+| Approval | `candidate`; registry-wired for in-context review, not yet an approved master |
+
 ## Phase 2 combat standees
 
 | Group | IDs | Count | Current state |
 |---|---|---:|---|
-| Heroes | `vanguard`, `aether_weaver` | 2 | Vanguard candidate `v1` registry-wired; Aether Weaver `v2` remains exploration; SVG fallbacks retained |
+| Heroes | `vanguard`, `aether_weaver` | 2 | Both hero candidate `v1` derivatives registry-wired and technically passed; reviewer approval pending; SVG fallbacks retained |
 | Standard enemies | `gloomfang_hound`, `shattered_husk`, `mire_imp`, `mist_chanter`, `gloom_spore` | 5 | SVG placeholders |
 | Boss | `lantern_smother` | 1 | SVG placeholder |
 | Boss entity | `smothering_shroud` | 1 | SVG placeholder |

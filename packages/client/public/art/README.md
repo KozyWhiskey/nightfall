@@ -64,6 +64,7 @@ Open `/?artReview=anchors` on the client dev server to inspect anchor assets at 
 | Path | Role | Status |
 |---|---|---|
 | `heroes/vanguard.webp` | Rook / Vanguard combat standee | Candidate v1; registry-wired for live standee-state review pending approval |
+| `heroes/aether_weaver.webp` | Mara / Aether Weaver combat standee | Candidate v1; registry-wired and technically passed pending approval |
 | `items/hewn_sword.webp` | Hewn Sword base-vessel illustration | Candidate v3; visible only in the anchor review fixture pending inventory integration and approval |
 
 Unknown ids (new enemies, future classes) resolve to a path by convention; if the file is absent, `ArtImage` shows the existing silhouette / text glyph. Layout must not depend on the bitmap succeeding.
