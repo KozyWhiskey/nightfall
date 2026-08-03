@@ -1,7 +1,7 @@
 # Build 1 Art Asset Manifest
 
-**Status:** Active production inventory — no generated assets approved  
-**Last updated:** 2026-08-01  
+**Status:** Active production inventory — approved masters and review candidates tracked below
+**Last updated:** 2026-08-03
 **Related:** [Build 1 Content Registry](../content/vertical-slice-content-registry.md), [Technical Asset Contract](technical-asset-contract.md)
 
 ## Status vocabulary
@@ -177,7 +177,7 @@ Pass-1 source files, exact prompts, and review notes live under [`art/source/exp
 | Post-processing | Targeted face/throat and costume-discipline revision; chroma removal, despill, soft matte, alpha-bounds crop, proportional resize, exact master framing, Lanczos downsample |
 | Focal/orientation data | Canonically screen-right; alpha bbox `(184, 50)–(807, 1083)`; ground line `93.92%`; hostile presentation mirrors left in the client |
 | QA | Transparent corners; 18.55% / 18.65% side safe areas and 4.34% top safe area; source-sheet and live state checks passed; conducting stance, sealed voice-bellows, hands, yoke, and name-tabs survive their intended sizes; decoded `496 × 576` source; no review-page overflow |
-| Approval | `candidate`; registry-wired for in-context review, not yet an approved master |
+| Approval | `verified`; approved by reviewer 2026-08-03, registry-wired and verified in context |
 
 ### Lantern-Smother candidate v1
 
