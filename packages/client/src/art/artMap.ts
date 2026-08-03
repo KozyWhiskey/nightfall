@@ -42,7 +42,8 @@ export const ART_ASSET_PATHS = {
     aether_rod: `${ART_ROOT}/items/aether_rod.webp`,
     cinder_scepter: `${ART_ROOT}/items/cinder_scepter.webp`,
     kite_shield: `${ART_ROOT}/items/kite_shield.webp`,
-    way_lantern_buckler: `${ART_ROOT}/items/way_lantern_buckler.webp`
+    way_lantern_buckler: `${ART_ROOT}/items/way_lantern_buckler.webp`,
+    archivists_focus: `${ART_ROOT}/items/archivists_focus.webp`
   }
 } as const;
 
