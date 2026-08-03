@@ -382,7 +382,7 @@ Mara's earlier Aether Weaver exploration and target-size comparison remain archi
 |---|---|---:|---|
 | Main hand | `hewn_sword`, `gloomwood_spear`, `aether_rod`, `cinder_scepter` | 4 | ID-keyed resolver active; Hewn Sword candidate plus Gloomwood Spear, Aether Rod, and Cinder Scepter approved masters wired |
 | Offhand | `kite_shield`, `way_lantern_buckler`, `archivists_focus` | 3 | ID-keyed resolver active; all three approved masters wired |
-| Relic | `cracked_way_lens`, `pilgrims_knot`, `name_thread_charm` | 3 | ID-keyed resolver active; Cracked Way Lens approved master wired; other vessels use glyph fallback |
+| Relic | `cracked_way_lens`, `pilgrims_knot`, `name_thread_charm` | 3 | ID-keyed resolver active; all three approved masters wired |
 | Head | `emberglass_cowl` | 1 | ID-keyed resolver active; glyph fallback until runtime art exists |
 | Body | `wayfarers_coat` | 1 | ID-keyed resolver active; glyph fallback until runtime art exists |
 | Gloves | `ironweave_gloves` | 1 | ID-keyed resolver active; glyph fallback until runtime art exists |

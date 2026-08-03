@@ -40,6 +40,7 @@ describe("art map", () => {
     expect(itemArtSrc("emberglass_cowl")).toBe("/art/items/emberglass_cowl.webp");
     expect(itemArtSrc("wayfarers_coat")).toBe("/art/items/wayfarers_coat.webp");
     expect(itemArtSrc("ironweave_gloves")).toBe("/art/items/ironweave_gloves.webp");
+    expect(itemArtSrc("name_thread_charm")).toBe("/art/items/name_thread_charm.webp");
   });
 
   it("keeps the SVG convention for unknown future IDs", () => {
@@ -75,7 +76,7 @@ describe("art map", () => {
     expect(paths[6]).toBe("/art/items/archivists_focus.webp");
     expect(paths[7]).toBe("/art/items/cracked_way_lens.webp");
     expect(paths[8]).toBe("/art/items/pilgrims_knot.webp");
-    expect(paths[9]).toBe("/art/items/name_thread_charm.svg");
+    expect(paths[9]).toBe("/art/items/name_thread_charm.webp");
     expect(paths[10]).toBe("/art/items/emberglass_cowl.webp");
     expect(paths[11]).toBe("/art/items/wayfarers_coat.webp");
     expect(paths[12]).toBe("/art/items/ironweave_gloves.webp");

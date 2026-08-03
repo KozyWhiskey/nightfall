@@ -48,7 +48,8 @@ export const ART_ASSET_PATHS = {
     pilgrims_knot: `${ART_ROOT}/items/pilgrims_knot.webp`,
     emberglass_cowl: `${ART_ROOT}/items/emberglass_cowl.webp`,
     wayfarers_coat: `${ART_ROOT}/items/wayfarers_coat.webp`,
-    ironweave_gloves: `${ART_ROOT}/items/ironweave_gloves.webp`
+    ironweave_gloves: `${ART_ROOT}/items/ironweave_gloves.webp`,
+    name_thread_charm: `${ART_ROOT}/items/name_thread_charm.webp`
   }
 } as const;
 
