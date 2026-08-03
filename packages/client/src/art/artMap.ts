@@ -75,8 +75,8 @@ export function cardFrameArtSrc(): string {
   return ART_ASSET_PATHS.cards.frame;
 }
 
-/** Review-only until ART-04 wires base-vessel art into the inventory. */
-export function reviewItemArtSrc(baseId: string): string {
+/** ID-keyed base-vessel art; ItemGlyph retains the authoritative slot-glyph fallback. */
+export function itemArtSrc(baseId: string): string {
   return registeredPath(ART_ASSET_PATHS.items, baseId, "items");
 }
 

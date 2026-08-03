@@ -366,7 +366,7 @@ button.equip-slot:hover:not(:disabled) {
 .inventory-doll.has-cross-highlight .equip-slot:not(.is-selected):not(.is-item-target):not(.is-item-blocked) {
   opacity: .48;
 }
-.equip-slot .item-glyph { width: 1.2rem; height: 1.2rem; margin: 0; }
+.equip-slot .item-glyph { width: 1.75rem; height: 1.75rem; margin: 0; }
 .item-glyph {
   display: grid;
   place-items: center;
@@ -376,11 +376,12 @@ button.equip-slot:hover:not(:disabled) {
   color: var(--brass);
 }
 .item-glyph.is-large {
-  width: 2.75rem;
-  height: 2.75rem;
+  width: 5rem;
+  height: 5rem;
   margin: 0 0 .35rem;
 }
 .item-glyph svg { width: 100%; height: 100%; }
+.item-glyph-art { width: 100%; height: 100%; object-fit: contain; }
 .inventory-stash.is-drop-target {
   outline: 2px dashed rgba(122, 196, 168, .55);
   outline-offset: -2px;
@@ -604,7 +605,7 @@ button.equip-slot:hover:not(:disabled) {
   width: 100%;
 }
 .inventory-cell small.is-destination { color: rgba(122, 196, 168, .95); }
-.inventory-cell .item-glyph { margin: 0 0 .05rem; width: 1.5rem; height: 1.5rem; }
+.inventory-cell .item-glyph { margin: 0 0 .05rem; width: 2rem; height: 2rem; }
 .inventory-cell.is-rarity-imbued { border-color: rgba(122, 196, 168, .45); }
 .inventory-cell.is-rarity-rare { border-color: rgba(217, 154, 78, .55); }
 .inventory-cell.is-rarity-legendary { border-color: rgba(232, 120, 88, .65); }

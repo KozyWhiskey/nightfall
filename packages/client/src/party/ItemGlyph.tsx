@@ -1,4 +1,6 @@
 import type { EquipmentSlot, ItemEquipmentSlot, ItemInstance } from "@nightfall/contracts";
+import { ArtImage } from "../art/ArtImage.js";
+import { itemArtSrc } from "../art/artMap.js";
 
 function glyphKind(item: ItemInstance): ItemEquipmentSlot | "scroll" | "supply" | "gear" {
   if (item.itemKind === "scroll") return "scroll";
@@ -6,9 +8,8 @@ function glyphKind(item: ItemInstance): ItemEquipmentSlot | "scroll" | "supply" 
   return item.mechanicSnapshot.equipmentSlot ?? "gear";
 }
 
-export function ItemGlyph({ item, large = false }: { item: ItemInstance; large?: boolean }) {
-  const kind = glyphKind(item);
-  return <span className={`item-glyph is-${kind}${large ? " is-large" : ""}`} aria-hidden="true">
+function GlyphMark({ kind }: { kind: ReturnType<typeof glyphKind> }) {
+  return <>
     {kind === "mainHand" && <svg viewBox="0 0 24 24"><path d="M4 20 L14 4 L17 6 L7 22 Z" fill="currentColor" opacity=".85" /><path d="M14 4 L20 10 L17 13 L11 7 Z" fill="currentColor" opacity=".45" /></svg>}
     {kind === "offHand" && <svg viewBox="0 0 24 24"><path d="M6 18 V8 H18 V18 Z" fill="none" stroke="currentColor" strokeWidth="1.8" /><path d="M9 8 V5 H15 V8" fill="none" stroke="currentColor" strokeWidth="1.8" /></svg>}
     {kind === "head" && <svg viewBox="0 0 24 24"><path d="M5 14 C5 8 8 5 12 5 C16 5 19 8 19 14 V18 H5 Z" fill="none" stroke="currentColor" strokeWidth="1.8" /><path d="M4 18 H20" stroke="currentColor" strokeWidth="1.8" /></svg>}
@@ -20,6 +21,24 @@ export function ItemGlyph({ item, large = false }: { item: ItemInstance; large?:
     {kind === "scroll" && <svg viewBox="0 0 24 24"><path d="M7 4 H17 C18 4 19 5 19 6 V20 C19 21 18 22 17 22 H7 C6 22 5 21 5 20 V6 C5 5 6 4 7 4 Z" fill="none" stroke="currentColor" strokeWidth="1.6" /><path d="M8 8 H16 M8 12 H14" stroke="currentColor" strokeWidth="1.2" /></svg>}
     {kind === "supply" && <svg viewBox="0 0 24 24"><path d="M9 3 H15 L17 7 V19 C17 20 16 21 15 21 H9 C8 21 7 20 7 19 V7 Z" fill="none" stroke="currentColor" strokeWidth="1.6" /><path d="M10 11 H14" stroke="currentColor" strokeWidth="1.4" /></svg>}
     {kind === "gear" && <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" strokeWidth="1.8" /><circle cx="12" cy="12" r="2.5" fill="currentColor" opacity=".55" /></svg>}
+  </>;
+}
+
+export function ItemGlyph({
+  item,
+  large = false,
+  showArt = true
+}: {
+  item: ItemInstance;
+  large?: boolean;
+  showArt?: boolean;
+}) {
+  const kind = glyphKind(item);
+  const fallback = <GlyphMark kind={kind} />;
+  return <span className={`item-glyph is-${kind}${large ? " is-large" : ""}`} aria-hidden="true">
+    {showArt && item.itemKind === "equipment"
+      ? <ArtImage src={itemArtSrc(item.definitionId)} className="item-glyph-art" fallback={fallback} />
+      : fallback}
   </span>;
 }
 
@@ -29,5 +48,5 @@ export function SlotGlyph({ slot }: { slot: ItemEquipmentSlot | EquipmentSlot })
     itemKind: "equipment",
     mechanicSnapshot: { equipmentSlot: normalized, modifiers: [] }
   } as unknown as ItemInstance;
-  return <ItemGlyph item={fake} />;
+  return <ItemGlyph item={fake} showArt={false} />;
 }

@@ -4,7 +4,7 @@ DOM-only art slots for the combat board. **Art never encodes gameplay rules** â€
 
 Production direction and acceptance criteria live in [`docs/art/`](../../../../docs/art/README.md). This file describes the current runtime seam only.
 
-> **Current implementation:** `src/art/artMap.ts` explicitly maps approved IDs to runtime URLs, so individual assets may use SVG, PNG, or WebP. Unknown IDs retain the SVG convention and graceful fallback.
+> **Current implementation:** `src/art/artMap.ts` explicitly maps approved IDs to runtime URLs, so individual assets may use SVG, PNG, or WebP. Unknown IDs retain the SVG convention and graceful fallback. Equipment resolves from its stable base-vessel `definitionId`; affixes do not change the art key.
 
 ## Where to drop assets
 
@@ -16,11 +16,11 @@ packages/client/public/art/
   enemies/{definitionId}.svg|png|webp
   entities/{definitionId}.svg|png|webp
   intents/{kind}.svg|png|webp          # attack | defend | buff | special
-  items/{baseId}.svg|png|webp           # review seam; inventory integration remains ART-04
+  items/{baseId}.svg|png|webp           # stash, equipped slot, and inspector
   cards/frame.svg|png|webp             # optional hand-card frame
 ```
 
-Client resolution lives in `src/art/artMap.ts` (`heroArtSrc`, `enemyArtSrc`, `entityArtSrc`, `intentArtSrc`, `cardFrameArtSrc`).
+Client resolution lives in `src/art/artMap.ts` (`heroArtSrc`, `enemyArtSrc`, `entityArtSrc`, `intentArtSrc`, `itemArtSrc`, `cardFrameArtSrc`).
 
 ## Naming convention (id-keyed)
 
@@ -30,6 +30,7 @@ Client resolution lives in `src/art/artMap.ts` (`heroArtSrc`, `enemyArtSrc`, `en
 | Enemy portrait | `enemies/{definitionId}` | Combatant `definitionId` when `kind === "enemy"` |
 | Entity portrait | `entities/{definitionId}` | Combatant `definitionId` when `kind === "entity"` (e.g. `smothering_shroud`) |
 | Intent glyph | `intents/{kind}` | Presentation kind only: `attack`, `defend`, `buff`, `special` |
+| Item illustration | `items/{baseId}` | Equipment `ItemInstance.definitionId`; procedural affixes share the base-vessel image |
 | Card frame | `cards/frame` | Optional; all hand cards share one frame |
 
 Use lowercase snake_case ids matching content/sim. The explicit registry supports SVG, PNG, or WebP per asset; changing a runtime format requires updating its registry entry. Keep fixed aspects so layout stays stable:
@@ -72,9 +73,9 @@ Open `/?artReview=anchors` on the client dev server to inspect anchor assets at 
 | `enemies/gloom_spore.webp` | Gloom Spore Band-1 exploder standee | Approved master v1; registry-wired and verified |
 | `enemies/lantern_smother.webp` | Lantern-Smother boss combat standee | Approved master v1; registry-wired and verified |
 | `entities/smothering_shroud.webp` | Smothering Shroud boss-mechanic entity | Approved master v1; separately registry-wired and verified |
-| `items/hewn_sword.webp` | Hewn Sword base-vessel illustration | Candidate v3; visible only in the anchor review fixture pending inventory integration and approval |
+| `items/hewn_sword.webp` | Hewn Sword base-vessel illustration | Candidate v3; inventory-wired and technically passed pending approval |
 
-Unknown ids (new enemies, future classes) resolve to a path by convention; if the file is absent, `ArtImage` shows the existing silhouette / text glyph. Layout must not depend on the bitmap succeeding.
+Unknown ids (new enemies, future classes, and base vessels without finished art) resolve to a path by convention. If the file is absent, `ArtImage` shows the existing silhouette or item glyph. Layout, names, mechanics, rarity, and eligibility must not depend on the bitmap succeeding.
 
 ## Later phases (not implemented here)
 

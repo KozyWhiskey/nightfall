@@ -58,7 +58,7 @@ Pass-1 source files, exact prompts, and review notes live under [`art/source/exp
 | Field | Record |
 |---|---|
 | Asset ID | `hewn_sword` |
-| Runtime role | Base-vessel item illustration; review fixture only until ART-04 inventory integration |
+| Runtime role | Base-vessel item illustration in Haven-held, equipped-slot, inspector, and review-fixture contexts |
 | Content source | [`vertical-slice-affix-pool.md`](../content/items/vertical-slice-affix-pool.md) |
 | Prompt ID/version | `hewn_sword_candidate_chroma_v1` + `hewn_sword_tip_fix_v2`; full text in the [candidate record](../../art/source/candidates/items/hewn_sword/README.md) |
 | Tool/model/date | Built-in image generation (model not surfaced), 2026-08-01 |
@@ -68,7 +68,7 @@ Pass-1 source files, exact prompts, and review notes live under [`art/source/exp
 | Runtime derivative | `packages/client/public/art/items/hewn_sword.webp`, lossless transparent WebP, `512 × 512` |
 | Post-processing | Chroma removal, despill, soft matte, 18% brightness lift, 4% contrast lift, occupancy normalization, Lanczos downsample |
 | Focal/orientation data | Diagonal lower-left grip to upper-right tip; 79.4% width and 83.8% height occupancy |
-| QA | Transparent corners; alpha bbox `(117, 92)–(930, 950)`; checked at `128`, `64`, and `32` px in color and grayscale; live browser fixture passes with exact sizes, decoded `512 × 512` source, and no page overflow |
+| QA | Transparent corners; alpha bbox `(117, 92)–(930, 950)`; checked at `128`, `64`, and `32` px in color and grayscale; live browser fixture passes with exact sizes, decoded `512 × 512` source, and no page overflow; isolated inventory QA passes in Haven-held, equipped-slot, and inspector contexts with missing-art glyph fallback verified on Kite Shield |
 | Approval | `candidate`; not an approved master or inventory-integrated asset |
 
 ### Vanguard candidate v1
@@ -252,12 +252,12 @@ Mara's earlier Aether Weaver exploration and target-size comparison remain archi
 
 | Slot | IDs | Count | Integration state |
 |---|---|---:|---|
-| Main hand | `hewn_sword`, `gloomwood_spear`, `aether_rod`, `cinder_scepter` | 4 | No item-art resolver |
-| Offhand | `kite_shield`, `way_lantern_buckler`, `archivists_focus` | 3 | No item-art resolver |
-| Relic | `cracked_way_lens`, `pilgrims_knot`, `name_thread_charm` | 3 | No item-art resolver |
-| Head | `emberglass_cowl` | 1 | No item-art resolver |
-| Body | `wayfarers_coat` | 1 | No item-art resolver |
-| Gloves | `ironweave_gloves` | 1 | No item-art resolver |
+| Main hand | `hewn_sword`, `gloomwood_spear`, `aether_rod`, `cinder_scepter` | 4 | ID-keyed resolver active; Hewn Sword candidate wired, remaining vessels use glyph fallback |
+| Offhand | `kite_shield`, `way_lantern_buckler`, `archivists_focus` | 3 | ID-keyed resolver active; glyph fallback until runtime art exists |
+| Relic | `cracked_way_lens`, `pilgrims_knot`, `name_thread_charm` | 3 | ID-keyed resolver active; glyph fallback until runtime art exists |
+| Head | `emberglass_cowl` | 1 | ID-keyed resolver active; glyph fallback until runtime art exists |
+| Body | `wayfarers_coat` | 1 | ID-keyed resolver active; glyph fallback until runtime art exists |
+| Gloves | `ironweave_gloves` | 1 | ID-keyed resolver active; glyph fallback until runtime art exists |
 
 Total accepted Build 1 base vessels: **13**. Legs and Feet are valid empty slots and have no Build 1 vessel art.
 

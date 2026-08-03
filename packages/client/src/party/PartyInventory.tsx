@@ -139,6 +139,7 @@ function EquipSlotCell({
   >
     <span className="equip-slot-label">{SLOT_SHORT_LABELS[slot]}</span>
     {filled ? <>
+      <ItemGlyph item={item} />
       <strong>{itemShortName(item.displaySnapshot.name)}</strong>
     </> : <span className="equip-slot-empty" aria-hidden="true">—</span>}
   </Tag>;

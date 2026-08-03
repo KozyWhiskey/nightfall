@@ -1,19 +1,19 @@
 # Client Art Integration Reconciliation
 
-**Status:** Active — `ART-01` through `ART-03` and `ART-05` implemented
+**Status:** Complete for Build 1 — `ART-01` through `ART-05` implemented
 **Last updated:** 2026-08-03
 **Related:** [Combat Art Runtime Notes](../../packages/client/public/art/README.md), [Technical Asset Contract](technical-asset-contract.md)
 
 ## Current state
 
-The client has a robust fallback-first presentation seam and an explicit registry serving the Build 1 combat-standee library. ID-keyed item presentation remains the next unresolved integration gap.
+The client has a robust fallback-first presentation seam and an explicit registry serving the Build 1 combat-standee and base-vessel libraries. The remaining hero equipment-overlay work is explicitly deferred beyond Build 1.
 
 | Gap | Status | Consequence / next decision |
 |---|---|---|
 | Mixed SVG/PNG/WebP paths | Resolved by explicit registry | Each approved ID can select its runtime format without changing content identity |
 | Inconsistent hostile orientation | Resolved by semantic facing | The same canonical right-facing source is mirrored in battlefield and timeline contexts |
 | Full-body art is reused at timeline size | Resolved by lineup audit | All nine combat standees remain recognizable at `32 × 38`; reuse full standees and do not commission bust crops for Build 1 |
-| Item UI uses slot-category glyphs | Pending `ART-04` | ID-keyed item illustrations are reviewable but not yet displayed in inventory |
+| Item UI uses slot-category glyphs | Resolved by `ART-04` | Equipment requests art by stable base-vessel ID in stash, equipped slot, and inspector; missing art keeps the existing glyph |
 | Hero art resolves only from `classId` | Explicitly deferred | Equipment overlays remain outside Build 1 until the bounded proof passes |
 
 These are presentation gaps, not simulation or content defects.
@@ -52,9 +52,11 @@ Acceptance:
 - Active, targetable, acting, downed, and linked treatments remain legible.
 - Art failure still produces the intended fallback without layout shift.
 
-### ART-04 — ID-keyed item art with glyph fallback
+### ART-04 — ID-keyed item art with glyph fallback — implemented
 
-Extend the inventory illustration seam so an item can request art from its base vessel ID. Keep the existing slot glyph as fallback and retain text/rarity/eligibility as authoritative UI.
+`ItemGlyph` now requests art from `ItemInstance.definitionId`, the stable base-vessel ID, through `itemArtSrc`. The existing slot glyph remains the failure fallback, while text, rarity, mechanics, and eligibility remain authoritative UI. Procedural affixes continue to share their base-vessel illustration.
+
+The isolated live-client check exercised Hewn Sword in equipped-slot, Haven-held, and inspector contexts. Its `512 × 512` runtime WebP decoded at each size without overflow. Kite Shield, which has no runtime illustration yet, fell back to its offhand glyph with its name and mechanics intact.
 
 Acceptance:
 

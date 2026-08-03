@@ -13,7 +13,7 @@
 | `hewn_sword_candidate_alpha_v2.png` | First chroma extraction | Matte passed; values too dark at 32 px |
 | `hewn_sword_candidate_alpha_v3_tonelift.png` | Cleaned alpha source with restrained value correction | Selected cleanup source |
 | `hewn_sword_candidate_qa_v2.png` | Pre-correction size sheet | Retained to document the failed value check |
-| `hewn_sword_candidate_qa_v3.png` | Current alpha, field-color, size, and grayscale sheet | Pass pending browser fixture |
+| `hewn_sword_candidate_qa_v3.png` | Current alpha, field-color, size, and grayscale sheet | Passed browser fixture and inventory integration QA |
 
 Master: [`art/masters/items/hewn_sword.png`](../../../../masters/items/hewn_sword.png) — transparent `1024 × 1024` PNG.
 
@@ -29,6 +29,7 @@ Runtime review derivative: [`packages/client/public/art/items/hewn_sword.webp`](
 - Final alpha bounds: `(117, 92)–(930, 950)`; occupancy `79.4% × 83.8%`; all four corner alpha values are `0`.
 - Created the runtime derivative at `512 × 512` as lossless WebP.
 - Verified the runtime WebP in the live `?artReview=anchors` fixture at exact `128`, `64`, and `32` px rendered sizes. The decoded source is `512 × 512`; the page has no horizontal overflow.
+- Verified the same base-vessel image in isolated live-client Haven-held, equipped-slot, and inspector contexts. The current slot glyph remains intact when a vessel image is missing.
 - Automated fringe scan found only two green-dominant runtime pixels, both nearly transparent (`alpha 17` and `22`) and not visibly contaminating either required field color.
 
 ## Integrity hashes

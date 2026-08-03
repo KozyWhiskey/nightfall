@@ -6,7 +6,7 @@ import {
   enemyArtSrc,
   heroArtSrc,
   intentArtSrc,
-  reviewItemArtSrc
+  itemArtSrc
 } from "./artMap.js";
 
 describe("art map", () => {
@@ -28,12 +28,34 @@ describe("art map", () => {
     expect(enemyArtSrc("gloom_spore")).toBe("/art/enemies/gloom_spore.webp");
     expect(enemyArtSrc("lantern_smother")).toBe("/art/enemies/lantern_smother.webp");
     expect(combatantArtSrc("entity", "smothering_shroud")).toBe("/art/entities/smothering_shroud.webp");
-    expect(reviewItemArtSrc("hewn_sword")).toBe("/art/items/hewn_sword.webp");
+    expect(itemArtSrc("hewn_sword")).toBe("/art/items/hewn_sword.webp");
   });
 
   it("keeps the SVG convention for unknown future IDs", () => {
     expect(heroArtSrc("future_class")).toBe("/art/heroes/future_class.svg");
     expect(enemyArtSrc("future_enemy")).toBe("/art/enemies/future_enemy.svg");
-    expect(reviewItemArtSrc("future_item")).toBe("/art/items/future_item.svg");
+    expect(itemArtSrc("future_item")).toBe("/art/items/future_item.svg");
+  });
+
+  it("resolves every Build 1 base vessel independently", () => {
+    const ids = [
+      "hewn_sword",
+      "gloomwood_spear",
+      "aether_rod",
+      "cinder_scepter",
+      "kite_shield",
+      "way_lantern_buckler",
+      "archivists_focus",
+      "cracked_way_lens",
+      "pilgrims_knot",
+      "name_thread_charm",
+      "emberglass_cowl",
+      "wayfarers_coat",
+      "ironweave_gloves"
+    ];
+    const paths = ids.map(itemArtSrc);
+    expect(new Set(paths).size).toBe(ids.length);
+    expect(paths[0]).toBe("/art/items/hewn_sword.webp");
+    expect(paths.slice(1).every((path) => path.endsWith(".svg"))).toBe(true);
   });
 });

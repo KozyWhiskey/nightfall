@@ -3,7 +3,7 @@ import { CombatStandee } from "../combat/CombatStandee.js";
 import { ArtImage, CombatPortrait } from "./ArtImage.js";
 import {
   combatantArtSrc,
-  reviewItemArtSrc,
+  itemArtSrc,
   silhouetteForCombatant,
   silhouetteForHero,
   type CombatantArtKind,
@@ -182,7 +182,7 @@ export function AnchorArtReview() {
           {([128, 64, 32] as const).map((size) => <div key={size}>
             <div className={`art-review-item-swatch is-size-${size}`}>
               <ArtImage
-                src={reviewItemArtSrc("hewn_sword")}
+                src={itemArtSrc("hewn_sword")}
                 className="art-review-item-image"
                 alt=""
                 fallback={<div className="art-review-missing"><span>Missing</span></div>}
@@ -191,7 +191,7 @@ export function AnchorArtReview() {
             <small>{size} × {size}</small>
           </div>)}
         </div>
-        <div><strong>Hewn Sword</strong><code>hewn_sword</code><p>Candidate v3: verify silhouette, alpha edge, and Salvaged material read at all contract sizes.</p></div>
+        <div><strong>Hewn Sword</strong><code>hewn_sword</code><p>Candidate v3: inventory-wired and technically passed; reviewer approval remains pending.</p></div>
       </article>
     </section>
 
