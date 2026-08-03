@@ -55,6 +55,11 @@ const combatAnchors = [
   fixtureCombatant("smothering_shroud", "Smothering Shroud", "enemies", "entity", 18)
 ] as const;
 
+const itemAnchors = [
+  { definitionId: "hewn_sword", name: "Hewn Sword", detail: "Candidate v3: inventory-wired and technically passed; reviewer approval remains pending." },
+  { definitionId: "gloomwood_spear", name: "Gloomwood Spear", detail: "Approved master v2: registry-wired and fixture-verified." }
+] as const;
+
 const reviewStates = [
   { label: "Neutral", active: false, acting: false, targetable: false, downed: false, linked: false },
   { label: "Active", active: true, acting: false, targetable: false, downed: false, linked: false },
@@ -176,13 +181,13 @@ export function AnchorArtReview() {
     </section>
 
     <section className="art-review-section">
-      <h2>Item anchor</h2>
-      <article className="art-review-item">
+      <h2>Item anchors</h2>
+      {itemAnchors.map((item) => <article className="art-review-item" key={item.definitionId}>
         <div className="art-review-item-sizes">
           {([128, 64, 32] as const).map((size) => <div key={size}>
             <div className={`art-review-item-swatch is-size-${size}`}>
               <ArtImage
-                src={itemArtSrc("hewn_sword")}
+                src={itemArtSrc(item.definitionId)}
                 className="art-review-item-image"
                 alt=""
                 fallback={<div className="art-review-missing"><span>Missing</span></div>}
@@ -191,8 +196,8 @@ export function AnchorArtReview() {
             <small>{size} × {size}</small>
           </div>)}
         </div>
-        <div><strong>Hewn Sword</strong><code>hewn_sword</code><p>Candidate v3: inventory-wired and technically passed; reviewer approval remains pending.</p></div>
-      </article>
+        <div><strong>{item.name}</strong><code>{item.definitionId}</code><p>{item.detail}</p></div>
+      </article>)}
     </section>
 
     <footer className="art-review-footer">This fixture is presentation-only and does not load or mutate game state.</footer>

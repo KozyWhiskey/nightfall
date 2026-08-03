@@ -29,6 +29,7 @@ describe("art map", () => {
     expect(enemyArtSrc("lantern_smother")).toBe("/art/enemies/lantern_smother.webp");
     expect(combatantArtSrc("entity", "smothering_shroud")).toBe("/art/entities/smothering_shroud.webp");
     expect(itemArtSrc("hewn_sword")).toBe("/art/items/hewn_sword.webp");
+    expect(itemArtSrc("gloomwood_spear")).toBe("/art/items/gloomwood_spear.webp");
   });
 
   it("keeps the SVG convention for unknown future IDs", () => {
@@ -56,6 +57,7 @@ describe("art map", () => {
     const paths = ids.map(itemArtSrc);
     expect(new Set(paths).size).toBe(ids.length);
     expect(paths[0]).toBe("/art/items/hewn_sword.webp");
-    expect(paths.slice(1).every((path) => path.endsWith(".svg"))).toBe(true);
+    expect(paths[1]).toBe("/art/items/gloomwood_spear.webp");
+    expect(paths.slice(2).every((path) => path.endsWith(".svg"))).toBe(true);
   });
 });

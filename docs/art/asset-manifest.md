@@ -71,6 +71,24 @@ Pass-1 source files, exact prompts, and review notes live under [`art/source/exp
 | QA | Transparent corners; alpha bbox `(117, 92)–(930, 950)`; checked at `128`, `64`, and `32` px in color and grayscale; live browser fixture passes with exact sizes, decoded `512 × 512` source, and no page overflow; isolated inventory QA passes in Haven-held, equipped-slot, and inspector contexts with missing-art glyph fallback verified on Kite Shield |
 | Approval | `candidate`; not an approved master or inventory-integrated asset |
 
+### Gloomwood Spear candidate v2
+
+| Field | Record |
+|---|---|
+| Asset ID | `gloomwood_spear` |
+| Runtime role | Base-vessel item illustration in Haven-held, equipped-slot, inspector, and review-fixture contexts |
+| Content source | [`vertical-slice-affix-pool.md`](../content/items/vertical-slice-affix-pool.md) |
+| Prompt ID/version | `gloomwood_spear_candidate_chroma_v1` + `gloomwood_spear_readability_fix_v2`; full text in the [candidate record](../../art/source/candidates/items/gloomwood_spear/README.md) |
+| Tool/model/date | Built-in image generation (model not surfaced), 2026-08-03 |
+| References | No image references; derived from accepted content and the visual style/technical contracts |
+| Original source | [`gloomwood_spear_candidate_chroma_v2.png`](../../art/source/candidates/items/gloomwood_spear/gloomwood_spear_candidate_chroma_v2.png) |
+| Master | [`art/masters/items/gloomwood_spear.png`](../../art/masters/items/gloomwood_spear.png), transparent PNG, `1024 × 1024` |
+| Runtime derivative | `packages/client/public/art/items/gloomwood_spear.webp`, lossless transparent WebP, `512 × 512` |
+| Post-processing | Chroma removal, despill, alpha-bounds crop, occupancy normalization, Lanczos downsample |
+| Focal/orientation data | Diagonal lower-left butt to upper-right spear tip; 81.3% width and 83.8% height occupancy |
+| QA | Transparent corners; alpha bbox `(95, 83)–(928, 941)`; no green-dominant visible pixels; checked at `128`, `64`, and `32` px in color and grayscale; registry-wired to the deterministic review fixture |
+| Approval | `verified`; master v2 approved by reviewer 2026-08-03, registry-wired and fixture-verified |
+
 ### Vanguard candidate v1
 
 | Field | Record |
@@ -252,7 +270,7 @@ Mara's earlier Aether Weaver exploration and target-size comparison remain archi
 
 | Slot | IDs | Count | Integration state |
 |---|---|---:|---|
-| Main hand | `hewn_sword`, `gloomwood_spear`, `aether_rod`, `cinder_scepter` | 4 | ID-keyed resolver active; Hewn Sword candidate wired, remaining vessels use glyph fallback |
+| Main hand | `hewn_sword`, `gloomwood_spear`, `aether_rod`, `cinder_scepter` | 4 | ID-keyed resolver active; Hewn Sword candidate and Gloomwood Spear approved master wired, remaining vessels use glyph fallback |
 | Offhand | `kite_shield`, `way_lantern_buckler`, `archivists_focus` | 3 | ID-keyed resolver active; glyph fallback until runtime art exists |
 | Relic | `cracked_way_lens`, `pilgrims_knot`, `name_thread_charm` | 3 | ID-keyed resolver active; glyph fallback until runtime art exists |
 | Head | `emberglass_cowl` | 1 | ID-keyed resolver active; glyph fallback until runtime art exists |

@@ -37,7 +37,8 @@ export const ART_ASSET_PATHS = {
     frame: `${ART_ROOT}/cards/frame.svg`
   },
   items: {
-    hewn_sword: `${ART_ROOT}/items/hewn_sword.webp`
+    hewn_sword: `${ART_ROOT}/items/hewn_sword.webp`,
+    gloomwood_spear: `${ART_ROOT}/items/gloomwood_spear.webp`
   }
 } as const;
 
