@@ -414,10 +414,10 @@ Rarity variants are not 52 separate required paintings. Base-vessel recognition 
 
 | Proof asset | Status | Gate |
 |---|---|---|
-| `vanguard_base` | Not started | Begin only after core standees are approved |
-| `hewn_sword` main-hand overlay | Not started | Exact shared pose/canvas anchors |
-| `gloomwood_spear` main-hand overlay | Not started | Must swap without anatomy repaint |
-| `kite_shield` offhand overlay | Not started | Must preserve silhouette and hand attachment |
+| `vanguard_base` | In progress | New proof base selected; normalized attachment anchors recorded |
+| `hewn_sword` main-hand overlay | In progress | Dedicated source generated; compositor anchor profile recorded |
+| `gloomwood_spear` main-hand overlay | In progress | Dedicated source generated; independent shaft-grip profile recorded |
+| `kite_shield` offhand overlay | In progress | Dedicated source generated; offhand strap profile recorded |
 
 No armor, relic, rarity, or Aether Weaver layers are authorized until this proof passes.
 
