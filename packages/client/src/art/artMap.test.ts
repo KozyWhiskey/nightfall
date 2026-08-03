@@ -30,6 +30,7 @@ describe("art map", () => {
     expect(combatantArtSrc("entity", "smothering_shroud")).toBe("/art/entities/smothering_shroud.webp");
     expect(itemArtSrc("hewn_sword")).toBe("/art/items/hewn_sword.webp");
     expect(itemArtSrc("gloomwood_spear")).toBe("/art/items/gloomwood_spear.webp");
+    expect(itemArtSrc("aether_rod")).toBe("/art/items/aether_rod.webp");
   });
 
   it("keeps the SVG convention for unknown future IDs", () => {
@@ -58,6 +59,7 @@ describe("art map", () => {
     expect(new Set(paths).size).toBe(ids.length);
     expect(paths[0]).toBe("/art/items/hewn_sword.webp");
     expect(paths[1]).toBe("/art/items/gloomwood_spear.webp");
-    expect(paths.slice(2).every((path) => path.endsWith(".svg"))).toBe(true);
+    expect(paths[2]).toBe("/art/items/aether_rod.webp");
+    expect(paths.slice(3).every((path) => path.endsWith(".svg"))).toBe(true);
   });
 });

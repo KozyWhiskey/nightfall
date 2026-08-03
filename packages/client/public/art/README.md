@@ -75,6 +75,7 @@ Open `/?artReview=anchors` on the client dev server to inspect anchor assets at 
 | `entities/smothering_shroud.webp` | Smothering Shroud boss-mechanic entity | Approved master v1; separately registry-wired and verified |
 | `items/hewn_sword.webp` | Hewn Sword base-vessel illustration | Candidate v3; inventory-wired and technically passed pending approval |
 | `items/gloomwood_spear.webp` | Gloomwood Spear base-vessel illustration | Approved master v2; registry-wired and fixture-verified |
+| `items/aether_rod.webp` | Aether Rod base-vessel illustration | Approved master v1; registry-wired with transparent-master and size QA passed |
 
 Unknown ids (new enemies, future classes, and base vessels without finished art) resolve to a path by convention. If the file is absent, `ArtImage` shows the existing silhouette or item glyph. Layout, names, mechanics, rarity, and eligibility must not depend on the bitmap succeeding.
 

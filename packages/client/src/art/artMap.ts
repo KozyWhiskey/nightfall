@@ -38,7 +38,8 @@ export const ART_ASSET_PATHS = {
   },
   items: {
     hewn_sword: `${ART_ROOT}/items/hewn_sword.webp`,
-    gloomwood_spear: `${ART_ROOT}/items/gloomwood_spear.webp`
+    gloomwood_spear: `${ART_ROOT}/items/gloomwood_spear.webp`,
+    aether_rod: `${ART_ROOT}/items/aether_rod.webp`
   }
 } as const;
 

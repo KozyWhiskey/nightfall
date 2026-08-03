@@ -57,7 +57,8 @@ const combatAnchors = [
 
 const itemAnchors = [
   { definitionId: "hewn_sword", name: "Hewn Sword", detail: "Candidate v3: inventory-wired and technically passed; reviewer approval remains pending." },
-  { definitionId: "gloomwood_spear", name: "Gloomwood Spear", detail: "Approved master v2: registry-wired and fixture-verified." }
+  { definitionId: "gloomwood_spear", name: "Gloomwood Spear", detail: "Approved master v2: registry-wired and fixture-verified." },
+  { definitionId: "aether_rod", name: "Aether Rod", detail: "Approved master v1: registry-wired with transparent-master and size QA passed." }
 ] as const;
 
 const reviewStates = [
