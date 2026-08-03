@@ -1,0 +1,6 @@
+.equipment-proof-page { min-height: 100vh; padding: 3rem; background: #0d171b; color: #d8d7ca; }
+.equipment-proof-page header { border-bottom: 1px solid #344; padding-bottom: 1rem; }.equipment-proof-page h1 { margin: .4rem 0; }.equipment-proof-page span, .equipment-proof-page small { color: #9ba8a1; font-family: Consolas, monospace; }
+.equipment-proof-tabs { display:flex; gap:.6rem; margin:1.5rem 0; }.equipment-proof-tabs button { padding:.6rem .9rem; }.equipment-proof-tabs .is-active { outline:2px solid #d99a4e; }
+.equipment-proof-review { display:flex; gap:2rem; align-items:end; }.equipment-proof-review > div { display:grid; gap:.5rem; justify-items:center; }
+.equipment-proof-swatch { position:relative; overflow:hidden; background:#122428; border:1px solid #344; }.equipment-proof-swatch.is-desktop { width:86px; height:115px; }.equipment-proof-swatch.is-narrow { width:72px; height:96px; }
+.equipment-proof-base,.equipment-proof-overlay { position:absolute; width:100%; height:100%; object-fit:contain; object-position:center bottom; }.equipment-proof-base { z-index:2; }.equipment-proof-overlay { z-index:1; width:220%; height:220%; transform:translate(-50%,-50%); object-fit:contain; }
