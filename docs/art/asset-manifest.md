@@ -125,6 +125,24 @@ Pass-1 source files, exact prompts, and review notes live under [`art/source/exp
 | QA | Transparent corners; alpha bbox `(190, 83)–(833, 941)`; no green-dominant visible pixels; checked at `128`, `64`, and `32` px in color and grayscale |
 | Approval | `approved-master`; master v1 approved by reviewer 2026-08-03; registry wiring and fixture verification pending commit |
 
+### Kite Shield master v1
+
+| Field | Record |
+|---|---|
+| Asset ID | `kite_shield` |
+| Runtime role | Base-vessel item illustration in Haven-held, equipped-slot, inspector, and review-fixture contexts |
+| Content source | [`vertical-slice-affix-pool.md`](../content/items/vertical-slice-affix-pool.md) |
+| Prompt ID/version | `kite_shield_candidate_chroma_v1`; full text in the [candidate record](../../art/source/candidates/items/kite_shield/README.md) |
+| Tool/model/date | Built-in image generation (model not surfaced), 2026-08-03 |
+| References | No image references; derived from accepted content and the visual style/technical contracts |
+| Original source | [`kite_shield_candidate_chroma_v1.png`](../../art/source/candidates/items/kite_shield/kite_shield_candidate_chroma_v1.png) |
+| Master | [`art/masters/items/kite_shield.png`](../../art/masters/items/kite_shield.png), transparent PNG, `1024 × 1024` |
+| Runtime derivative | `packages/client/public/art/items/kite_shield.webp`, lossless transparent WebP, `512 × 512` |
+| Post-processing | Chroma removal, despill, alpha-bounds crop, occupancy normalization, Lanczos downsample |
+| Focal/orientation data | Upright kite silhouette with a slight tilt; 54.9% width and 83.8% height occupancy |
+| QA | Transparent corners; alpha bbox `(231, 83)–(793, 941)`; no green-dominant visible pixels; checked at `128`, `64`, and `32` px |
+| Approval | `approved-master`; master v1 approved by reviewer 2026-08-03; registry wiring and fixture verification pending commit |
+
 ### Vanguard candidate v1
 
 | Field | Record |
@@ -307,7 +325,7 @@ Mara's earlier Aether Weaver exploration and target-size comparison remain archi
 | Slot | IDs | Count | Integration state |
 |---|---|---:|---|
 | Main hand | `hewn_sword`, `gloomwood_spear`, `aether_rod`, `cinder_scepter` | 4 | ID-keyed resolver active; Hewn Sword candidate plus Gloomwood Spear, Aether Rod, and Cinder Scepter approved masters wired |
-| Offhand | `kite_shield`, `way_lantern_buckler`, `archivists_focus` | 3 | ID-keyed resolver active; glyph fallback until runtime art exists |
+| Offhand | `kite_shield`, `way_lantern_buckler`, `archivists_focus` | 3 | ID-keyed resolver active; Kite Shield approved master wired; other vessels use glyph fallback |
 | Relic | `cracked_way_lens`, `pilgrims_knot`, `name_thread_charm` | 3 | ID-keyed resolver active; glyph fallback until runtime art exists |
 | Head | `emberglass_cowl` | 1 | ID-keyed resolver active; glyph fallback until runtime art exists |
 | Body | `wayfarers_coat` | 1 | ID-keyed resolver active; glyph fallback until runtime art exists |
