@@ -22,10 +22,10 @@ export const ART_ASSET_PATHS = {
     mire_imp: `${ART_ROOT}/enemies/mire_imp.svg`,
     mist_chanter: `${ART_ROOT}/enemies/mist_chanter.svg`,
     gloom_spore: `${ART_ROOT}/enemies/gloom_spore.svg`,
-    lantern_smother: `${ART_ROOT}/enemies/lantern_smother.svg`
+    lantern_smother: `${ART_ROOT}/enemies/lantern_smother.webp`
   },
   entities: {
-    smothering_shroud: `${ART_ROOT}/entities/smothering_shroud.svg`
+    smothering_shroud: `${ART_ROOT}/entities/smothering_shroud.webp`
   },
   intents: {
     attack: `${ART_ROOT}/intents/attack.svg`,

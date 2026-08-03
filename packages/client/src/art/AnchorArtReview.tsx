@@ -84,7 +84,24 @@ function ReviewPortrait({ combatant, size }: { combatant: CombatantSnapshot; siz
 function StandeeStateReview({ combatant }: { combatant: CombatantSnapshot }) {
   const isWeaver = combatant.definitionId === "aether_weaver";
   const isEnemy = combatant.side === "enemies";
-  const classLabel = isEnemy ? "Band 1" : isWeaver ? "Aether Weaver" : "Vanguard";
+  const classLabel = combatant.definitionId === "lantern_smother"
+    ? "Boss"
+    : combatant.kind === "entity"
+      ? "Boss Entity"
+      : isEnemy
+        ? "Band 1"
+        : isWeaver
+          ? "Aether Weaver"
+          : "Vanguard";
+  const actingIntentLabel = combatant.definitionId === "lantern_smother"
+    ? "Smother Lantern"
+    : combatant.kind === "entity"
+      ? "Constrict"
+      : isEnemy
+        ? "Maul"
+        : isWeaver
+          ? "Aether Bolt"
+          : "Iron Cut";
   return <div className="art-review-state-set">
     <h3>{combatant.name} · {classLabel}</h3>
     <div className="art-review-state-grid">
@@ -98,7 +115,7 @@ function StandeeStateReview({ combatant }: { combatant: CombatantSnapshot }) {
             classLabel={classLabel}
             isActive={state.active}
             isActing={state.acting}
-            actingIntentLabel={state.acting ? (isEnemy ? "Maul" : isWeaver ? "Aether Bolt" : "Iron Cut") : undefined}
+            actingIntentLabel={state.acting ? actingIntentLabel : undefined}
             canTarget={state.targetable}
             targetable={!state.downed}
             block={0}
@@ -141,7 +158,7 @@ export function AnchorArtReview() {
 
     <section className="art-review-section">
       <h2>Actual standee treatments</h2>
-      {combatAnchors.filter((combatant) => combatant.side === "heroes" || combatant.definitionId === "gloomfang_hound").map((combatant) =>
+      {combatAnchors.map((combatant) =>
         <StandeeStateReview combatant={combatant} key={combatant.definitionId} />
       )}
     </section>
