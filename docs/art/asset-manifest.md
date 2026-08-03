@@ -179,6 +179,24 @@ Pass-1 source files, exact prompts, and review notes live under [`art/source/exp
 | QA | Transparent corners; 18.55% / 18.65% side safe areas and 4.34% top safe area; source-sheet and live state checks passed; conducting stance, sealed voice-bellows, hands, yoke, and name-tabs survive their intended sizes; decoded `496 × 576` source; no review-page overflow |
 | Approval | `verified`; approved by reviewer 2026-08-03, registry-wired and verified in context |
 
+### Gloom Spore candidate v1
+
+| Field | Record |
+|---|---|
+| Asset ID | `gloom_spore` |
+| Runtime role | Band-1 exploder enemy combat standee and current initiative source |
+| Content source | [`band-1-frontier.md`](../content/enemies/band-1-frontier.md) |
+| Prompt ID/version | `gloom_spore_candidate_chroma_v1`; full text in the [candidate record](../../art/source/candidates/enemies/gloom_spore/README.md) |
+| Tool/model/date | Built-in image generation (model not surfaced), 2026-08-03 |
+| References | [`mire_imp.png`](../../art/masters/enemies/mire_imp.png) and [`gloomfang_hound.png`](../../art/masters/enemies/gloomfang_hound.png) as fear-parasite rendering/material and restrained corruption references only |
+| Original source | [`gloom_spore_candidate_chroma_v1.png`](../../art/source/candidates/enemies/gloom_spore/gloom_spore_candidate_chroma_v1.png) |
+| Master | [`art/masters/enemies/gloom_spore.png`](../../art/masters/enemies/gloom_spore.png), transparent PNG, `992 × 1152` |
+| Runtime derivative | `packages/client/public/art/enemies/gloom_spore.webp`, lossless transparent WebP, `496 × 576` |
+| Post-processing | Chroma removal, despill, soft matte, alpha-bounds crop, proportional resize, deliberately reduced small-creature framing, Lanczos downsample |
+| Focal/orientation data | Canonically screen-right; alpha bbox `(191, 383)–(800, 1083)`; ground line `93.92%`; hostile presentation mirrors left in the client |
+| QA | Transparent corners; 19.25% / 19.35% side safe areas and 33.25% top safe area; source-sheet and live state checks passed; swollen orb, three-scar cadence, marker shard, vent, and root-star base survive their intended sizes; decoded `496 × 576` source; no review-page overflow |
+| Approval | `candidate`; registry-wired for in-context review, not yet an approved master |
+
 ### Lantern-Smother candidate v1
 
 | Field | Record |
@@ -220,7 +238,7 @@ Pass-1 source files, exact prompts, and review notes live under [`art/source/exp
 | Group | IDs | Count | Current state |
 |---|---|---:|---|
 | Heroes | `vanguard`, `aether_weaver` | 2 | Both hero candidate `v1` derivatives registry-wired and technically passed; reviewer approval pending; SVG fallbacks retained |
-| Standard enemies | `gloomfang_hound`, `shattered_husk`, `mire_imp`, `mist_chanter`, `gloom_spore` | 5 | Shattered Husk master `v1` approved and verified; Gloomfang Hound, Mire Imp, and Mist Chanter candidates `v1` technically passed; Gloom Spore uses an SVG placeholder |
+| Standard enemies | `gloomfang_hound`, `shattered_husk`, `mire_imp`, `mist_chanter`, `gloom_spore` | 5 | Shattered Husk and Mist Chanter masters `v1` approved and verified; Gloomfang Hound, Mire Imp, and Gloom Spore candidates `v1` technically passed; all five runtime standees are registry-wired |
 | Boss | `lantern_smother` | 1 | Master `v1` approved, registry-wired, and verified |
 | Boss entity | `smothering_shroud` | 1 | Master `v1` approved, separately registry-wired, and verified |
 
