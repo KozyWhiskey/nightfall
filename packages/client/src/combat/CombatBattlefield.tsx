@@ -76,7 +76,6 @@ export function CombatBattlefield({
       <header className="battlefield-side-label">Hostiles</header>
       <div className="battlefield-formation enemy-formation">
         {enemies.map((enemy) => {
-          const intent = combat.intents.find((entry) => entry.enemyId === enemy.id);
           const block = enemy.blockLayers.reduce((sum, layer) => sum + layer.amount, 0);
           const canTarget = targetMode === "enemy" && enemy.targetable;
           const carrier = enemy.carriedItemId === undefined

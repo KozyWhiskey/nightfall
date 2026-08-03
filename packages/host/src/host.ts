@@ -129,5 +129,5 @@ export function replayAcceptedCommands(initial: GameSnapshot, records: readonly 
     if (result.resolvedEventHash !== record.resolvedEventHash || result.revision !== record.resultingRevision) throw new Error(`Replay mismatch at ${record.commandId}`);
     snapshot = result.snapshot;
   }
-  return snapshot;
+  return enrichSnapshotDisplays(snapshot, pack);
 }

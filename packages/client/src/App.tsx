@@ -200,7 +200,22 @@ function RewardView({ snapshot, send }: ViewProps) {
 
 function ChoiceView({ snapshot, send, kind }: ViewProps & { kind: "event" | "rest" | "craft" }) {
   const run = snapshot.activeRun!;
-  const decision = run.pendingDecision; if (decision?.kind !== kind) return null;
+  const decision = run.pendingDecision;
+  const gearOptions = useMemo(
+    () => run.holdings.filter((item) => item.itemKind === "equipment" && item.location.kind !== "lost" && item.location.kind !== "consumed"),
+    [run.holdings]
+  );
+  const [heroId, setHeroId] = useState(run.heroes[0]?.id ?? "");
+  const [itemId, setItemId] = useState(gearOptions[0]?.instanceId ?? "");
+
+  useEffect(() => {
+    if (!run.heroes.some((hero) => hero.id === heroId)) setHeroId(run.heroes[0]?.id ?? "");
+  }, [run.heroes, heroId]);
+  useEffect(() => {
+    if (!gearOptions.some((item) => item.instanceId === itemId)) setItemId(gearOptions[0]?.instanceId ?? "");
+  }, [gearOptions, itemId]);
+
+  if (decision?.kind !== kind) return null;
   const heading = decision.kind === "event"
     ? titleCase(decision.eventId)
     : decision.kind === "rest"
@@ -212,17 +227,6 @@ function ChoiceView({ snapshot, send, kind }: ViewProps & { kind: "event" | "res
     : decision.kind === "craft"
       ? "Costs and odds below are fixed before you confirm. Leaving the forge spends no inputs."
       : "Each option lists its exact cost, consequence, and chance bands before you choose.";
-  const gearOptions = run.holdings.filter((item) => item.itemKind === "equipment" && item.location.kind !== "lost" && item.location.kind !== "consumed");
-  const [heroId, setHeroId] = useState(run.heroes[0]?.id ?? "");
-  const [itemId, setItemId] = useState(gearOptions[0]?.instanceId ?? "");
-
-  useEffect(() => {
-    if (!run.heroes.some((hero) => hero.id === heroId)) setHeroId(run.heroes[0]?.id ?? "");
-  }, [run.heroes, heroId]);
-  useEffect(() => {
-    if (!gearOptions.some((item) => item.instanceId === itemId)) setItemId(gearOptions[0]?.instanceId ?? "");
-  }, [gearOptions, itemId]);
-
   const choose = (choice: DecisionChoiceSnapshot) => {
     const check = affordability(run, choice.cost);
     if (!check.ok) return;
