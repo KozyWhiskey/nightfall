@@ -143,6 +143,24 @@ Pass-1 source files, exact prompts, and review notes live under [`art/source/exp
 | QA | Transparent corners; alpha bbox `(231, 83)–(793, 941)`; no green-dominant visible pixels; checked at `128`, `64`, and `32` px |
 | Approval | `approved-master`; master v1 approved by reviewer 2026-08-03; registry wiring and fixture verification pending commit |
 
+### Way-lantern Buckler master v1
+
+| Field | Record |
+|---|---|
+| Asset ID | `way_lantern_buckler` |
+| Runtime role | Base-vessel item illustration |
+| Content source | [`vertical-slice-affix-pool.md`](../content/items/vertical-slice-affix-pool.md) |
+| Prompt ID/version | `way_lantern_buckler_candidate_chroma_v1`; full text in the [candidate record](../../art/source/candidates/items/way_lantern_buckler/README.md) |
+| Tool/model/date | Built-in image generation (model not surfaced), 2026-08-03 |
+| References | No image references |
+| Original source | [`way_lantern_buckler_candidate_chroma_v1.png`](../../art/source/candidates/items/way_lantern_buckler/way_lantern_buckler_candidate_chroma_v1.png) |
+| Master | [`art/masters/items/way_lantern_buckler.png`](../../art/masters/items/way_lantern_buckler.png), transparent PNG, `1024 × 1024` |
+| Runtime derivative | `packages/client/public/art/items/way_lantern_buckler.webp`, lossless transparent WebP, `512 × 512` |
+| Post-processing | Chroma removal, despill, alpha-bounds crop, occupancy normalization, Lanczos downsample |
+| Focal/orientation data | Round buckler with a contained central Way-lantern aperture; 76.5% width and 83.8% height occupancy |
+| QA | Transparent corners; alpha bbox `(120, 83)–(903, 941)`; checked at `128`, `64`, and `32` px |
+| Approval | `approved-master`; master v1 approved by reviewer 2026-08-03; registry wiring and fixture verification pending commit |
+
 ### Vanguard candidate v1
 
 | Field | Record |
@@ -325,7 +343,7 @@ Mara's earlier Aether Weaver exploration and target-size comparison remain archi
 | Slot | IDs | Count | Integration state |
 |---|---|---:|---|
 | Main hand | `hewn_sword`, `gloomwood_spear`, `aether_rod`, `cinder_scepter` | 4 | ID-keyed resolver active; Hewn Sword candidate plus Gloomwood Spear, Aether Rod, and Cinder Scepter approved masters wired |
-| Offhand | `kite_shield`, `way_lantern_buckler`, `archivists_focus` | 3 | ID-keyed resolver active; Kite Shield approved master wired; other vessels use glyph fallback |
+| Offhand | `kite_shield`, `way_lantern_buckler`, `archivists_focus` | 3 | ID-keyed resolver active; Kite Shield and Way-lantern Buckler approved masters wired; Archivist’s Focus uses glyph fallback |
 | Relic | `cracked_way_lens`, `pilgrims_knot`, `name_thread_charm` | 3 | ID-keyed resolver active; glyph fallback until runtime art exists |
 | Head | `emberglass_cowl` | 1 | ID-keyed resolver active; glyph fallback until runtime art exists |
 | Body | `wayfarers_coat` | 1 | ID-keyed resolver active; glyph fallback until runtime art exists |

@@ -60,7 +60,8 @@ const itemAnchors = [
   { definitionId: "gloomwood_spear", name: "Gloomwood Spear", detail: "Approved master v2: registry-wired and fixture-verified." },
   { definitionId: "aether_rod", name: "Aether Rod", detail: "Approved master v1: registry-wired with transparent-master and size QA passed." },
   { definitionId: "cinder_scepter", name: "Cinder Scepter", detail: "Approved master v1: registry-wired with transparent-master and size QA passed." },
-  { definitionId: "kite_shield", name: "Kite Shield", detail: "Approved master v1: registry-wired with transparent-master and size QA passed." }
+  { definitionId: "kite_shield", name: "Kite Shield", detail: "Approved master v1: registry-wired with transparent-master and size QA passed." },
+  { definitionId: "way_lantern_buckler", name: "Way-lantern Buckler", detail: "Approved master v1: registry-wired with transparent-master and size QA passed." }
 ] as const;
 
 const reviewStates = [

@@ -41,7 +41,8 @@ export const ART_ASSET_PATHS = {
     gloomwood_spear: `${ART_ROOT}/items/gloomwood_spear.webp`,
     aether_rod: `${ART_ROOT}/items/aether_rod.webp`,
     cinder_scepter: `${ART_ROOT}/items/cinder_scepter.webp`,
-    kite_shield: `${ART_ROOT}/items/kite_shield.webp`
+    kite_shield: `${ART_ROOT}/items/kite_shield.webp`,
+    way_lantern_buckler: `${ART_ROOT}/items/way_lantern_buckler.webp`
   }
 } as const;
 
