@@ -1,18 +1,18 @@
 # Client Art Integration Reconciliation
 
-**Status:** Active — `ART-01` through `ART-03` implemented  
-**Last updated:** 2026-08-01  
+**Status:** Active — `ART-01` through `ART-03` and `ART-05` implemented
+**Last updated:** 2026-08-03
 **Related:** [Combat Art Runtime Notes](../../packages/client/public/art/README.md), [Technical Asset Contract](technical-asset-contract.md)
 
 ## Current state
 
-The client has a robust fallback-first presentation seam, but its implementation does not yet support the proposed production asset library.
+The client has a robust fallback-first presentation seam and an explicit registry serving the Build 1 combat-standee library. ID-keyed item presentation remains the next unresolved integration gap.
 
 | Gap | Status | Consequence / next decision |
 |---|---|---|
 | Mixed SVG/PNG/WebP paths | Resolved by explicit registry | Each approved ID can select its runtime format without changing content identity |
 | Inconsistent hostile orientation | Resolved by semantic facing | The same canonical right-facing source is mirrored in battlefield and timeline contexts |
-| Full-body art is reused at timeline size | Review fixture added; decision pending anchors | Add bust crops or focal metadata only if approved standees fail at roughly 32 px wide |
+| Full-body art is reused at timeline size | Resolved by lineup audit | All nine combat standees remain recognizable at `32 × 38`; reuse full standees and do not commission bust crops for Build 1 |
 | Item UI uses slot-category glyphs | Pending `ART-04` | ID-keyed item illustrations are reviewable but not yet displayed in inventory |
 | Hero art resolves only from `classId` | Explicitly deferred | Equipment overlays remain outside Build 1 until the bounded proof passes |
 
@@ -44,7 +44,7 @@ Acceptance:
 
 ### ART-03 — Anchor contact-sheet fixture — implemented
 
-The deterministic review surface is available at `/?artReview=anchors`. It renders the hero, Hound, boss, and Shroud in exact review swatches plus the real standee state treatments. This is visual QA, not combat correctness testing.
+The deterministic review surface is available at `/?artReview=anchors`. It renders all nine Build 1 combat standees in exact review swatches plus the real standee state treatments. This is visual QA, not combat correctness testing.
 
 Acceptance:
 
@@ -63,9 +63,9 @@ Acceptance:
 - A missing item image shows the current glyph without losing its name or mechanics.
 - The same base vessel remains recognizable in stash, equipped slot, and inspector contexts.
 
-### ART-05 — Timeline crop decision
+### ART-05 — Timeline crop decision — implemented
 
-Run the anchor standees through the timeline test. Add dedicated bust assets or focal metadata only if recognition fails. Do not commission all busts speculatively.
+The full nine-standee fixture and [Band-1 lineup audit](band-1-lineup-audit.md) pass at `32 × 38`. Build 1 reuses the full standees in the initiative tracker. Dedicated bust assets and focal metadata remain unnecessary unless a later art revision fails the same contract check.
 
 ## Explicitly deferred
 

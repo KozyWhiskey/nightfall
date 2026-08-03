@@ -244,6 +244,8 @@ Pass-1 source files, exact prompts, and review notes live under [`art/source/exp
 
 Total required combat standees: **9**.
 
+The [Band-1 enemy lineup audit](band-1-lineup-audit.md) passed on 2026-08-03 with no blocking repaint. All five standard-enemy full standees remain recognizable at initiative size, so Build 1 does not require dedicated enemy bust crops.
+
 Mara's earlier Aether Weaver exploration and target-size comparison remain archived under [`art/source/explorations/aether_weaver/`](../../art/source/explorations/aether_weaver/); the current production candidate is recorded above.
 
 ## Phase 3 base-vessel illustrations
