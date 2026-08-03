@@ -49,6 +49,7 @@ const combatAnchors = [
   fixtureCombatant("gloomfang_hound", "Gloomfang Hound", "enemies", "enemy", 20),
   fixtureCombatant("shattered_husk", "Shattered Husk", "enemies", "enemy", 30),
   fixtureCombatant("mire_imp", "Mire Imp", "enemies", "enemy", 16),
+  fixtureCombatant("mist_chanter", "Mist Chanter", "enemies", "enemy", 22),
   fixtureCombatant("lantern_smother", "Lantern-Smother", "enemies", "enemy", 110),
   fixtureCombatant("smothering_shroud", "Smothering Shroud", "enemies", "entity", 18)
 ] as const;
@@ -103,6 +104,8 @@ function StandeeStateReview({ combatant }: { combatant: CombatantSnapshot }) {
         ? "Mourning Blow"
       : combatant.definitionId === "mire_imp"
         ? "Whisper Bolt"
+      : combatant.definitionId === "mist_chanter"
+        ? "Dirge"
       : isEnemy
         ? "Maul"
         : isWeaver

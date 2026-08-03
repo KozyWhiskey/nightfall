@@ -24,6 +24,7 @@ describe("art map", () => {
     expect(enemyArtSrc("gloomfang_hound")).toBe("/art/enemies/gloomfang_hound.webp");
     expect(enemyArtSrc("shattered_husk")).toBe("/art/enemies/shattered_husk.webp");
     expect(enemyArtSrc("mire_imp")).toBe("/art/enemies/mire_imp.webp");
+    expect(enemyArtSrc("mist_chanter")).toBe("/art/enemies/mist_chanter.webp");
     expect(enemyArtSrc("lantern_smother")).toBe("/art/enemies/lantern_smother.webp");
     expect(combatantArtSrc("entity", "smothering_shroud")).toBe("/art/entities/smothering_shroud.webp");
     expect(reviewItemArtSrc("hewn_sword")).toBe("/art/items/hewn_sword.webp");
