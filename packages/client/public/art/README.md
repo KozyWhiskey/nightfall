@@ -66,8 +66,8 @@ Open `/?artReview=anchors` on the client dev server to inspect anchor assets at 
 | `heroes/vanguard.webp` | Rook / Vanguard combat standee | Candidate v1; registry-wired for live standee-state review pending approval |
 | `heroes/aether_weaver.webp` | Mara / Aether Weaver combat standee | Candidate v1; registry-wired and technically passed pending approval |
 | `enemies/gloomfang_hound.webp` | Gloomfang Hound Band-1 combat standee | Candidate v1; registry-wired for mirrored hostile and live standee-state review pending approval |
-| `enemies/lantern_smother.webp` | Lantern-Smother boss combat standee | Candidate v1; registry-wired for mirrored hostile and live standee-state review pending approval |
-| `entities/smothering_shroud.webp` | Smothering Shroud boss-mechanic entity | Candidate v1; separately registry-wired for live target-state review pending approval |
+| `enemies/lantern_smother.webp` | Lantern-Smother boss combat standee | Approved master v1; registry-wired and verified |
+| `entities/smothering_shroud.webp` | Smothering Shroud boss-mechanic entity | Approved master v1; separately registry-wired and verified |
 | `items/hewn_sword.webp` | Hewn Sword base-vessel illustration | Candidate v3; visible only in the anchor review fixture pending inventory integration and approval |
 
 Unknown ids (new enemies, future classes) resolve to a path by convention; if the file is absent, `ArtImage` shows the existing silhouette / text glyph. Layout must not depend on the bitmap succeeding.
