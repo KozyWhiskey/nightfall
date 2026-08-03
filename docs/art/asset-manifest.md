@@ -199,6 +199,19 @@ Pass-1 source files, exact prompts, and review notes live under [`art/source/exp
 | QA | Transparent corners; alpha bbox `(207, 83)–(817, 941)` |
 | Approval | `approved-master`; master v1 approved by reviewer 2026-08-03 |
 
+### Streamlined item records (v1)
+
+The following masters were approved through the streamlined pipeline on 2026-08-03. Their cleaned source, master, and lossless runtime derivative are retained beside each asset. The full generator prompts were not written to a local prompt archive at generation time; this is recorded as a provenance debt rather than reconstructed after the fact.
+
+| Asset ID | Master | Runtime derivative | QA |
+|---|---|---|---|
+| `name_thread_charm` | [`name_thread_charm.png`](../../art/masters/items/name_thread_charm.png) | `packages/client/public/art/items/name_thread_charm.webp` | Transparent corners; normalized alpha bounds `(398, 83)–(625, 941)`; live review passed |
+| `emberglass_cowl` | [`emberglass_cowl.png`](../../art/masters/items/emberglass_cowl.png) | `packages/client/public/art/items/emberglass_cowl.webp` | Transparent corners; normalized alpha bounds `(178, 83)–(845, 941)`; live review passed |
+| `wayfarers_coat` | [`wayfarers_coat.png`](../../art/masters/items/wayfarers_coat.png) | `packages/client/public/art/items/wayfarers_coat.webp` | Transparent corners; normalized alpha bounds `(207, 83)–(817, 941)`; live review passed |
+| `ironweave_gloves` | [`ironweave_gloves.png`](../../art/masters/items/ironweave_gloves.png) | `packages/client/public/art/items/ironweave_gloves.webp` | Transparent corners; normalized alpha bounds `(98, 83)–(926, 941)`; live review passed |
+| `cracked_way_lens` | [`cracked_way_lens.png`](../../art/masters/items/cracked_way_lens.png) | `packages/client/public/art/items/cracked_way_lens.webp` | Transparent corners; normalized alpha bounds `(206, 83)–(817, 941)`; live review passed |
+| `pilgrims_knot` | [`pilgrims_knot.png`](../../art/masters/items/pilgrims_knot.png) | `packages/client/public/art/items/pilgrims_knot.webp` | Transparent corners; normalized alpha bounds `(207, 83)–(817, 941)`; live review passed |
+
 ### Vanguard candidate v1
 
 | Field | Record |
@@ -383,9 +396,9 @@ Mara's earlier Aether Weaver exploration and target-size comparison remain archi
 | Main hand | `hewn_sword`, `gloomwood_spear`, `aether_rod`, `cinder_scepter` | 4 | ID-keyed resolver active; Hewn Sword candidate plus Gloomwood Spear, Aether Rod, and Cinder Scepter approved masters wired |
 | Offhand | `kite_shield`, `way_lantern_buckler`, `archivists_focus` | 3 | ID-keyed resolver active; all three approved masters wired |
 | Relic | `cracked_way_lens`, `pilgrims_knot`, `name_thread_charm` | 3 | ID-keyed resolver active; all three approved masters wired |
-| Head | `emberglass_cowl` | 1 | ID-keyed resolver active; glyph fallback until runtime art exists |
-| Body | `wayfarers_coat` | 1 | ID-keyed resolver active; glyph fallback until runtime art exists |
-| Gloves | `ironweave_gloves` | 1 | ID-keyed resolver active; glyph fallback until runtime art exists |
+| Head | `emberglass_cowl` | 1 | ID-keyed resolver active; approved master wired and live-reviewed |
+| Body | `wayfarers_coat` | 1 | ID-keyed resolver active; approved master wired and live-reviewed |
+| Gloves | `ironweave_gloves` | 1 | ID-keyed resolver active; approved master wired and live-reviewed |
 
 Total accepted Build 1 base vessels: **13**. Legs and Feet are valid empty slots and have no Build 1 vessel art.
 
