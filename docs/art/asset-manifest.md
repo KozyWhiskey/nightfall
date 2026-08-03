@@ -195,7 +195,7 @@ Pass-1 source files, exact prompts, and review notes live under [`art/source/exp
 | Post-processing | Chroma removal, despill, soft matte, alpha-bounds crop, proportional resize, deliberately reduced small-creature framing, Lanczos downsample |
 | Focal/orientation data | Canonically screen-right; alpha bbox `(191, 383)–(800, 1083)`; ground line `93.92%`; hostile presentation mirrors left in the client |
 | QA | Transparent corners; 19.25% / 19.35% side safe areas and 33.25% top safe area; source-sheet and live state checks passed; swollen orb, three-scar cadence, marker shard, vent, and root-star base survive their intended sizes; decoded `496 × 576` source; no review-page overflow |
-| Approval | `candidate`; registry-wired for in-context review, not yet an approved master |
+| Approval | `verified`; approved by reviewer 2026-08-03, registry-wired and verified in context |
 
 ### Lantern-Smother candidate v1
 
@@ -238,7 +238,7 @@ Pass-1 source files, exact prompts, and review notes live under [`art/source/exp
 | Group | IDs | Count | Current state |
 |---|---|---:|---|
 | Heroes | `vanguard`, `aether_weaver` | 2 | Both hero candidate `v1` derivatives registry-wired and technically passed; reviewer approval pending; SVG fallbacks retained |
-| Standard enemies | `gloomfang_hound`, `shattered_husk`, `mire_imp`, `mist_chanter`, `gloom_spore` | 5 | Shattered Husk and Mist Chanter masters `v1` approved and verified; Gloomfang Hound, Mire Imp, and Gloom Spore candidates `v1` technically passed; all five runtime standees are registry-wired |
+| Standard enemies | `gloomfang_hound`, `shattered_husk`, `mire_imp`, `mist_chanter`, `gloom_spore` | 5 | Shattered Husk, Mist Chanter, and Gloom Spore masters `v1` approved and verified; Gloomfang Hound and Mire Imp candidates `v1` technically passed; all five runtime standees are registry-wired |
 | Boss | `lantern_smother` | 1 | Master `v1` approved, registry-wired, and verified |
 | Boss entity | `smothering_shroud` | 1 | Master `v1` approved, separately registry-wired, and verified |
 

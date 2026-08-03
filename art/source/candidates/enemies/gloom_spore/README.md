@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-03  
 **Tool:** Built-in image generation; model identifier is not surfaced by the built-in tool  
-**Status:** Candidate v1; integrated and technically verified, reviewer approval pending
+**Status:** Approved master v1; integrated and verified, reviewer approval recorded 2026-08-03
 
 ## Files
 

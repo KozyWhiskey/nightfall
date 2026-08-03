@@ -69,7 +69,7 @@ Open `/?artReview=anchors` on the client dev server to inspect anchor assets at 
 | `enemies/shattered_husk.webp` | Shattered Husk Band-1 tank standee | Approved master v1; registry-wired and verified |
 | `enemies/mire_imp.webp` | Mire Imp Band-1 disruptor standee | Candidate v1; registry-wired for mirrored hostile and live standee-state review pending approval |
 | `enemies/mist_chanter.webp` | Mist Chanter Band-1 support standee | Approved master v1; registry-wired and verified |
-| `enemies/gloom_spore.webp` | Gloom Spore Band-1 exploder standee | Candidate v1; registry-wired for mirrored hostile and live standee-state review pending approval |
+| `enemies/gloom_spore.webp` | Gloom Spore Band-1 exploder standee | Approved master v1; registry-wired and verified |
 | `enemies/lantern_smother.webp` | Lantern-Smother boss combat standee | Approved master v1; registry-wired and verified |
 | `entities/smothering_shroud.webp` | Smothering Shroud boss-mechanic entity | Approved master v1; separately registry-wired and verified |
 | `items/hewn_sword.webp` | Hewn Sword base-vessel illustration | Candidate v3; visible only in the anchor review fixture pending inventory integration and approval |
