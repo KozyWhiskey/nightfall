@@ -141,7 +141,7 @@ Pass-1 source files, exact prompts, and review notes live under [`art/source/exp
 | Post-processing | Chroma removal, despill, soft matte, alpha-bounds crop, proportional resize, exact master framing, Lanczos downsample |
 | Focal/orientation data | Canonically screen-right; alpha bbox `(149, 50)–(843, 1083)`; ground line `94.01%`; hostile presentation mirrors left in the client |
 | QA | Transparent corners; 15.02% side safe areas and 4.34% top safe area; source-sheet and live state checks passed; bowed head, pack wedge, guard arm, and dragging hand survive initiative size; decoded `496 × 576` source; no review-page overflow |
-| Approval | `candidate`; registry-wired for in-context review, not yet an approved master |
+| Approval | `verified`; approved by reviewer 2026-08-03, registry-wired and verified in context |
 
 ### Lantern-Smother candidate v1
 
@@ -184,7 +184,7 @@ Pass-1 source files, exact prompts, and review notes live under [`art/source/exp
 | Group | IDs | Count | Current state |
 |---|---|---:|---|
 | Heroes | `vanguard`, `aether_weaver` | 2 | Both hero candidate `v1` derivatives registry-wired and technically passed; reviewer approval pending; SVG fallbacks retained |
-| Standard enemies | `gloomfang_hound`, `shattered_husk`, `mire_imp`, `mist_chanter`, `gloom_spore` | 5 | Gloomfang Hound and Shattered Husk candidate `v1` derivatives registry-wired and technically passed; remaining three use SVG placeholders |
+| Standard enemies | `gloomfang_hound`, `shattered_husk`, `mire_imp`, `mist_chanter`, `gloom_spore` | 5 | Shattered Husk master `v1` approved and verified; Gloomfang Hound candidate `v1` technically passed; remaining three use SVG placeholders |
 | Boss | `lantern_smother` | 1 | Master `v1` approved, registry-wired, and verified |
 | Boss entity | `smothering_shroud` | 1 | Master `v1` approved, separately registry-wired, and verified |
 
