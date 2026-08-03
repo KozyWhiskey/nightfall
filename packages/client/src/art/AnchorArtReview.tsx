@@ -63,7 +63,8 @@ const itemAnchors = [
   { definitionId: "kite_shield", name: "Kite Shield", detail: "Approved master v1: registry-wired with transparent-master and size QA passed." },
   { definitionId: "way_lantern_buckler", name: "Way-lantern Buckler", detail: "Approved master v1: registry-wired with transparent-master and size QA passed." },
   { definitionId: "archivists_focus", name: "Archivist’s Focus", detail: "Approved master v1: registry-wired with transparent-master and size QA passed." },
-  { definitionId: "cracked_way_lens", name: "Cracked Way Lens", detail: "Approved master v1: registry-wired with transparent-master and size QA passed." }
+  { definitionId: "cracked_way_lens", name: "Cracked Way Lens", detail: "Approved master v1: registry-wired with transparent-master and size QA passed." },
+  { definitionId: "pilgrims_knot", name: "Pilgrim’s Knot", detail: "Approved master v1: registry-wired with transparent-master and size QA passed." }
 ] as const;
 
 const reviewStates = [

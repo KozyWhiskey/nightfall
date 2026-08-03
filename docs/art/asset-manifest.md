@@ -188,6 +188,17 @@ Pass-1 source files, exact prompts, and review notes live under [`art/source/exp
 | QA | Transparent corners; alpha bbox `(206, 83)–(817, 941)`; checked at `128`, `64`, and `32` px |
 | Approval | `approved-master`; master v1 approved by reviewer 2026-08-03 |
 
+### Pilgrim’s Knot master v1
+
+| Field | Record |
+|---|---|
+| Asset ID | `pilgrims_knot` |
+| Runtime role | Base-vessel relic illustration |
+| Master | [`art/masters/items/pilgrims_knot.png`](../../art/masters/items/pilgrims_knot.png), transparent PNG, `1024 × 1024` |
+| Runtime derivative | `packages/client/public/art/items/pilgrims_knot.webp`, lossless transparent WebP, `512 × 512` |
+| QA | Transparent corners; alpha bbox `(207, 83)–(817, 941)` |
+| Approval | `approved-master`; master v1 approved by reviewer 2026-08-03 |
+
 ### Vanguard candidate v1
 
 | Field | Record |
