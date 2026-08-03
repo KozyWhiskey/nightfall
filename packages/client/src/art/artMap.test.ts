@@ -35,6 +35,7 @@ describe("art map", () => {
     expect(itemArtSrc("kite_shield")).toBe("/art/items/kite_shield.webp");
     expect(itemArtSrc("way_lantern_buckler")).toBe("/art/items/way_lantern_buckler.webp");
     expect(itemArtSrc("archivists_focus")).toBe("/art/items/archivists_focus.webp");
+    expect(itemArtSrc("cracked_way_lens")).toBe("/art/items/cracked_way_lens.webp");
   });
 
   it("keeps the SVG convention for unknown future IDs", () => {
@@ -68,6 +69,7 @@ describe("art map", () => {
     expect(paths[4]).toBe("/art/items/kite_shield.webp");
     expect(paths[5]).toBe("/art/items/way_lantern_buckler.webp");
     expect(paths[6]).toBe("/art/items/archivists_focus.webp");
-    expect(paths.slice(7).every((path) => path.endsWith(".svg"))).toBe(true);
+    expect(paths[7]).toBe("/art/items/cracked_way_lens.webp");
+    expect(paths.slice(8).every((path) => path.endsWith(".svg"))).toBe(true);
   });
 });
