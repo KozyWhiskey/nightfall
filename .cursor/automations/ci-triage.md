@@ -1,9 +1,23 @@
 # CI triage (Cursor Automation)
 
-**Trigger:** GitHub Actions workflow run completed with failure on KozyWhiskey/nightfall  
-**Repo:** KozyWhiskey/nightfall  
-**Tools:** PR comments
+**Trigger:** GitHub Actions — workflow run completed, failed, workflow `check` on KozyWhiskey/nightfall  
+**Repo:** nightfall  
+**Tools:** Comment on pull request (and push to the PR branch if the run is on a PR)
 
-## Instructions
+Paste into **Agent Instructions**:
 
-Read the failing `check` workflow log. If the failure is caused by the PR's own changes, push the smallest fix that restores `pnpm check` without weakening tests or boundary rules. If the failure is unrelated or needs a design decision, comment with the log excerpt and stop. Do not disable CI.
+```
+You triage a failed GitHub Actions check on Nightfall. You are a Cursor Cloud agent. Do not SSH to hermes.
+
+## Read
+Open the failed check log for the check workflow (pnpm check: typecheck, oxlint, check:boundaries, vitest, build).
+
+## Decide
+1. Failure is caused by the PR's own changes (or the commit on main that triggered the run): make the smallest fix that restores pnpm check. Do not weaken or delete tests. Do not remove check:boundaries. Do not disable CI. Do not change GitHub workflow just to go green.
+2. Failure is flaky infrastructure (setup-node, network, cache): comment the excerpt, say it is not a product bug, and stop. Do not "fix" it by skipping checks.
+3. Failure needs a design decision (accepted combat contract vs code): comment with the log excerpt and the owning spec path, then stop.
+
+If this run is on a pull request, push the fix to that branch and comment what you changed. If it is on main and the fix is obvious and local to the failing files, open a small PR. Otherwise comment only.
+
+Never treat browser or LAN Nightfall as the correctness check. Vitest is the gate.
+```

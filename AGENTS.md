@@ -23,6 +23,7 @@ Design authority is `docs/`. The old Vite one-shot lives under [`docs/_archive/p
 - **Setting**: Vesper after the Nightfall cataclysm; antagonist is The Gloom
 - **Horizon**: friends-hosted on N100/LAN (not commercial); solo first; async Havens + co-op PvE later; authoritative host
 - **Repo**: https://github.com/KozyWhiskey/nightfall
+- **Host**: Intel N100 on the LAN, VoxMox hypervisor, development VM **hermes**. This repo lives at `/home/hermes/projects/nightfall` — one of several projects under `/home/hermes/projects`. Do not treat hermes or the N100 as Nightfall-only; keep ports, SQLite files, and processes inside this tree.
 
 ## Tech Stack (locked)
 
@@ -85,7 +86,7 @@ See [`.cursor/skills/`](.cursor/skills/) and [`docs/specs/README.md`](docs/specs
 
 ### Cursor Cloud specific instructions
 
-Cloud agents should use [`.cursor/environment.json`](.cursor/environment.json). After install, run `pnpm test` to verify. `pnpm dev` exposes Vite on 3050 and the host on 3051. Combat correctness is Vitest, not the browser. Enable Bugbot on this GitHub repo from Cursor Automations if it is not already on.
+Cloud agents should use [`.cursor/environment.json`](.cursor/environment.json). After install, run `pnpm test` to verify. `pnpm dev` exposes Vite on 3050 and the host on 3051. Combat correctness is Vitest, not the browser. Bugbot is optional and currently off — do not enable or assume it is on.
 
 ## Notes for Agents
 
@@ -95,12 +96,14 @@ Cloud agents should use [`.cursor/environment.json`](.cursor/environment.json). 
 - Theme motifs: named Haven, Gloom, pillar/failure stakes
 - Solo play must go through the host/sim path so co-op is not a rewrite
 
-1. Ask, don't assume. If something is unclear, ask before writing a single line. Never make silent assumptions about intent, architecture, or requirements. When running unattended, pick the most reasonable interpretation, proceed, and record the assumption rather than blocking.
+### Coding agent principles
 
-2. Implement the simplest solution for simple problems, better solutions for harder problems. Do not over-engineer or add flexibility that isn't needed yet.
+1. Think before coding. Ask when unclear; never silently invent intent, architecture, or requirements. When unattended, pick the most reasonable interpretation, proceed, and record the assumption.
 
-3. Don't touch unrelated code but please do surface bad code or design smells you discover with me so we can address them as a separate issue.
+2. Simplicity first. Smallest change that meets the need. No speculative features, extra abstractions, or flexibility that is not required yet.
 
-4. Flag uncertainty explicitly. If you're unsure about something, see point 1 above. If it makes sense to do so, conduct a small, localised and low-risk experiment and bring the hypothesis and results to me to discuss. Confidence without certainty causes more damage than admitting a gap.
+3. Surgical edits. Touch only files and code the task needs. Do not drive-by refactor. Surface bad code or design smells as a separate issue rather than fixing them in passing.
 
-5. I'm always open to ideas on better ways to do things. Please don't hesitate to suggest a better way, or one that has long lasting impact over a tactical change.
+4. Goal-driven verify loop. State acceptance criteria (or use the change-spec's) before implementing. Run the relevant checks (`pnpm check:boundaries`, `pnpm test`, or full `pnpm check` for broader work). Do not claim done until those pass. Prefer Vitest `SIM-*` / `SIM-C*` over browser for combat correctness.
+
+5. Flag uncertainty explicitly. Prefer a small, local experiment over confident guesswork. Suggest lasting improvements when they beat a tactical patch.
