@@ -76,4 +76,31 @@ describe("SIM-16 reload, replay, and idempotence", () => {
       cleanup();
     }
   });
+
+  it("resumes the exact SQLite snapshot after an accepted mid-combat command", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "nightfall-sim16-combat-"));
+    const path = join(dir, "test.sqlite");
+    const cleanup = () => { if (existsSync(dir)) rmSync(dir, { recursive: true, force: true }); };
+    try {
+      const initial = createInitialSnapshot(build1Pack, 780);
+      let store = new SQLiteGameStore(path);
+      let host = await LocalGameHost.open(store, build1Pack, initial);
+      const embarked = await host.submit(command(initial, "commitEmbark", {}, undefined, "embark"));
+      if (embarked.status !== "accepted") throw new Error("Embark failed");
+      const entered = await host.submit(command(embarked.snapshot, "chooseMapEdge", { edgeId: "edge_01" }, undefined, "travel"));
+      if (entered.status !== "accepted") throw new Error("Travel failed");
+      expect(entered.snapshot.view).toBe("combat");
+      const actorId = entered.snapshot.activeRun!.combat!.activeCombatantId;
+      const ended = await host.submit(command(entered.snapshot, "endTurn", {}, actorId, "combat-end"));
+      if (ended.status !== "accepted") throw new Error("Combat command failed");
+      expect(ended.snapshot.view).toBe("combat");
+      await host.close();
+
+      store = new SQLiteGameStore(path); host = await LocalGameHost.open(store, build1Pack, initial);
+      expect(await host.getSnapshot()).toEqual(ended.snapshot);
+      await host.close();
+    } finally {
+      cleanup();
+    }
+  });
 });

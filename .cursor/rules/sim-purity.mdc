@@ -1,0 +1,13 @@
+---
+description: Simulation purity and combat contract rules for packages/sim
+globs: packages/sim/**/*.ts
+alwaysApply: false
+---
+
+# Sim purity
+
+`packages/sim` is the only combat rules engine. It must stay synchronous, deterministic, and free of React, DOM, Fastify, SQLite, `fetch`, `window`, `document`, `Date.`, `performance.`, and `Math.random(`.
+
+Combat lifecycle, initiative, Stun skip, Guard, Block timing, and downed rules follow [docs/systems/combat-simulation-contract.md](docs/systems/combat-simulation-contract.md). Tunable numbers live in the content pack, not hardcoded sim constants.
+
+Invalid commands return a reason code and change nothing. Prefer adding a `SIM-*` / `SIM-C*` fixture over snapshot mutation.

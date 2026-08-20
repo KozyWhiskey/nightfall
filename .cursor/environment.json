@@ -1,0 +1,14 @@
+{
+  "install": "corepack enable && corepack prepare pnpm@11.9.0 --activate && pnpm install --frozen-lockfile && pnpm build:libs",
+  "terminals": [
+    {
+      "name": "nightfall-dev",
+      "command": "pnpm dev",
+      "description": "Local host API on 3051 and Vite client on 3050. Verify with pnpm test; do not treat the browser as combat-correctness authority."
+    }
+  ],
+  "ports": [
+    { "name": "Vite UI", "port": 3050 },
+    { "name": "Local host API", "port": 3051 }
+  ]
+}

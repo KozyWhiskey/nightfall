@@ -1,0 +1,15 @@
+---
+description: Change-spec process for bugs, enhancements, and new capabilities
+globs: docs/specs/**/*.md,docs/templates/change-spec.md
+alwaysApply: false
+---
+
+# Spec process
+
+Use [docs/templates/change-spec.md](docs/templates/change-spec.md).
+
+- `bug` / `enhancement` that only matches an accepted contract: write the spec and implement. Put the file in `docs/specs/approved/` while in flight, then `docs/specs/shipped/` after tests pass.
+- `new_capability` or any Locked/Accepted design-doc edit: write to `docs/specs/proposed/` and stop.
+- Cite a Decision Register id, or `none — bug vs accepted contract`.
+- Prefer accepted contracts over Draft `docs/systems/combat.md`.
+- New capabilities must add a Decision Register row in the same change as the owning spec.

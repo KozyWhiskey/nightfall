@@ -2,7 +2,7 @@
 
 Do **not** use scrapyard Supabase ports `54321`–`54324`.
 
-Default persistence for v2 is **SQLite** ([docs/product/tech-decision.md](docs/product/tech-decision.md)).
+Default persistence is **SQLite** ([docs/product/tech-decision.md](docs/product/tech-decision.md)).
 
 Former local Supabase port map is preserved under [`docs/_archive/prototype-supabase/config.toml`](docs/_archive/prototype-supabase/config.toml) if you ever opt into Postgres again:
 
@@ -14,8 +14,9 @@ Former local Supabase port map is preserved under [`docs/_archive/prototype-supa
 | **54424** | Inbucket |
 | **54427** | Analytics |
 
-| Port | Role (v2) |
-|------|-----------|
-| **3050** | Vite client UI (after scaffold) — `http://192.168.68.71:3050` |
+| Port | Role (Build 1) |
+|------|----------------|
+| **3050** | Vite client UI — `http://192.168.68.71:3050` / `http://127.0.0.1:3050` |
+| **3051** | Local host HTTP API during `pnpm dev` (`/api/health`, `/api/snapshot`, `/api/commands`) |
 
-Server WebSocket/HTTP port for the authoritative host: choose at scaffold time (document here when picked).
+`pnpm start` after `pnpm build` serves the built client from `@nightfall/local-host` and defaults `NIGHTFALL_PORT` to **3050**. Override with `NIGHTFALL_PORT` / `NIGHTFALL_HOST`.

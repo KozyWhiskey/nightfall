@@ -108,6 +108,12 @@ In-repo source of truth for **what the game should be**. Implementation and tech
 | Doc | Status |
 |-----|--------|
 | [templates/](templates/) | Locked structure |
+| [templates/change-spec.md](templates/change-spec.md) | Agent bug / enhancement / capability intake |
+
+### Spec queue
+| Doc | Status |
+|-----|--------|
+| [specs/](specs/README.md) | proposed / approved / shipped change-specs |
 
 ## Writing order (spine)
 

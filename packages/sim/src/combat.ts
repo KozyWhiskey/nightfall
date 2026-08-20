@@ -406,11 +406,15 @@ function checkOutcome(snapshot: MutableSnapshot): "active" | "victory" | "wipe" 
   return combat.outcome;
 }
 
-function beginCurrentTurn(snapshot: MutableSnapshot, pack: ValidatedContentPack, context: SimulationContext): void {
+function beginCurrentTurn(snapshot: MutableSnapshot, pack: ValidatedContentPack, context: SimulationContext): "ready" | "skipped" {
   const combat = combatOf(snapshot);
   const actor = combat.combatants.find((entry) => entry.id === combat.activeCombatantId);
-  if (actor === undefined || !isAlive(actor)) return;
+  if (actor === undefined || !isAlive(actor)) return "skipped";
   expireAtTurnStart(combat, actor);
+  if (actor.conditions.some((entry) => entry.id === "stun")) {
+    actor.conditions = actor.conditions.filter((entry) => entry.id !== "stun");
+    return "skipped";
+  }
   if (actor.side === "heroes") {
     const resource = combat.heroResources.find((entry) => entry.heroId === actor.id)!;
     const strained = actor.conditions.some((entry) => entry.id === "strain");
@@ -418,6 +422,7 @@ function beginCurrentTurn(snapshot: MutableSnapshot, pack: ValidatedContentPack,
     actor.conditions = actor.conditions.filter((entry) => entry.id !== "strain");
     refillHand(snapshot, actor.id, pack, context);
   }
+  return "ready";
 }
 
 function moveCursor(snapshot: MutableSnapshot): void {
@@ -455,8 +460,20 @@ function advanceUntilHero(snapshot: MutableSnapshot, pack: ValidatedContentPack,
   while (checkOutcome(snapshot) === "active") {
     const combat = combatOf(snapshot);
     const actor = combat.combatants.find((entry) => entry.id === combat.activeCombatantId);
-    if (actor !== undefined && actor.side === "heroes" && isAlive(actor)) { beginCurrentTurn(snapshot, pack, context); return; }
-    if (actor !== undefined && isAlive(actor)) { beginCurrentTurn(snapshot, pack, context); executeEnemyTurn(snapshot, pack, actor, context); }
+    if (actor !== undefined && isAlive(actor)) {
+      const turn = beginCurrentTurn(snapshot, pack, context);
+      if (turn === "skipped") {
+        finishTurn(snapshot, actor, context);
+        if (checkOutcome(snapshot) !== "active") return;
+        moveCursor(snapshot);
+        continue;
+      }
+      if (actor.side === "heroes") return;
+      executeEnemyTurn(snapshot, pack, actor, context);
+      if (checkOutcome(snapshot) !== "active") return;
+      moveCursor(snapshot);
+      continue;
+    }
     if (checkOutcome(snapshot) !== "active") return;
     moveCursor(snapshot);
   }

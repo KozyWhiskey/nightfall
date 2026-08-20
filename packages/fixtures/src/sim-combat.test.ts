@@ -114,4 +114,22 @@ describe("Build 1 combat acceptance", () => {
     expect(matches).toHaveLength(1);
     expect(matches[0]!.location.kind).toBe("held_by_expedition");
   });
+
+  it("SIM-C01 skips a stunned combatant's next complete turn and does not stack Stun", () => {
+    let snapshot = startFixtureCombat(build1Pack, "roadside_trail", { forcedStreams: { combatInitiative: [0.9, 0.9, 0, 0], combatIntent: [0, 0] } });
+    const run = snapshot.activeRun!;
+    const combat = run.combat!;
+    const vanguard = run.heroes.find((hero) => hero.classId === "vanguard")!;
+    const weaver = run.heroes.find((hero) => hero.classId === "aether_weaver")!;
+    const hounds = combat.combatants.filter((entry) => entry.definitionId === "gloomfang_hound");
+    const weaverCombatant = combat.combatants.find((entry) => entry.id === weaver.id)!;
+    combat.timeline = [vanguard.id, weaver.id, hounds[0]!.id, hounds[1]!.id];
+    weaverCombatant.conditions = [{ id: "stun", expiresAfterCompletedTurn: 99 }, { id: "stun", expiresAfterCompletedTurn: 99 }];
+    setActiveHero(snapshot, vanguard.id);
+    snapshot = accept(snapshot, command(snapshot, "endTurn", {}, vanguard.id), build1Pack, { combatIntent: [0, 0] }) as MutableSnapshot;
+    const after = snapshot.activeRun!.combat!;
+    const weaverAfter = after.combatants.find((entry) => entry.id === weaver.id)!;
+    expect(weaverAfter.conditions.some((entry) => entry.id === "stun")).toBe(false);
+    expect(after.activeCombatantId).toBe(vanguard.id);
+  });
 });

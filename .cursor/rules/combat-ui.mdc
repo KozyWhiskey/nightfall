@@ -1,0 +1,13 @@
+---
+description: Combat UI is a snapshot renderer; no local rules
+globs: packages/client/src/combat/**/*.tsx,packages/client/src/combat/**/*.ts
+alwaysApply: false
+---
+
+# Combat UI
+
+Render the authoritative combat snapshot. Submit only `playCard`, `useBasicAttack`, `useBasicBlock`, `useSupply`, and `endTurn`.
+
+Must stay visible: current actor, AP, HP/Mana/Stamina, card costs, initiative timeline, next enemy intents, Basics, draw/discard/exhaust counts. Color is never the only signal.
+
+Do not compute damage, initiative, or targeting legality locally. Interaction lock during turn playback is view state only.

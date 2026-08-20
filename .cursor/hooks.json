@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "hooks": {
+    "afterFileEdit": [
+      {
+        "command": ".cursor/hooks/sim-boundary.sh"
+      }
+    ],
+    "subagentStop": [
+      {
+        "command": ".cursor/hooks/spec-scout-handoff.sh",
+        "matcher": "spec-scout"
+      }
+    ]
+  }
+}

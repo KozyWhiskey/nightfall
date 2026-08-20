@@ -1,0 +1,17 @@
+---
+description: Nightfall design authority, package boundaries, and agent loop. Apply to every session.
+alwaysApply: true
+---
+
+# Nightfall core
+
+Design authority is `docs/`. When sources conflict: Decision Register → current-scope → vertical-slice-handoff → accepted specs → Draft docs. `docs/product/open-questions.md` is historical only.
+
+- Gameplay never calls `Math.random()`. Use named RNG streams.
+- `packages/sim` is pure: no React, DOM, Fastify, SQLite, clocks, network, or browser globals.
+- `packages/client` renders snapshots and submits commands only.
+- Build 1 combat correctness is Vitest fixtures (`SIM-*` / `SIM-C*`). Browser tests are UX smoke only.
+- Spec loop: `/write-spec` → bugs/enhancements to implementer → `/test-combat`. New capabilities stay in `docs/specs/proposed/` until a human moves them to `approved/` or labels `spec-approved`.
+- Local stack: `pnpm dev` → Vite `3050`, host `3051`. Verify with `pnpm test` and `curl http://127.0.0.1:3051/api/health`.
+
+Do not overwrite unrelated uncommitted client work. Keep changes inside the spec's package touch list.
