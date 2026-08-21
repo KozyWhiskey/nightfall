@@ -4,6 +4,7 @@ import type { DeepMutable, MutableSnapshot, SimulationContext } from "./internal
 import { clamp, emitFact } from "./internal.js";
 import { applyCombatCommand, startCombat, syncHeroesFromCombat } from "./combat.js";
 import { createItemInstance, itemSlotForDefinition, rarityFromUnit } from "./items.js";
+import { legendaryEligibleDefinitionIds, rollGearAffixIds } from "./loot.js";
 import { chooseWeighted, drawInt, drawUnit } from "./rng.js";
 import { createFoundingParty, createRouteNodes, deriveHeroPools } from "./state.js";
 
@@ -44,32 +45,44 @@ function itemId(snapshot: MutableSnapshot, source: string): string {
 }
 
 function generateItem(snapshot: MutableSnapshot, pack: ValidatedContentPack, kind: "gear" | "scroll" | "supply", source: string, context: SimulationContext, minimumRarity: ItemInstance["rarityId"] = "salvaged", extraAffixes: readonly string[] = []): MutableItem {
+  const lootDraw = () => drawUnit(snapshot, "loot", context);
   let definitionId: string;
-  if (kind === "gear") {
-    const pool = pack.items.filter((entry) => entry.itemKind === "equipment");
-    definitionId = pool[drawInt(snapshot, "loot", 0, pool.length - 1, context)]!.id;
+  let rarity: ItemInstance["rarityId"];
+  if (kind === "supply") {
+    const pool = ["mana_phial", "mana_phial", "mana_phial", "stamina_draught", "stamina_draught", "ash_tonic"];
+    definitionId = pool[drawInt(snapshot, "loot", 0, pool.length - 1, context)]!;
+    rarity = "salvaged";
   } else if (kind === "scroll") {
     const pool = pack.items.filter((entry) => entry.itemKind === "scroll" && !entry.heldOnly);
     definitionId = pool[drawInt(snapshot, "loot", 0, pool.length - 1, context)]!.id;
+    rarity = rarityFromUnit(lootDraw(), minimumRarity);
   } else {
-    const pool = ["mana_phial", "mana_phial", "mana_phial", "stamina_draught", "stamina_draught", "ash_tonic"];
-    definitionId = pool[drawInt(snapshot, "loot", 0, pool.length - 1, context)]!;
+    rarity = rarityFromUnit(lootDraw(), minimumRarity);
+    const legendaryIds = legendaryEligibleDefinitionIds();
+    let pool = rarity === "legendary"
+      ? pack.items.filter((entry) => entry.itemKind === "equipment" && legendaryIds.includes(entry.id))
+      : pack.items.filter((entry) => entry.itemKind === "equipment");
+    const needsGrantedCard = extraAffixes.some((id) => pack.affixes.find((entry) => entry.id === id)?.requiresGrantedCard);
+    if (needsGrantedCard) {
+      const withCard = pool.filter((entry) => entry.grantedCardId !== undefined);
+      if (withCard.length > 0) pool = withCard;
+    }
+    const usable = pool.length > 0 ? pool : pack.items.filter((entry) => entry.itemKind === "equipment");
+    definitionId = usable[drawInt(snapshot, "loot", 0, usable.length - 1, context)]!.id;
   }
-  const rarity = kind === "supply" ? "salvaged" : rarityFromUnit(drawUnit(snapshot, "loot", context), minimumRarity);
-  const affixes = [
-    ...(kind === "gear" && rarity !== "salvaged" ? ["quickened", ...(rarity === "rare" || rarity === "legendary" ? ["broken_gate"] : [])] : []),
-    ...extraAffixes
-  ];
+  const affixes = kind === "gear"
+    ? rollGearAffixIds(pack, definitionId, rarity, lootDraw, extraAffixes)
+    : [...extraAffixes];
   return createItemInstance(pack, definitionId, rarity, snapshot.rngStates.loot, itemId(snapshot, source), { kind: "held_by_expedition", runId: runOf(snapshot).runId }, affixes) as MutableItem;
 }
 
 function bossOffers(snapshot: MutableSnapshot, pack: ValidatedContentPack, context: SimulationContext): DeepMutable<RewardOffer>[] {
   const definitions = ["kite_shield", "aether_rod", "gloomwood_spear"];
-  const signatures = ["vigils_promise", "cinder_scar", "hounds_pursuit"];
   return definitions.map((definitionId, index) => {
     const legendary = drawUnit(snapshot, "loot", context) < 0.15;
-    const affixes = ["quickened", "broken_gate", ...(legendary ? [signatures[index]!] : [])];
-    const item = createItemInstance(pack, definitionId, legendary ? "legendary" : "rare", snapshot.rngStates.loot + index, itemId(snapshot, `boss_offer_${index}`), { kind: "held_by_expedition", runId: runOf(snapshot).runId }, affixes) as MutableItem;
+    const rarity = legendary ? "legendary" : "rare";
+    const affixes = rollGearAffixIds(pack, definitionId, rarity, () => drawUnit(snapshot, "loot", context));
+    const item = createItemInstance(pack, definitionId, rarity, snapshot.rngStates.loot + index, itemId(snapshot, `boss_offer_${index}`), { kind: "held_by_expedition", runId: runOf(snapshot).runId }, affixes) as MutableItem;
     return { id: `boss_offer_${index + 1}`, kind: "item", item };
   });
 }

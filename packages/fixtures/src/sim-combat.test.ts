@@ -102,9 +102,14 @@ describe("Build 1 combat acceptance", () => {
   });
 
   it("SIM-06 gives a marked carrier the exact pre-generated item and drops that instance once", () => {
-    const snapshot = startFixtureCombat(build1Pack, "stalking_choir", { forcedStreams: { loot: [0, 0, 0, 0], combatInitiative: [0.9, 0.9, 0, 0, 0] } });
+    // loot: pass carrier chance → pick carrier → pick base → Imbued prefix branch → Quickened among compatible prefixes
+    const snapshot = startFixtureCombat(build1Pack, "stalking_choir", {
+      forcedStreams: { loot: [0, 0, 0, 0.1, 0.2], combatInitiative: [0.9, 0.9, 0, 0, 0] }
+    });
     const run = snapshot.activeRun!; const carrierItem = run.holdings.find((item) => item.location.kind === "carried_by_enemy")!;
     expect(carrierItem).toBeDefined();
+    expect(carrierItem.rarityId).toBe("imbued");
+    expect(carrierItem.prefixIds).toContain("quickened");
     const carrier = run.combat!.combatants.find((entry) => entry.carriedItemId === carrierItem.instanceId)!;
     expect(carrier.itemInitiative).toBe(1);
     run.combat!.combatants.filter((entry) => entry.side === "enemies" && entry.kind === "enemy").forEach((entry) => { entry.destroyed = true; entry.hp = 0; });

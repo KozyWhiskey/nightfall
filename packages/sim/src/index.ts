@@ -6,5 +6,6 @@ export { startCombat, applyCombatCommand, refillForFixture, reviveForFixture, sy
 export { finishCombatIfNeeded, wipe } from "./expedition.js";
 export { hashResolvedFacts } from "./facts.js";
 export { createItemInstance, enrichItemDisplay, rarityFromUnit } from "./items.js";
+export { legendaryEligibleDefinitionIds, rollGearAffixIds, signatureForDefinition } from "./loot.js";
 export { cloneSnapshot, createContext } from "./internal.js";
 export type { ForcedStreams, MutableSnapshot, SimulationContext } from "./internal.js";

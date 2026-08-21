@@ -3,6 +3,7 @@ import type { CardDefinition, EffectDefinition, EnemyDefinition, IntentDefinitio
 import type { DeepMutable, MutableSnapshot, SimulationContext } from "./internal.js";
 import { clamp, emitFact, stableSort } from "./internal.js";
 import { createItemInstance } from "./items.js";
+import { rollGearAffixIds } from "./loot.js";
 import { chooseWeighted, drawInt, drawUnit, shuffle } from "./rng.js";
 
 type MutableCombatant = DeepMutable<CombatantSnapshot>;
@@ -97,7 +98,8 @@ function maybeCreateCarrier(snapshot: MutableSnapshot, pack: ValidatedContentPac
   const carrier = eligible[drawInt(snapshot, "loot", 0, eligible.length - 1, context)]!;
   const bases = eligibleCarrierBases(carrier.definitionId);
   const definitionId = bases[drawInt(snapshot, "loot", 0, bases.length - 1, context)]!;
-  return createItemInstance(pack, definitionId, "imbued", snapshot.rngStates.loot, `${runOf(snapshot).runId}:carrier:${carrier.id}`, { kind: "carried_by_enemy", enemyId: carrier.id }, ["quickened"]);
+  const affixes = rollGearAffixIds(pack, definitionId, "imbued", () => drawUnit(snapshot, "loot", context));
+  return createItemInstance(pack, definitionId, "imbued", snapshot.rngStates.loot, `${runOf(snapshot).runId}:carrier:${carrier.id}`, { kind: "carried_by_enemy", enemyId: carrier.id }, affixes);
 }
 
 function combatantFromHero(hero: HeroSnapshot, initiative: number, initiativeBonus: number): MutableCombatant {
