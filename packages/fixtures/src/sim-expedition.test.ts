@@ -175,6 +175,9 @@ describe("Build 1 expedition acceptance", () => {
         const after = accept(fixture, command(fixture, "chooseCraftRecipe", { recipeId, targetItemId: target.instanceId }), build1Pack, { craft: [roll] }) as MutableSnapshot;
         expect(after.activeRun!.holdings.find((item) => item.instanceId === beforeId)?.location.kind).not.toBe("lost");
         expect(after.activeRun!.holdings.find((item) => item.instanceId === beforeId)?.location.kind).not.toBe("consumed");
+        const craftFact = after.latestFacts.find((entry) => entry.kind === "craft_resolved");
+        expect(craftFact?.data.itemId).toBe(beforeId);
+        expect(craftFact?.message).toMatch(/reforged/);
       }
     }
     const stabilized = craftFixture(); const target = stabilized.activeRun!.holdings.find((item) => item.itemKind === "equipment")!;

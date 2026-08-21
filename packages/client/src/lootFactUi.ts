@@ -2,7 +2,7 @@ import type { GameSnapshot, ItemInstance, ResolvedFact } from "@nightfall/contra
 import { titleCase } from "./decisionUi.js";
 import { rarityGlyph } from "./rewardUi.js";
 
-const LOOT_FACT_KINDS = new Set(["reward_chosen", "item_equipped"]);
+const LOOT_FACT_KINDS = new Set(["reward_chosen", "item_equipped", "craft_resolved"]);
 
 export function isLootCelebrationKind(kind: string): boolean {
   return LOOT_FACT_KINDS.has(kind);

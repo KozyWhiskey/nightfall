@@ -69,6 +69,7 @@ describe("lootFactUi", () => {
   it("recognizes celebration kinds only", () => {
     expect(isLootCelebrationKind("reward_chosen")).toBe(true);
     expect(isLootCelebrationKind("item_equipped")).toBe(true);
+    expect(isLootCelebrationKind("craft_resolved")).toBe(true);
     expect(isLootCelebrationKind("gloom_changed")).toBe(false);
   });
 
@@ -96,6 +97,19 @@ describe("lootFactUi", () => {
     expect(presented.className).toContain("is-loot-celebrate");
     expect(presented.className).toContain("is-rarity-rare");
     expect(presented.message).toContain("joined the expedition");
+  });
+
+  it("celebrates craft_resolved with itemId as forged identity", () => {
+    const forged = item({ instanceId: "gear_1", rarityId: "imbued", curseId: "overdrawn", displaySnapshot: { name: "Hewn Sword", description: "x" } });
+    const presented = presentLootFact(
+      snapshotWith([forged]),
+      fact("craft_resolved", "gear_1", "Risky Overbind reforged Hewn Sword — Overdrawn.")
+    );
+    expect(isLootCelebrationKind("craft_resolved")).toBe(true);
+    expect(presented.notable).toBe(true);
+    expect(presented.cursed).toBe(true);
+    expect(presented.rarityLabel).toBe("Imbued · cursed");
+    expect(presented.className).toContain("is-loot-cursed");
   });
 
   it("marks cursed equip rows with dashed cursed class", () => {

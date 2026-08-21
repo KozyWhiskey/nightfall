@@ -549,13 +549,35 @@ export function chooseCraft(snapshot: MutableSnapshot, pack: ValidatedContentPac
     run.flags = run.flags.filter((flag) => flag !== "safe_fuse_voucher");
   } else if (target !== undefined) {
     target.mechanicSnapshot.modifiers = [...target.mechanicSnapshot.modifiers, ...modifiers];
-    if (modifiers.includes("overdrawn")) target.mechanicSnapshot.secondaryCostDelta = (target.mechanicSnapshot.secondaryCostDelta ?? 0) + 1;
-    if (modifiers.includes("frayed")) target.mechanicSnapshot.selfDamage = 1;
-    if (modifiers.includes("hollow")) target.mechanicSnapshot.exhaust = true;
+    if (modifiers.includes("overdrawn")) {
+      target.mechanicSnapshot.secondaryCostDelta = (target.mechanicSnapshot.secondaryCostDelta ?? 0) + 1;
+      if (target.curseId === undefined) target.curseId = "overdrawn";
+    }
+    if (modifiers.includes("frayed")) {
+      target.mechanicSnapshot.selfDamage = 1;
+      if (target.curseId === undefined) target.curseId = "frayed";
+    }
+    if (modifiers.includes("hollow")) {
+      target.mechanicSnapshot.exhaust = true;
+      if (target.curseId === undefined) target.curseId = "hollow";
+    }
     target.mechanicSnapshot.damageDelta = (target.mechanicSnapshot.damageDelta ?? 0) + 1;
   }
   run.diagnostics.craftBranches.push(`${recipeId}.${outcome.id}${stabilize ? ".stabilized" : ""}`);
-  emitFact(context, snapshot.revision, "craft_resolved", `${recipe.display.name} produced ${outcome.id.replaceAll("_", " ")}.`, { recipeId, outcomeId: outcome.id, stabilized: stabilize, itemDeleted: false }); resolveCurrentNodeToMap(snapshot); return undefined;
+  const curseLabel = modifiers.includes("hollow") ? "Hollow" : modifiers.includes("frayed") ? "Frayed" : modifiers.includes("overdrawn") ? "Overdrawn" : undefined;
+  const outcomeLabel = outcome.id.replaceAll("_", " ");
+  const craftMessage = target !== undefined
+    ? `${recipe.display.name} reforged ${target.displaySnapshot.name}${curseLabel !== undefined ? ` — ${curseLabel}` : ` (${outcomeLabel})`}${stabilize ? " · stabilized" : ""}.`
+    : `${recipe.display.name} produced ${outcomeLabel}${stabilize ? " · stabilized" : ""}.`;
+  emitFact(context, snapshot.revision, "craft_resolved", craftMessage, {
+    recipeId,
+    outcomeId: outcome.id,
+    stabilized: stabilize,
+    itemDeleted: false,
+    ...(target !== undefined ? { itemId: target.instanceId } : {})
+  });
+  resolveCurrentNodeToMap(snapshot);
+  return undefined;
 }
 
 export function cancelCraft(snapshot: MutableSnapshot, context: SimulationContext): ReasonCode | undefined {
