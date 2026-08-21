@@ -433,7 +433,6 @@ function beginCurrentTurn(snapshot: MutableSnapshot, pack: ValidatedContentPack,
     const resource = combat.heroResources.find((entry) => entry.heroId === actor.id)!;
     const strained = actor.conditions.some((entry) => entry.id === "strain");
     resource.ap = pack.tuning.heroAp - (strained ? 1 : 0);
-    actor.conditions = actor.conditions.filter((entry) => entry.id !== "strain");
     refillHand(snapshot, actor.id, pack, context);
   }
   return "ready";

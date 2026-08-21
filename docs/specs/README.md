@@ -11,6 +11,8 @@ Agent-written change specs for Nightfall. Design authority remains `docs/` (Deci
 
 Template: [../templates/change-spec.md](../templates/change-spec.md).
 
-**Human gates:** merge PRs; move `new_capability` files from `proposed/` to `approved/` (or label the tracking PR `spec-approved`). Bugs vs accepted contracts skip the wait.
+**Human gates:** merge PRs; review `new_capability` PRs labeled `needs-human` (move `proposed/` → `approved/` and add `spec-approved` when ready). Bugs and enhancements are auto-labeled `auto-bug` + `spec-approved` by the daily scout so the implementer can run without a daily click.
 
-**Cursor Automations:** enable Bugbot on this GitHub repo from [Cursor Automations](https://cursor.com/automations/from-cursor/bugbot). Drafts for daily spec scout, `spec-approved` implementer, and CI triage live in `.cursor/automations/`.
+**Notifications:** `needs-human` PRs post to a private Discord channel via `.github/workflows/notify-needs-human.yml` (secret `DISCORD_WEBHOOK_URL`). No Slack required. Cursor does not push a reliable in-IDE “action required” for cloud automations.
+
+**Cursor Automations:** Bugbot is optional. Drafts for daily spec scout, `spec-approved` implementer, and CI triage live in `.cursor/automations/`.

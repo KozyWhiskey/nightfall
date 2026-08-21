@@ -199,6 +199,35 @@ describe("Build 1 combat acceptance", () => {
     expect(after.timelineCursor).not.toBe(beforeCursor);
   });
 
+  it("SIM-C03 keeps Strain −1 AP on every turn until combat ends", () => {
+    const intentPad = { combatIntent: [0, 0, 0, 0, 0, 0, 0, 0] as const };
+    let snapshot = startFixtureCombat(build1Pack, "roadside_trail", {
+      runGloom: 90,
+      forcedStreams: { combatInitiative: [0.9, 0.9, 0, 0], ...intentPad }
+    });
+    const combat = snapshot.activeRun!.combat!;
+    const heroes = combat.combatants.filter((entry) => entry.side === "heroes");
+    expect(heroes).toHaveLength(2);
+    expect(heroes.every((hero) => hero.conditions.some((entry) => entry.id === "strain"))).toBe(true);
+    const firstId = combat.activeCombatantId;
+    const first = combat.combatants.find((entry) => entry.id === firstId)!;
+    expect(first.side).toBe("heroes");
+    expect(combat.heroResources.find((entry) => entry.heroId === firstId)!.ap).toBe(2);
+
+    snapshot = accept(snapshot, command(snapshot, "endTurn", {}, firstId), build1Pack, intentPad) as MutableSnapshot;
+    const afterFirst = snapshot.activeRun!.combat!;
+    expect(afterFirst.combatants.find((entry) => entry.id === firstId)!.conditions.some((entry) => entry.id === "strain")).toBe(true);
+    const midId = afterFirst.activeCombatantId;
+    expect(midId).not.toBe(firstId);
+    expect(afterFirst.combatants.find((entry) => entry.id === midId)!.side).toBe("heroes");
+    snapshot = accept(snapshot, command(snapshot, "endTurn", {}, midId), build1Pack, intentPad) as MutableSnapshot;
+
+    const second = snapshot.activeRun!.combat!;
+    expect(second.activeCombatantId).toBe(firstId);
+    expect(second.combatants.find((entry) => entry.id === firstId)!.conditions.some((entry) => entry.id === "strain")).toBe(true);
+    expect(second.heroResources.find((entry) => entry.heroId === firstId)!.ap).toBe(2);
+  });
+
   it("SIM-C04 Archivist's Focus draws one extra card at combat start", () => {
     let snapshot = startCombatWithVessel("aether_weaver", "archivists_focus", "offHand", ["aether_needle"]);
     const weaver = snapshot.activeRun!.heroes.find((hero) => hero.classId === "aether_weaver")!;
