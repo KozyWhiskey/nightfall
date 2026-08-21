@@ -2,14 +2,14 @@
 
 **Branch:** `overnight/loot-gameplay-aaa` (pushed to `origin`)  
 **Started:** 2026-08-21 ~02:54 UTC  
-**Stopped:** 2026-08-21 ~03:37 UTC (morning briefing ready)  
+**Stopped:** 2026-08-21 ~03:40 UTC (morning briefing ready)  
 **Mission:** Diablo-grade loot feel + core loop tightness within Build 1 architecture.
 
 ## Morning briefing
 
 ### Verdict
 
-**Sim + reward helpers are substantially upgraded and green (81 tests).** Procedural loot identity, reward compare/deck/carrier UX, and nearly the full Build 1 affix registry now resolve in combat. Browser UI smoke was not run (host was down during combat-tester pass) — morning playtest should open `pnpm dev` and clear Roadside Trail.
+**Sim + reward helpers are substantially upgraded and green.** `pnpm check` (typecheck + lint + 81 tests + build) passes on the pushed branch. Procedural loot identity, reward compare/deck/carrier UX, and nearly the full Build 1 affix registry now resolve in combat. Browser UI smoke was not run overnight — morning playtest should open `pnpm dev` and clear Roadside Trail.
 
 ### Shipped specs (this night)
 
