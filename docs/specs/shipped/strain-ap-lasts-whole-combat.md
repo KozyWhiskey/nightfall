@@ -1,14 +1,14 @@
 # Strain −1 AP lasts the whole combat
 
 **Kind:** bug  
-**Status:** approved  
+**Status:** shipped  
 **Last updated:** 2026-08-21  
 **Decision Register:** `run.gloom`  
 **Related:** [Combat Simulation Contract](../../systems/combat-simulation-contract.md) (Strain row), [Gloom, Light, and Rest](../../systems/gloom-and-stress.md), [Build 1 Acceptance Plan](../../product/build-1-acceptance-plan.md) `SIM-04`
 
 ## Summary
 
-Strain is applied at combat start, but `beginCurrentTurn` consumes it after the first AP refill. Later turns in that same fight restore 3 AP. The accepted rule is −1 AP for the whole affected combat; Strain clears only when that combat ends (or Rest removes it before the fight).
+Strain is applied at combat start, but `beginCurrentTurn` consumed it after the first AP refill. Later turns in that same fight restored 3 AP. The accepted rule is −1 AP for the whole affected combat; Strain clears only when that combat ends (or Rest removes it before the fight).
 
 ## Authority
 
@@ -29,16 +29,16 @@ Acceptance Plan `SIM-04` requires Strain to resolve at that documented timing. D
 ## Package touch list
 
 - `packages/sim/src/combat.ts` — stop removing Strain in `beginCurrentTurn`; keep `heroAp - 1` on every strained hero turn until combat ends
-- `packages/fixtures/src/sim-combat.test.ts` — `SIM-C03` (failing until the fix)
+- `packages/fixtures/src/sim-combat.test.ts` — `SIM-C03`
 
 ## Acceptance criteria
 
-- [ ] `SIM-C03`: Overrun (`runGloom` 90) both heroes begin Strained; first hero turn has 2 AP; after a full timeline loop that same hero still has 2 AP and still has Strain
-- [ ] Strain is not consumed on the first refill; `finishTurn` continues to keep Strain while other conditions expire
-- [ ] A new combat after victory does not inherit Strain (combatants are rebuilt; no hero-snapshot Strain field)
-- [ ] `pnpm test` covers the change
-- [ ] `pnpm check:boundaries` still passes
-- [ ] Out of scope listed below is untouched
+- [x] `SIM-C03`: Overrun (`runGloom` 90) both heroes begin Strained; first hero turn has 2 AP; after a full timeline loop that same hero still has 2 AP and still has Strain
+- [x] Strain is not consumed on the first refill; `finishTurn` continues to keep Strain while other conditions expire
+- [x] A new combat after victory does not inherit Strain (combatants are rebuilt; no hero-snapshot Strain field)
+- [x] `pnpm test` covers the change
+- [x] `pnpm check:boundaries` still passes
+- [x] Out of scope listed below is untouched
 
 ## Out of scope
 
