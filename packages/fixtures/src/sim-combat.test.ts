@@ -169,4 +169,28 @@ describe("Build 1 combat acceptance", () => {
     expect(after.activeCombatantId).toBe(weaver.id);
     expect(after.timelineCursor).not.toBe(beforeCursor);
   });
+
+  it("SIM-C03 keeps Strain −1 AP on every turn until combat ends", () => {
+    const intentPad = { combatIntent: [0, 0, 0, 0, 0, 0, 0, 0] as const };
+    let snapshot = startFixtureCombat(build1Pack, "roadside_trail", {
+      runGloom: 90,
+      forcedStreams: { combatInitiative: [0.9, 0.9, 0, 0], ...intentPad }
+    });
+    const firstId = snapshot.activeRun!.combat!.activeCombatantId;
+    const first = snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === firstId)!;
+    expect(first.side).toBe("heroes");
+    expect(first.conditions.some((entry) => entry.id === "strain")).toBe(true);
+    expect(snapshot.activeRun!.combat!.heroResources.find((entry) => entry.heroId === firstId)!.ap).toBe(2);
+
+    snapshot = accept(snapshot, command(snapshot, "endTurn", {}, firstId), build1Pack, intentPad) as MutableSnapshot;
+    const midId = snapshot.activeRun!.combat!.activeCombatantId;
+    expect(midId).not.toBe(firstId);
+    expect(snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === midId)!.side).toBe("heroes");
+    snapshot = accept(snapshot, command(snapshot, "endTurn", {}, midId), build1Pack, intentPad) as MutableSnapshot;
+
+    const second = snapshot.activeRun!.combat!;
+    expect(second.activeCombatantId).toBe(firstId);
+    expect(second.combatants.find((entry) => entry.id === firstId)!.conditions.some((entry) => entry.id === "strain")).toBe(true);
+    expect(second.heroResources.find((entry) => entry.heroId === firstId)!.ap).toBe(2);
+  });
 });
