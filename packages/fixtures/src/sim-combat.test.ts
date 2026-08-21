@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
+import type { EquipmentSlot } from "@nightfall/contracts";
 import { build1Pack } from "@nightfall/content";
-import { applyCommand, cloneSnapshot, createContext, finishCombatIfNeeded, refillForFixture, reviveForFixture, totalBlockForFixture, type MutableSnapshot } from "@nightfall/sim";
-import { accept, command, startFixtureCombat } from "./index.js";
+import { applyCommand, cloneSnapshot, createContext, createItemInstance, finishCombatIfNeeded, refillForFixture, reviveForFixture, startCombat, totalBlockForFixture, type MutableSnapshot } from "@nightfall/sim";
+import { accept, command, createEmbarkedSnapshot, startFixtureCombat } from "./index.js";
 
 function setActiveHero(snapshot: MutableSnapshot, heroId: string): void {
   const combat = snapshot.activeRun?.combat;
@@ -11,6 +12,34 @@ function setActiveHero(snapshot: MutableSnapshot, heroId: string): void {
   combat.activeCombatantId = heroId;
   const resources = combat.heroResources.find((entry) => entry.heroId === heroId);
   if (resources !== undefined) resources.ap = 3;
+}
+
+function equipVessel(snapshot: MutableSnapshot, heroId: string, definitionId: string, slot: EquipmentSlot): void {
+  const run = snapshot.activeRun;
+  if (run === undefined) throw new Error("Expected run");
+  const hero = run.heroes.find((entry) => entry.id === heroId);
+  if (hero === undefined) throw new Error(`Missing hero ${heroId}`);
+  const existingId = hero.equipment[slot];
+  if (existingId !== null) {
+    const existing = run.holdings.find((item) => item.instanceId === existingId);
+    if (existing !== undefined) existing.location = { kind: "held_by_expedition", runId: run.runId };
+    hero.equipment[slot] = null;
+  }
+  const item = createItemInstance(build1Pack, definitionId, "salvaged", 1, `fixture:${definitionId}`, { kind: "equipped", heroId, slotId: slot });
+  hero.equipment[slot] = item.instanceId;
+  run.holdings.push(item as never);
+}
+
+function startCombatWithVessel(heroClass: "vanguard" | "aether_weaver", definitionId: string, slot: EquipmentSlot, extraLearned: readonly string[] = []): MutableSnapshot {
+  const embarked = createEmbarkedSnapshot(build1Pack, 12345);
+  const snapshot = cloneSnapshot(embarked);
+  if (snapshot.activeRun === undefined) throw new Error("Fixture failed to embark");
+  const hero = snapshot.activeRun.heroes.find((entry) => entry.classId === heroClass)!;
+  if (extraLearned.length > 0) hero.learnedCardIds = [...hero.learnedCardIds, ...extraLearned];
+  equipVessel(snapshot, hero.id, definitionId, slot);
+  snapshot.activeRun.phase = "combat";
+  startCombat(snapshot, build1Pack, "roadside_trail", createContext({ combatInitiative: [0.9, 0.9, 0, 0], combatIntent: [0, 0] }));
+  return snapshot;
 }
 
 describe("Build 1 combat acceptance", () => {
@@ -173,5 +202,86 @@ describe("Build 1 combat acceptance", () => {
     const after = snapshot.activeRun!.combat!;
     expect(after.activeCombatantId).toBe(weaver.id);
     expect(after.timelineCursor).not.toBe(beforeCursor);
+  });
+
+  it("SIM-C03 keeps Strain −1 AP on every turn until combat ends", () => {
+    const intentPad = { combatIntent: [0, 0, 0, 0, 0, 0, 0, 0] as const };
+    let snapshot = startFixtureCombat(build1Pack, "roadside_trail", {
+      runGloom: 90,
+      forcedStreams: { combatInitiative: [0.9, 0.9, 0, 0], ...intentPad }
+    });
+    const combat = snapshot.activeRun!.combat!;
+    const heroes = combat.combatants.filter((entry) => entry.side === "heroes");
+    expect(heroes).toHaveLength(2);
+    expect(heroes.every((hero) => hero.conditions.some((entry) => entry.id === "strain"))).toBe(true);
+    const firstId = combat.activeCombatantId;
+    const first = combat.combatants.find((entry) => entry.id === firstId)!;
+    expect(first.side).toBe("heroes");
+    expect(combat.heroResources.find((entry) => entry.heroId === firstId)!.ap).toBe(2);
+
+    snapshot = accept(snapshot, command(snapshot, "endTurn", {}, firstId), build1Pack, intentPad) as MutableSnapshot;
+    const afterFirst = snapshot.activeRun!.combat!;
+    expect(afterFirst.combatants.find((entry) => entry.id === firstId)!.conditions.some((entry) => entry.id === "strain")).toBe(true);
+    const midId = afterFirst.activeCombatantId;
+    expect(midId).not.toBe(firstId);
+    expect(afterFirst.combatants.find((entry) => entry.id === midId)!.side).toBe("heroes");
+    snapshot = accept(snapshot, command(snapshot, "endTurn", {}, midId), build1Pack, intentPad) as MutableSnapshot;
+
+    const second = snapshot.activeRun!.combat!;
+    expect(second.activeCombatantId).toBe(firstId);
+    expect(second.combatants.find((entry) => entry.id === firstId)!.conditions.some((entry) => entry.id === "strain")).toBe(true);
+    expect(second.heroResources.find((entry) => entry.heroId === firstId)!.ap).toBe(2);
+  });
+
+  it("SIM-C04 Archivist's Focus draws one extra card at combat start", () => {
+    let snapshot = startCombatWithVessel("aether_weaver", "archivists_focus", "offHand", ["aether_needle"]);
+    const weaver = snapshot.activeRun!.heroes.find((hero) => hero.classId === "aether_weaver")!;
+    expect(snapshot.activeRun!.combat!.activeCombatantId).toBe(weaver.id);
+    expect(snapshot.activeRun!.combat!.cards.filter((card) => card.ownerId === weaver.id && card.zone === "hand")).toHaveLength(4);
+    snapshot = accept(snapshot, command(snapshot, "endTurn", {}, weaver.id), build1Pack, { combatIntent: [0, 0] }) as MutableSnapshot;
+    for (let attempts = 0; attempts < 8 && snapshot.activeRun!.combat!.activeCombatantId !== weaver.id; attempts += 1) {
+      const actorId = snapshot.activeRun!.combat!.activeCombatantId;
+      snapshot = accept(snapshot, command(snapshot, "endTurn", {}, actorId), build1Pack, { combatIntent: [0, 0] }) as MutableSnapshot;
+    }
+    expect(snapshot.activeRun!.combat!.activeCombatantId).toBe(weaver.id);
+    expect(snapshot.activeRun!.combat!.cards.filter((card) => card.ownerId === weaver.id && card.zone === "hand")).toHaveLength(3);
+  });
+
+  it("SIM-C05 Cracked Way-Lens adds +1 to spell card damage", () => {
+    let snapshot = startCombatWithVessel("aether_weaver", "cracked_way_lens", "relic1");
+    const weaver = snapshot.activeRun!.heroes.find((hero) => hero.classId === "aether_weaver")!;
+    const combat = snapshot.activeRun!.combat!;
+    const bolt = combat.cards.find((card) => card.ownerId === weaver.id && card.definitionId === "aether_bolt")!;
+    bolt.zone = "hand";
+    const [spellTarget, basicTarget] = combat.combatants.filter((entry) => entry.side === "enemies");
+    spellTarget!.blockLayers = [];
+    basicTarget!.blockLayers = [];
+    const spellBefore = spellTarget!.hp;
+    const basicBefore = basicTarget!.hp;
+    setActiveHero(snapshot, weaver.id);
+    snapshot.activeRun!.combat!.heroResources.find((entry) => entry.heroId === weaver.id)!.mana = 10;
+    snapshot = accept(snapshot, command(snapshot, "playCard", { cardInstanceId: bolt.cardInstanceId, targetId: spellTarget!.id }, weaver.id), build1Pack) as MutableSnapshot;
+    expect(snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === spellTarget!.id)!.hp).toBe(spellBefore - 12);
+    snapshot = accept(snapshot, command(snapshot, "useBasicAttack", { targetId: basicTarget!.id }, weaver.id), build1Pack) as MutableSnapshot;
+    expect(snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === basicTarget!.id)!.hp).toBe(basicBefore - 3);
+  });
+
+  it("SIM-C06 Ironweave Gloves add +1 to basic attack damage", () => {
+    let snapshot = startCombatWithVessel("vanguard", "ironweave_gloves", "gloves", ["aether_bolt"]);
+    const vanguard = snapshot.activeRun!.heroes.find((hero) => hero.classId === "vanguard")!;
+    const combat = snapshot.activeRun!.combat!;
+    const bolt = combat.cards.find((card) => card.ownerId === vanguard.id && card.definitionId === "aether_bolt")!;
+    bolt.zone = "hand";
+    const [basicTarget, spellTarget] = combat.combatants.filter((entry) => entry.side === "enemies");
+    basicTarget!.blockLayers = [];
+    spellTarget!.blockLayers = [];
+    const basicBefore = basicTarget!.hp;
+    const spellBefore = spellTarget!.hp;
+    setActiveHero(snapshot, vanguard.id);
+    snapshot.activeRun!.combat!.heroResources.find((entry) => entry.heroId === vanguard.id)!.mana = 10;
+    snapshot = accept(snapshot, command(snapshot, "useBasicAttack", { targetId: basicTarget!.id }, vanguard.id), build1Pack) as MutableSnapshot;
+    expect(snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === basicTarget!.id)!.hp).toBe(basicBefore - 6);
+    snapshot = accept(snapshot, command(snapshot, "playCard", { cardInstanceId: bolt.cardInstanceId, targetId: spellTarget!.id }, vanguard.id), build1Pack) as MutableSnapshot;
+    expect(snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === spellTarget!.id)!.hp).toBe(spellBefore - 8);
   });
 });
