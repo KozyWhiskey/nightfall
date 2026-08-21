@@ -5,22 +5,34 @@
 name: notify-needs-human
 
 on:
-  pull_request:
+  pull_request_target:
     types: [labeled]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number to mention in a test ping"
+        required: true
+        type: string
 
 jobs:
   discord:
-    if: github.event.label.name == 'needs-human'
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.label.name == 'needs-human'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Post to Discord
         env:
           WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          EVENT_NAME: ${{ github.event_name }}
+          REPO: ${{ github.repository }}
+          INPUT_PR: ${{ github.event.inputs.pr_number }}
           PR_URL: ${{ github.event.pull_request.html_url }}
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_USER: ${{ github.event.pull_request.user.login }}
+          ACTOR: ${{ github.actor }}
         run: |
           set -euo pipefail
           if [ -z "${WEBHOOK_URL}" ]; then
@@ -30,12 +42,23 @@ jobs:
           python3 <<'PY'
           import json, os, urllib.request
 
+          if os.environ.get("EVENT_NAME") == "workflow_dispatch":
+              number = os.environ["INPUT_PR"]
+              title = "Manual test ping"
+              user = os.environ.get("ACTOR", "unknown")
+              url = f"https://github.com/{os.environ['REPO']}/pull/{number}"
+          else:
+              number = os.environ["PR_NUMBER"]
+              title = os.environ["PR_TITLE"]
+              user = os.environ["PR_USER"]
+              url = os.environ["PR_URL"]
+
           content = (
               "**Nightfall needs you** — new capability / design gate\n\n"
-              f"PR #{os.environ['PR_NUMBER']}: {os.environ['PR_TITLE']}\n"
-              f"Opened by: {os.environ['PR_USER']}\n"
+              f"PR #{number}: {title}\n"
+              f"Opened by: {user}\n"
               "Label: `needs-human`\n"
-              f"{os.environ['PR_URL']}\n\n"
+              f"{url}\n\n"
               "Review `docs/specs/proposed/`, then move to approved and add "
               "`spec-approved` when ready."
           )
