@@ -1130,6 +1130,42 @@ button.route-node:hover:not(:disabled) {
   padding-left: .7rem;
   border-left: 2px solid var(--brass);
 }
+.deck-inject-callout {
+  display: grid;
+  gap: .25rem;
+  padding: .45rem .55rem;
+  border: 1px solid rgba(169, 130, 69, .55);
+  background: rgba(8, 14, 16, .55);
+}
+.deck-inject-callout p {
+  margin: 0 !important;
+  color: var(--ash) !important;
+  font-size: .86rem !important;
+  line-height: 1.35 !important;
+  font-family: Consolas, "Cascadia Mono", monospace;
+  letter-spacing: .01em;
+}
+.equip-compare {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: .3rem;
+}
+.equip-compare li {
+  color: var(--muted);
+  font-size: .8rem;
+  line-height: 1.35;
+  padding-left: .65rem;
+  border-left: 2px solid rgba(125, 169, 189, .45);
+}
+.reward-carrier {
+  margin-bottom: 1rem;
+  max-width: 28rem;
+}
+.reward-carrier .offer-card {
+  border-color: rgba(169, 130, 69, .7);
+}
 .item-list .offer-effects { margin-top: .35rem; }
 .item-list .offer-effect-lead { margin: .35rem 0 0; }
 .leave-action { justify-self: start; }

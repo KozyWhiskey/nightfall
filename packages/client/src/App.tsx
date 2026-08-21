@@ -16,6 +16,14 @@ import { RouteMapBoard } from "./map/RouteMapBoard.js";
 import { CombatView } from "./combat/CombatView.js";
 import { EQUIP_SLOTS, itemById } from "./party/inventoryUi.js";
 import { PartyInventory } from "./party/PartyInventory.js";
+import {
+  deckInjectLines,
+  equipCompareRows,
+  needsRareLeaveConfirm,
+  nonInjectEffectLines,
+  packAndSealedCounts,
+  resolveCarrierItem
+} from "./rewardUi.js";
 import { useNightfall } from "./store.js";
 
 function PillarRail({ lit }: { lit: number }) {
@@ -151,15 +159,44 @@ function MapView({ snapshot, send }: ViewProps) {
   </Page>;
 }
 
-function effectLines(description: string): string[] {
-  return description.split(/\n+/).map((line) => line.trim()).filter((line) => line.length > 0);
-}
-
-function ItemEffects({ description }: { description: string }) {
-  const lines = effectLines(description);
+function ItemEffects({ description, omitInject = false }: { description: string; omitInject?: boolean }) {
+  const lines = omitInject ? nonInjectEffectLines(description) : description.split(/\n+/).map((line) => line.trim()).filter((line) => line.length > 0);
   if (lines.length === 0) return null;
   if (lines.length === 1) return <p className="offer-effect-lead">{lines[0]}</p>;
   return <ul className="offer-effects" aria-label="Item effects">{lines.map((line) => <li key={line}>{line}</li>)}</ul>;
+}
+
+function DeckInjectCallout({ description }: { description: string }) {
+  const lines = deckInjectLines(description);
+  if (lines.length === 0) return null;
+  return <div className="deck-inject-callout" role="status">
+    {lines.map((line) => <p key={line}>{line}</p>)}
+  </div>;
+}
+
+function IdentifiedItemCard({
+  item,
+  eyebrow,
+  compareLines,
+  children
+}: {
+  item: ItemInstance;
+  eyebrow: string;
+  compareLines?: readonly string[];
+  children?: ReactNode;
+}) {
+  return <article className="offer-card">
+    <small>{eyebrow}</small>
+    <h2>{item.displaySnapshot.name}</h2>
+    <DeckInjectCallout description={item.displaySnapshot.description} />
+    <ItemEffects description={item.displaySnapshot.description} omitInject />
+    {compareLines !== undefined && compareLines.length > 0 && <ul className="equip-compare" aria-label="Compared to equipped">
+      {compareLines.map((line) => <li key={line}>{line}</li>)}
+    </ul>}
+    {item.curseId !== undefined && <span className="warning">{titleCase(item.curseId)}</span>}
+    <p className="ownership-tag">Carried — at risk</p>
+    {children}
+  </article>;
 }
 
 function ItemList({ items, empty }: { items: readonly ItemInstance[]; empty: string }) {
@@ -170,10 +207,13 @@ function ItemList({ items, empty }: { items: readonly ItemInstance[]; empty: str
 function RewardView({ snapshot, send }: ViewProps) {
   const run = snapshot.activeRun!;
   const decision = run.pendingDecision; if (decision?.kind !== "reward") return null;
-  const hasRareOrBetter = decision.offers.some((offer) => offer.item.rarityId === "rare" || offer.item.rarityId === "imbued");
+  const needsConfirm = needsRareLeaveConfirm(decision.offers);
   const heroes = run.heroes;
+  const holdings = run.holdings;
+  const counts = packAndSealedCounts(run);
+  const carrier = resolveCarrierItem(run, decision.carrierItemId);
   const leave = () => {
-    if (hasRareOrBetter && !globalThis.confirm("Leave these offers? A Rare-or-better item will be gone for this expedition.")) return;
+    if (needsConfirm && !globalThis.confirm("Leave these offers? A Rare-or-better item will be gone for this expedition.")) return;
     void send("leaveReward");
   };
   return <Page
@@ -181,21 +221,37 @@ function RewardView({ snapshot, send }: ViewProps) {
     title="Choose what the road gives back"
     intro="The automatic bundle is already secured—but still carried at risk. Choose one fully identified offer, or equip from Party & packs after taking it."
   >
+    <section className="decision-state-strip" aria-label="Carried at risk">
+      <div className="decision-state-head">
+        <span className="ownership-tag">Carried — at risk</span>
+        <p className="decision-gloom" role="status">Run Gloom <strong>{run.runGloom}</strong></p>
+      </div>
+      <p className="stat-line">Pack {counts.pack} · Sealed at waypoint {counts.sealed}</p>
+    </section>
     <section className="bundle"><strong>Automatic bundle</strong><span>{Object.entries(decision.automatic).map(([id, amount]) => `${amount} ${titleCase(id)}`).join(" · ")}</span></section>
-    {decision.carrierItemId !== undefined && <p className="carrier-note">A marked carrier dropped an exceptional item into the expedition pack.</p>}
-    <div className="reward-grid">{decision.offers.map((offer) => <article key={offer.id} className="offer-card">
-      <small>{titleCase(offer.item.rarityId)} · {titleCase(offer.kind)}</small>
-      <h2>{offer.item.displaySnapshot.name}</h2>
-      <ItemEffects description={offer.item.displaySnapshot.description} />
-      <p className="ownership-tag">Carried — at risk until Return or chest sealing.</p>
-      <button onClick={() => void send("chooseReward", { offerId: offer.id })}>Take {offer.item.displaySnapshot.name}</button>
-      {offer.kind === "item" && <div className="reward-equip-row">{heroes.map((hero) => <button key={hero.id} type="button" className="quiet" onClick={() => {
-        void (async () => {
-          await send("chooseReward", { offerId: offer.id });
-          await send("equipItem", { heroId: hero.id, itemId: offer.item.instanceId });
-        })();
-      }}>Take & equip on {hero.name}</button>)}</div>}
-    </article>)}</div>
+    {carrier !== undefined && <div className="reward-carrier" aria-label="Marked carrier item">
+      <IdentifiedItemCard item={carrier} eyebrow={`${titleCase(carrier.rarityId)} · Marked carrier`} />
+    </div>}
+    {decision.carrierItemId !== undefined && carrier === undefined && <p className="carrier-note">A marked carrier dropped an exceptional item into the expedition pack.</p>}
+    <div className="reward-grid">{decision.offers.map((offer) => {
+      const compare = offer.kind === "item"
+        ? equipCompareRows(offer.item, heroes, holdings).map((row) => row.line)
+        : [];
+      return <IdentifiedItemCard
+        key={offer.id}
+        item={offer.item}
+        eyebrow={`${titleCase(offer.item.rarityId)} · ${titleCase(offer.kind)}`}
+        compareLines={compare}
+      >
+        <button onClick={() => void send("chooseReward", { offerId: offer.id })}>Take {offer.item.displaySnapshot.name}</button>
+        {offer.kind === "item" && <div className="reward-equip-row">{heroes.map((hero) => <button key={hero.id} type="button" className="quiet" onClick={() => {
+          void (async () => {
+            await send("chooseReward", { offerId: offer.id });
+            await send("equipItem", { heroId: hero.id, itemId: offer.item.instanceId });
+          })();
+        }}>Take & equip on {hero.name}</button>)}</div>}
+      </IdentifiedItemCard>;
+    })}</div>
     {decision.sourceId !== "lantern_smother" && <button className="quiet leave-action" onClick={leave}>Leave both offers</button>}
   </Page>;
 }

@@ -35,13 +35,13 @@ Reject incompatible modules (`anchored`+`long_vigil`, modules that require a gra
 
 ## Acceptance criteria
 
-`- [x]` `generateItem` / carrier / boss offers roll affixes per registry budgets (not hardcoded `quickened`+`broken_gate` only)
-`- [x]` Compatibility filter rejects tag/granted-card/incompatible/overdrawn-without-secondary cases
-`- [x]` Curses only attach on Rare/Legendary at stated rates, and only when at least one non-curse affix upside remains
-`- [x]` Legendary boss/signature path uses curated signatures with valid prefix+suffix
-`- [x]` Named fixture `SIM-LOOT-01` (or equivalent) proves two different loot seeds produce different affix sets for the same vessel pool, and salvage stays affix-free
-`- [x]` `pnpm test` and `pnpm check:boundaries` pass
-`- [x]` Out of scope untouched
+- [x] `generateItem` / carrier / boss offers roll affixes per registry budgets (not hardcoded `quickened`+`broken_gate` only)
+- [x] Compatibility filter rejects tag/granted-card/incompatible/overdrawn-without-secondary cases
+- [x] Curses only attach on Rare/Legendary at stated rates, and only when at least one non-curse affix upside remains
+- [x] Legendary boss/signature path uses curated signatures with valid prefix+suffix
+- [x] Named fixture `SIM-LOOT-01` (or equivalent) proves two different loot seeds produce different affix sets for the same vessel pool, and salvage stays affix-free
+- [x] `pnpm test` and `pnpm check:boundaries` pass
+- [x] Out of scope untouched
 
 ## Out of scope
 
