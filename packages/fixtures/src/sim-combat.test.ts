@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
+import type { EquipmentSlot } from "@nightfall/contracts";
 import { build1Pack } from "@nightfall/content";
-import { applyCommand, cloneSnapshot, createContext, finishCombatIfNeeded, refillForFixture, reviveForFixture, totalBlockForFixture, type MutableSnapshot } from "@nightfall/sim";
-import { accept, command, startFixtureCombat } from "./index.js";
+import { applyCommand, cloneSnapshot, createContext, createItemInstance, finishCombatIfNeeded, refillForFixture, reviveForFixture, startCombat, totalBlockForFixture, type MutableSnapshot } from "@nightfall/sim";
+import { accept, command, createEmbarkedSnapshot, startFixtureCombat } from "./index.js";
 
 function setActiveHero(snapshot: MutableSnapshot, heroId: string): void {
   const combat = snapshot.activeRun?.combat;
@@ -11,6 +12,34 @@ function setActiveHero(snapshot: MutableSnapshot, heroId: string): void {
   combat.activeCombatantId = heroId;
   const resources = combat.heroResources.find((entry) => entry.heroId === heroId);
   if (resources !== undefined) resources.ap = 3;
+}
+
+function equipVessel(snapshot: MutableSnapshot, heroId: string, definitionId: string, slot: EquipmentSlot): void {
+  const run = snapshot.activeRun;
+  if (run === undefined) throw new Error("Expected run");
+  const hero = run.heroes.find((entry) => entry.id === heroId);
+  if (hero === undefined) throw new Error(`Missing hero ${heroId}`);
+  const existingId = hero.equipment[slot];
+  if (existingId !== null) {
+    const existing = run.holdings.find((item) => item.instanceId === existingId);
+    if (existing !== undefined) existing.location = { kind: "held_by_expedition", runId: run.runId };
+    hero.equipment[slot] = null;
+  }
+  const item = createItemInstance(build1Pack, definitionId, "salvaged", 1, `fixture:${definitionId}`, { kind: "equipped", heroId, slotId: slot });
+  hero.equipment[slot] = item.instanceId;
+  run.holdings.push(item);
+}
+
+function startCombatWithVessel(heroClass: "vanguard" | "aether_weaver", definitionId: string, slot: EquipmentSlot, extraLearned: readonly string[] = []): MutableSnapshot {
+  const embarked = createEmbarkedSnapshot(build1Pack, 12345);
+  const snapshot = cloneSnapshot(embarked);
+  if (snapshot.activeRun === undefined) throw new Error("Fixture failed to embark");
+  const hero = snapshot.activeRun.heroes.find((entry) => entry.classId === heroClass)!;
+  if (extraLearned.length > 0) hero.learnedCardIds = [...hero.learnedCardIds, ...extraLearned];
+  equipVessel(snapshot, hero.id, definitionId, slot);
+  snapshot.activeRun.phase = "combat";
+  startCombat(snapshot, build1Pack, "roadside_trail", createContext({ combatInitiative: [0.9, 0.9, 0, 0], combatIntent: [0, 0] }));
+  return snapshot;
 }
 
 describe("Build 1 combat acceptance", () => {
@@ -168,5 +197,38 @@ describe("Build 1 combat acceptance", () => {
     const after = snapshot.activeRun!.combat!;
     expect(after.activeCombatantId).toBe(weaver.id);
     expect(after.timelineCursor).not.toBe(beforeCursor);
+  });
+
+  it("SIM-C04 Archivist's Focus draws one extra card at combat start", () => {
+    const snapshot = startCombatWithVessel("aether_weaver", "archivists_focus", "offHand", ["aether_needle"]);
+    const weaver = snapshot.activeRun!.heroes.find((hero) => hero.classId === "aether_weaver")!;
+    expect(snapshot.activeRun!.combat!.activeCombatantId).toBe(weaver.id);
+    expect(snapshot.activeRun!.combat!.cards.filter((card) => card.ownerId === weaver.id && card.zone === "hand")).toHaveLength(4);
+  });
+
+  it("SIM-C05 Cracked Way-Lens adds +1 to spell card damage", () => {
+    let snapshot = startCombatWithVessel("aether_weaver", "cracked_way_lens", "relic1");
+    const weaver = snapshot.activeRun!.heroes.find((hero) => hero.classId === "aether_weaver")!;
+    const combat = snapshot.activeRun!.combat!;
+    const bolt = combat.cards.find((card) => card.ownerId === weaver.id && card.definitionId === "aether_bolt")!;
+    bolt.zone = "hand";
+    const target = combat.combatants.find((entry) => entry.side === "enemies")!;
+    target.blockLayers = [];
+    const before = target.hp;
+    setActiveHero(snapshot, weaver.id);
+    snapshot.activeRun!.combat!.heroResources.find((entry) => entry.heroId === weaver.id)!.mana = 10;
+    snapshot = accept(snapshot, command(snapshot, "playCard", { cardInstanceId: bolt.cardInstanceId, targetId: target.id }, weaver.id), build1Pack) as MutableSnapshot;
+    expect(snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === target.id)!.hp).toBe(before - 12);
+  });
+
+  it("SIM-C06 Ironweave Gloves add +1 to basic attack damage", () => {
+    let snapshot = startCombatWithVessel("vanguard", "ironweave_gloves", "gloves");
+    const vanguard = snapshot.activeRun!.heroes.find((hero) => hero.classId === "vanguard")!;
+    const target = snapshot.activeRun!.combat!.combatants.find((entry) => entry.side === "enemies")!;
+    target.blockLayers = [];
+    const before = target.hp;
+    setActiveHero(snapshot, vanguard.id);
+    snapshot = accept(snapshot, command(snapshot, "useBasicAttack", { targetId: target.id }, vanguard.id), build1Pack) as MutableSnapshot;
+    expect(snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === target.id)!.hp).toBe(before - 6);
   });
 });
