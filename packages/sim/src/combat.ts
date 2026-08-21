@@ -224,12 +224,30 @@ function drawOne(snapshot: MutableSnapshot, heroId: string, context: SimulationC
   draw[0]!.zone = "hand";
 }
 
+function equippedItemsForHero(snapshot: MutableSnapshot, heroId: string): ItemInstance[] {
+  return runOf(snapshot).holdings.filter((item) => item.location.kind === "equipped" && item.location.heroId === heroId);
+}
+
+function heroModifierCount(snapshot: MutableSnapshot, heroId: string, modifier: string): number {
+  return equippedItemsForHero(snapshot, heroId).filter((item) => item.mechanicSnapshot.modifiers.includes(modifier)).length;
+}
+
+function heroHasModifier(snapshot: MutableSnapshot, heroId: string, modifier: string): boolean {
+  return heroModifierCount(snapshot, heroId, modifier) > 0;
+}
+
+function vesselItemForCard(snapshot: MutableSnapshot, card: MutableCard | undefined): ItemInstance | undefined {
+  if (card === undefined) return undefined;
+  return runOf(snapshot).holdings.find((item) => item.instanceId === card.sourceId);
+}
+
 function heroHasRetainRefill(snapshot: MutableSnapshot, heroId: string): boolean {
-  return runOf(snapshot).holdings.some((item) => item.location.kind === "equipped" && item.location.heroId === heroId && item.mechanicSnapshot.modifiers.includes("retain_refill"));
+  return heroHasModifier(snapshot, heroId, "retain_refill");
 }
 
 function refillHand(snapshot: MutableSnapshot, heroId: string, pack: ValidatedContentPack, context: SimulationContext): void {
   const combat = combatOf(snapshot);
+  const actor = combat.combatants.find((entry) => entry.id === heroId);
   let target = pack.tuning.handSize;
   if (heroHasRetainRefill(snapshot, heroId) && !combat.retainRefillUsedHeroIds.includes(heroId)) {
     const retainedInHand = zoneCards(combat, heroId, "hand").filter((card) => card.retain).length;
@@ -238,6 +256,11 @@ function refillHand(snapshot: MutableSnapshot, heroId: string, pack: ValidatedCo
       combat.retainRefillUsedHeroIds.push(heroId);
       emitFact(context, snapshot.revision, "item_passive", "A Retained card stayed in hand without reducing draw.", { heroId });
     }
+  }
+  const combatStartDraw = heroModifierCount(snapshot, heroId, "combat_start_draw");
+  if (combatStartDraw > 0 && actor !== undefined && actor.turnsCompleted === 0 && actor.turnsStarted === 1) {
+    target += combatStartDraw;
+    emitFact(context, snapshot.revision, "item_passive", "Combat-start draw granted an extra card.", { heroId, amount: combatStartDraw });
   }
   while (zoneCards(combat, heroId, "hand").length < target) {
     const before = zoneCards(combat, heroId, "hand").length;
@@ -358,9 +381,16 @@ function resolveEffects(snapshot: MutableSnapshot, actor: MutableCombatant, effe
       combat.combatants = combat.combatants.filter((entry) => entry.id !== entity.id); combat.combatants.push(entity);
       continue;
     }
+    const vesselMods = vesselItemForCard(snapshot, cardModifiers)?.mechanicSnapshot.modifiers ?? [];
     for (const originalTarget of targets) {
       if (!isAlive(originalTarget) && !(effect.kind === "heal" && effect.revive)) continue;
-      if (effect.kind === "dealDamage") dealDamage(snapshot, actor, originalTarget, effect.amount + (cardModifiers?.damageDelta ?? 0), effect.scaling, effect.bypassBlock, ["enemy", "ally", "lowestHpHero", "lowestBlockHero", "randomLivingHero"].includes(effect.target), sourceId, context);
+      if (effect.kind === "dealDamage") {
+        const directTargeted = ["enemy", "ally", "lowestHpHero", "lowestBlockHero", "randomLivingHero"].includes(effect.target);
+        let amount = effect.amount + (cardModifiers?.damageDelta ?? 0);
+        if (vesselMods.includes("exposed_damage_plus_2") && originalTarget.conditions.some((entry) => entry.id === "exposed")) amount += 2;
+        dealDamage(snapshot, actor, originalTarget, amount, effect.scaling, effect.bypassBlock, directTargeted, sourceId, context);
+        if (vesselMods.includes("card_burn")) addCondition(resolveGuard(combat, originalTarget, directTargeted), "burn", 1, 2);
+      }
       else if (effect.kind === "dealDirectDamage") directDamage(snapshot, actor, originalTarget, effect.amount, context);
       else if (effect.kind === "gainBlock") addBlock(snapshot, originalTarget, effect.amount + (cardModifiers?.blockDelta ?? 0), sourceId, effect.duration);
       else if (effect.kind === "removeBlock") {
@@ -370,7 +400,10 @@ function resolveEffects(snapshot: MutableSnapshot, actor: MutableCombatant, effe
       }
       else if (effect.kind === "applyCondition") addCondition(originalTarget, effect.conditionId, effect.stacks, effect.duration + (combat.activeCombatantId === originalTarget.id ? 1 : 0));
       else if (effect.kind === "removeCondition") { originalTarget.conditions = originalTarget.conditions.filter((entry) => entry.id !== effect.conditionId); if (effect.conditionId === "burn") originalTarget.burn = []; }
-      else if (effect.kind === "createGuard") combat.guards.push({ id: `${sourceId}:${snapshot.revision}`, guardingHeroId: actor.id, protectedHeroId: originalTarget.id, expiresAtGuardTurnStart: actor.turnsStarted + 1, createdAtRevision: snapshot.revision });
+      else if (effect.kind === "createGuard") {
+        combat.guards.push({ id: `${sourceId}:${snapshot.revision}`, guardingHeroId: actor.id, protectedHeroId: originalTarget.id, expiresAtGuardTurnStart: actor.turnsStarted + 1, createdAtRevision: snapshot.revision });
+        if (heroHasModifier(snapshot, actor.id, "guard_self_block")) addBlock(snapshot, actor, 2, "guard_self_block", "ownerNextTurn");
+      }
       else if (effect.kind === "grantNextDamageBonus") originalTarget.nextDamageBonus += effect.amount;
       else if (effect.kind === "restoreResource") { const resource = combat.heroResources.find((entry) => entry.heroId === originalTarget.id); const hero = runOf(snapshot).heroes.find((entry) => entry.id === originalTarget.id); if (resource !== undefined && hero !== undefined) resource[effect.resource] = Math.min(effect.resource === "mana" ? hero.maxMana : hero.maxStamina, resource[effect.resource] + effect.amount); }
       else if (effect.kind === "heal") { const healed = effect.percentMax ? Math.ceil(originalTarget.maxHp * effect.amount) : effect.amount; originalTarget.hp = Math.min(originalTarget.maxHp, Math.max(effect.revive ? 1 : 0, originalTarget.hp + healed)); if (effect.revive && originalTarget.hp > 0) originalTarget.downed = false; }
@@ -611,6 +644,10 @@ export function applyCombatCommand(snapshot: MutableSnapshot, command: CommandEn
       const definition = pack.cards.find((entry) => entry.id === definitionId)!;
       const reason = playDefinition(snapshot, active.actor, active.resource, definition, targetId, context);
       if (reason !== undefined) return reason;
+      if (command.type === "useBasicBlock") {
+        const bonus = heroModifierCount(snapshot, active.actor.id, "basic_block_plus_1");
+        if (bonus > 0) addBlock(snapshot, active.actor, bonus, "basic_block_plus_1", "ownerNextTurn");
+      }
     } else if (command.type === "useSupply") {
       if (combat.supplyUsed) return "item_unavailable";
       if (active.resource.ap < 1) return "insufficient_ap";
