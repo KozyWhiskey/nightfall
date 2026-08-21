@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { build1Pack } from "@nightfall/content";
 import type { EquipmentSlot } from "@nightfall/contracts";
-import { cloneSnapshot, createContext, createItemInstance, startCombat, totalBlockForFixture, type ForcedStreams, type MutableSnapshot } from "@nightfall/sim";
+import { cloneSnapshot, createContext, createItemInstance, deriveHeroPools, startCombat, totalBlockForFixture, type ForcedStreams, type MutableSnapshot } from "@nightfall/sim";
 import { accept, command, createEmbarkedSnapshot } from "./index.js";
 
 function setActiveHero(snapshot: MutableSnapshot, heroId: string): void {
@@ -162,5 +162,181 @@ describe("Registry affix combat modifiers", () => {
     const snapshot = startAffixCombat("kite_shield", ["lumenforged"], { slot: "offHand" });
     const brace = snapshot.activeRun!.combat!.cards.find((card) => card.definitionId === "brace")!;
     expect(brace.blockDelta).toBe(2);
+  });
+
+  it("SIM-AFFIX-SIG-01 vigils_promise Guard grants the protected ally 2 Block", () => {
+    let snapshot = startAffixCombat("kite_shield", ["vigils_promise"], { slot: "offHand" });
+    const run = snapshot.activeRun!;
+    const vanguard = run.heroes.find((hero) => hero.classId === "vanguard")!;
+    const weaver = run.heroes.find((hero) => hero.classId === "aether_weaver")!;
+    const hold = run.combat!.cards.find((card) => card.ownerId === vanguard.id && card.definitionId === "hold_the_line")!;
+    hold.zone = "hand";
+    setActiveHero(snapshot, vanguard.id);
+    snapshot = accept(snapshot, command(snapshot, "playCard", { cardInstanceId: hold.cardInstanceId, targetId: weaver.id }, vanguard.id), build1Pack) as MutableSnapshot;
+    expect(snapshot.activeRun!.combat!.guards).toHaveLength(1);
+    expect(totalBlockForFixture(snapshot, vanguard.id)).toBe(4);
+    expect(totalBlockForFixture(snapshot, weaver.id)).toBe(2);
+  });
+
+  it("SIM-AFFIX-SIG-02 cinder_scar reduces Burned enemy calculated damage by 1", () => {
+    let snapshot = startAffixCombat("aether_rod", ["cinder_scar"], {
+      heroClass: "aether_weaver",
+      slot: "mainHand",
+      forcedStreams: { combatInitiative: [0.9, 0.9, 0, 0], combatIntent: [0, 0] }
+    });
+    const run = snapshot.activeRun!;
+    const weaver = run.heroes.find((hero) => hero.classId === "aether_weaver")!;
+    const vanguard = run.heroes.find((hero) => hero.classId === "vanguard")!;
+    const combat = run.combat!;
+    const hounds = combat.combatants.filter((entry) => entry.definitionId === "gloomfang_hound");
+    const hound = hounds[0]!;
+    hound.burn = [{ remainingOwnerTurns: 2 }];
+    const intent = combat.intents.find((entry) => entry.enemyId === hound.id)!;
+    intent.intentId = "lunge";
+    intent.label = "Lunge";
+    intent.magnitude = 5;
+    // Stop after one enemy turn on the next living hero.
+    combat.timeline = [weaver.id, hound.id, vanguard.id, hounds[1]!.id];
+    setActiveHero(snapshot, weaver.id);
+    const target = combat.combatants.filter((entry) => entry.side === "heroes").sort((left, right) => left.hp - right.hp || left.id.localeCompare(right.id))[0]!;
+    const hpBefore = target.hp;
+    snapshot = accept(snapshot, command(snapshot, "endTurn", {}, weaver.id), build1Pack, { combatIntent: [0] }) as MutableSnapshot;
+    const after = snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === target.id)!;
+    expect(hpBefore - after.hp).toBe(4);
+  });
+
+  it("SIM-AFFIX-SIG-03 hounds_pursuit draws once the first time an enemy becomes Exposed", () => {
+    let snapshot = startAffixCombat("gloomwood_spear", ["hounds_pursuit"]);
+    const run = snapshot.activeRun!;
+    const vanguard = run.heroes.find((hero) => hero.classId === "vanguard")!;
+    const thrust = run.combat!.cards.find((card) => card.ownerId === vanguard.id && card.definitionId === "piercing_thrust")!;
+    thrust.zone = "hand";
+    const enemies = run.combat!.combatants.filter((entry) => entry.side === "enemies");
+    const handBefore = run.combat!.cards.filter((card) => card.ownerId === vanguard.id && card.zone === "hand").length;
+    setActiveHero(snapshot, vanguard.id);
+    snapshot = accept(snapshot, command(snapshot, "playCard", { cardInstanceId: thrust.cardInstanceId, targetId: enemies[0]!.id }, vanguard.id), build1Pack) as MutableSnapshot;
+    const handAfterFirst = snapshot.activeRun!.combat!.cards.filter((card) => card.ownerId === vanguard.id && card.zone === "hand").length;
+    // Play consumes 1; exposed_draw returns 1 → net unchanged.
+    expect(handAfterFirst).toBe(handBefore);
+    expect(snapshot.activeRun!.flags.some((flag) => flag.startsWith("hounds_pursuit_used:"))).toBe(true);
+
+    const secondThrust = snapshot.activeRun!.combat!.cards.find((card) => card.ownerId === vanguard.id && card.definitionId === "piercing_thrust")!;
+    secondThrust.zone = "hand";
+    const resources = snapshot.activeRun!.combat!.heroResources.find((entry) => entry.heroId === vanguard.id)!;
+    resources.ap = 3;
+    resources.stamina = 6;
+    const handMid = snapshot.activeRun!.combat!.cards.filter((card) => card.ownerId === vanguard.id && card.zone === "hand").length;
+    setActiveHero(snapshot, vanguard.id);
+    snapshot = accept(snapshot, command(snapshot, "playCard", { cardInstanceId: secondThrust.cardInstanceId, targetId: enemies[1]!.id }, vanguard.id), build1Pack) as MutableSnapshot;
+    const handFinal = snapshot.activeRun!.combat!.cards.filter((card) => card.ownerId === vanguard.id && card.zone === "hand").length;
+    expect(handFinal).toBe(handMid - 1);
+    expect(snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === enemies[1]!.id)!.conditions.some((entry) => entry.id === "exposed")).toBe(true);
+  });
+
+  it("SIM-AFFIX-SIG-04 ashen_names grants 4 Block to living allies when a hero is Downed", () => {
+    let snapshot = startAffixCombat("hewn_sword", ["ashen_names"], {
+      heroClass: "aether_weaver",
+      slot: "mainHand",
+      forcedStreams: { combatInitiative: [0.9, 0.9, 0, 0], combatIntent: [0, 0] }
+    });
+    const run = snapshot.activeRun!;
+    const weaver = run.heroes.find((hero) => hero.classId === "aether_weaver")!;
+    const vanguard = run.heroes.find((hero) => hero.classId === "vanguard")!;
+    const combat = run.combat!;
+    const hounds = combat.combatants.filter((entry) => entry.definitionId === "gloomfang_hound");
+    const hound = hounds[0]!;
+    combat.combatants.find((entry) => entry.id === vanguard.id)!.hp = 1;
+    const intent = combat.intents.find((entry) => entry.enemyId === hound.id)!;
+    intent.intentId = "lunge";
+    intent.label = "Lunge";
+    intent.magnitude = 5;
+    // After the hound acts, stop on vanguard's turn start (before weaver's Block would expire).
+    combat.timeline = [weaver.id, hound.id, vanguard.id, hounds[1]!.id];
+    setActiveHero(snapshot, weaver.id);
+    snapshot = accept(snapshot, command(snapshot, "endTurn", {}, weaver.id), build1Pack, { combatIntent: [0] }) as MutableSnapshot;
+    expect(snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === vanguard.id)!.downed).toBe(true);
+    // Owner's next turn start expires ownerNextTurn Block; assert via fact + layers if still present,
+    // or via the passive fact when advanceUntilHero already opened the owner's turn.
+    const ashenFact = snapshot.latestFacts.find((fact) => fact.kind === "item_passive" && String(fact.message).includes("Ashen Names"));
+    expect(ashenFact).toBeDefined();
+    expect(ashenFact!.data.amount).toBe(4);
+    expect(ashenFact!.data.heroId).toBe(weaver.id);
+  });
+
+  it("SIM-AFFIX-SIG-05 deepdrawn adds maxMana on spell vessels and maxStamina otherwise", () => {
+    const spellVessel = createItemInstance(build1Pack, "aether_rod", "imbued", 1, "deepdrawn_spell", { kind: "held_by_expedition", runId: "run" }, ["deepdrawn"]);
+    expect(spellVessel.mechanicSnapshot.maxManaDelta).toBe(1);
+    expect(spellVessel.mechanicSnapshot.maxStaminaDelta ?? 0).toBe(0);
+
+    const physicalVessel = createItemInstance(build1Pack, "hewn_sword", "imbued", 1, "deepdrawn_phys", { kind: "held_by_expedition", runId: "run" }, ["deepdrawn"]);
+    expect(physicalVessel.mechanicSnapshot.maxStaminaDelta).toBe(1);
+    expect(physicalVessel.mechanicSnapshot.maxManaDelta ?? 0).toBe(0);
+
+    const armor = createItemInstance(build1Pack, "kite_shield", "imbued", 1, "deepdrawn_armor", { kind: "held_by_expedition", runId: "run" }, ["deepdrawn"]);
+    expect(armor.mechanicSnapshot.maxStaminaDelta).toBe(1);
+
+    const weaverClass = build1Pack.classes.find((entry) => entry.id === "aether_weaver")!;
+    const base = deriveHeroPools(weaverClass, weaverClass.attributes, []);
+    const withSpell = deriveHeroPools(weaverClass, weaverClass.attributes, [spellVessel]);
+    expect(withSpell.maxMana).toBe(base.maxMana + 1);
+    expect(withSpell.maxStamina).toBe(base.maxStamina);
+  });
+
+  it("SIM-AFFIX-SIG-06 waystation reduces the first Event Run Gloom increase by 5", () => {
+    const embarked = createEmbarkedSnapshot(build1Pack);
+    const snapshot = cloneSnapshot(embarked);
+    const run = snapshot.activeRun!;
+    const vanguard = run.heroes.find((hero) => hero.classId === "vanguard")!;
+    const previousId = vanguard.equipment.offHand;
+    if (previousId !== null) {
+      const previous = run.holdings.find((entry) => entry.instanceId === previousId);
+      if (previous !== undefined) previous.location = { kind: "held_by_expedition", runId: run.runId };
+    }
+    const item = createItemInstance(
+      build1Pack,
+      "kite_shield",
+      "imbued",
+      7,
+      "waystation_test",
+      { kind: "equipped", heroId: vanguard.id, slotId: "offHand" },
+      ["waystation"]
+    );
+    run.holdings.push(item as never);
+    vanguard.equipment.offHand = item.instanceId;
+    run.currentNodeId = "early_event";
+    const node = run.nodes.find((entry) => entry.id === "early_event")!;
+    node.contentId = "last_courier";
+    node.state = "entered";
+    const event = build1Pack.events.find((entry) => entry.id === "last_courier")!;
+    run.phase = "event";
+    run.pendingDecision = {
+      kind: "event",
+      eventId: "last_courier",
+      optionIds: [...event.optionIds],
+      choices: event.options.map((option) => ({ id: option.id, label: option.label, detail: "fixture" }))
+    };
+    run.runGloom = 20;
+    const after = accept(snapshot, command(snapshot, "chooseEventOption", { optionId: "ledger" }), build1Pack) as MutableSnapshot;
+    // ledger is +8, waystation reduces by 5 → +3
+    expect(after.activeRun!.runGloom).toBe(23);
+    expect(after.activeRun!.flags).toContain("waystation_used");
+
+    // Second positive Event Gloom is not reduced.
+    const second = cloneSnapshot(after);
+    second.activeRun!.currentNodeId = "deep_event";
+    const deep = second.activeRun!.nodes.find((entry) => entry.id === "deep_event")!;
+    deep.contentId = "cache_ember_pit";
+    deep.state = "entered";
+    const pit = build1Pack.events.find((entry) => entry.id === "cache_ember_pit")!;
+    second.activeRun!.phase = "event";
+    second.activeRun!.pendingDecision = {
+      kind: "event",
+      eventId: "cache_ember_pit",
+      optionIds: [...pit.optionIds],
+      choices: pit.options.map((option) => ({ id: option.id, label: option.label, detail: "fixture" }))
+    };
+    const gloomBefore = second.activeRun!.runGloom;
+    const afterSecond = accept(second, command(second, "chooseEventOption", { optionId: "haul" }), build1Pack) as MutableSnapshot;
+    expect(afterSecond.activeRun!.runGloom).toBe(gloomBefore + 5);
   });
 });

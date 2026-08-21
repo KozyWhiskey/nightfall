@@ -30,10 +30,30 @@ function uniquePush(values: string[], value: string): void {
   if (!values.includes(value)) values.push(value);
 }
 
-function addGloom(snapshot: MutableSnapshot, amount: number, source: string, context: SimulationContext): void {
-  const run = runOf(snapshot); const before = run.runGloom; run.runGloom = clamp(before + amount, 0, 100);
+function addGloom(snapshot: MutableSnapshot, amount: number, source: string, context: SimulationContext, options: { fromEvent?: boolean } = {}): void {
+  const run = runOf(snapshot);
+  let adjusted = amount;
+  if (
+    options.fromEvent === true &&
+    adjusted > 0 &&
+    !run.flags.includes("waystation_used") &&
+    run.heroes.some((hero) =>
+      run.holdings.some(
+        (item) =>
+          item.location.kind === "equipped" &&
+          item.location.heroId === hero.id &&
+          item.mechanicSnapshot.modifiers.includes("gloom_increase_reduction")
+      )
+    )
+  ) {
+    adjusted = Math.max(0, adjusted - 5);
+    uniquePush(run.flags, "waystation_used");
+    emitFact(context, snapshot.revision, "item_passive", "Waystation reduced an Event Run Gloom increase.", { amountBefore: amount, amountAfter: adjusted });
+  }
+  const before = run.runGloom;
+  run.runGloom = clamp(before + adjusted, 0, 100);
   run.diagnostics.gloomChanges.push({ source, before, after: run.runGloom });
-  emitFact(context, snapshot.revision, "gloom_changed", `Run Gloom ${amount >= 0 ? "rose" : "fell"} by ${Math.abs(amount)}.`, { before, after: run.runGloom, source });
+  emitFact(context, snapshot.revision, "gloom_changed", `Run Gloom ${adjusted >= 0 ? "rose" : "fell"} by ${Math.abs(adjusted)}.`, { before, after: run.runGloom, source });
 }
 
 function addMaterial(snapshot: MutableSnapshot, id: string, amount: number): void {
@@ -441,7 +461,7 @@ function payCost(snapshot: MutableSnapshot, cost: Readonly<Record<string, number
 function applyExpeditionEffects(snapshot: MutableSnapshot, pack: ValidatedContentPack, effects: readonly EffectDefinition[], source: string, context: SimulationContext): void {
   const run = runOf(snapshot);
   for (const effect of effects) {
-    if (effect.kind === "changeRunGloom") addGloom(snapshot, effect.amount, source, context);
+    if (effect.kind === "changeRunGloom") addGloom(snapshot, effect.amount, source, context, { fromEvent: true });
     else if (effect.kind === "grantMaterial") addMaterial(snapshot, effect.materialId, effect.amount);
     else if (effect.kind === "addExpeditionFlag") uniquePush(run.flags, effect.flagId);
     else if (effect.kind === "dealDirectDamage") for (const hero of run.heroes.filter((entry) => !entry.downed)) { hero.hp = Math.max(0, hero.hp - effect.amount); if (hero.hp === 0) hero.downed = true; }

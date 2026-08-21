@@ -236,6 +236,37 @@ function heroHasModifier(snapshot: MutableSnapshot, heroId: string, modifier: st
   return heroModifierCount(snapshot, heroId, modifier) > 0;
 }
 
+function livingHeroesWithModifier(snapshot: MutableSnapshot, modifier: string): string[] {
+  const combat = combatOf(snapshot);
+  return runOf(snapshot).heroes
+    .filter((hero) => {
+      const combatant = combat.combatants.find((entry) => entry.id === hero.id);
+      return combatant !== undefined && isAlive(combatant) && heroHasModifier(snapshot, hero.id, modifier);
+    })
+    .map((hero) => hero.id);
+}
+
+function applyAshenNames(snapshot: MutableSnapshot, downedHeroId: string, context: SimulationContext): void {
+  for (const heroId of livingHeroesWithModifier(snapshot, "ally_downed_block")) {
+    if (heroId === downedHeroId) continue;
+    const ally = combatOf(snapshot).combatants.find((entry) => entry.id === heroId);
+    if (ally === undefined || !isAlive(ally)) continue;
+    addBlock(snapshot, ally, 4, "ally_downed_block", "ownerNextTurn");
+    emitFact(context, snapshot.revision, "item_passive", "Ashen Names granted Block after an ally was Downed.", { heroId, amount: 4 });
+  }
+}
+
+function triggerExposedDraw(snapshot: MutableSnapshot, context: SimulationContext): void {
+  const run = runOf(snapshot);
+  for (const heroId of livingHeroesWithModifier(snapshot, "exposed_draw")) {
+    const flag = `hounds_pursuit_used:${heroId}`;
+    if (run.flags.includes(flag)) continue;
+    run.flags.push(flag);
+    drawOne(snapshot, heroId, context);
+    emitFact(context, snapshot.revision, "item_passive", "Hound's Pursuit drew a card when an enemy became Exposed.", { heroId });
+  }
+}
+
 function vesselItemForCard(snapshot: MutableSnapshot, card: MutableCard | undefined): ItemInstance | undefined {
   if (card === undefined) return undefined;
   return runOf(snapshot).holdings.find((item) => item.instanceId === card.sourceId);
@@ -304,7 +335,10 @@ function dealDamage(snapshot: MutableSnapshot, actor: MutableCombatant, original
   const target = resolveGuard(combat, originalTarget, directTargeted);
   const scalingValue = scaling === "strength" ? actor.strength : scaling === "intellect" ? actor.intellect : 0;
   const raw = Math.max(0, amount + scalingValue + actor.nextDamageBonus);
-  const calculated = Math.max(0, Math.floor(raw * conditionMultiplier(actor, "weakened") * conditionMultiplier(target, "exposed")));
+  let calculated = Math.max(0, Math.floor(raw * conditionMultiplier(actor, "weakened") * conditionMultiplier(target, "exposed")));
+  if (actor.side === "enemies" && actor.burn.length > 0 && livingHeroesWithModifier(snapshot, "burned_enemy_damage_minus_1").length > 0) {
+    calculated = Math.max(0, calculated - 1);
+  }
   if (actor.nextDamageBonus > 0) actor.nextDamageBonus = 0;
   let remaining = calculated;
   let stillWallAbsorbed = false;
@@ -322,8 +356,10 @@ function dealDamage(snapshot: MutableSnapshot, actor: MutableCombatant, original
   emitFact(context, snapshot.revision, "damage", `${actor.name} dealt ${calculated} damage to ${target.name}.`, { actorId: actor.id, targetId: target.id, amount: calculated, hpDamage: remaining, redirected: target.id !== originalTarget.id });
   if (stillWallAbsorbed) addCondition(actor, "weakened", 1, 1);
   if (target.hp === 0) {
-    if (target.side === "heroes") target.downed = true;
-    else target.destroyed = true;
+    if (target.side === "heroes") {
+      target.downed = true;
+      applyAshenNames(snapshot, target.id, context);
+    } else target.destroyed = true;
     emitFact(context, snapshot.revision, target.side === "heroes" ? "hero_downed" : "enemy_destroyed", target.side === "heroes" ? `${target.name} was Downed.` : `${target.name} was destroyed.`, { targetId: target.id });
     if (target.definitionId === "smothering_shroud") {
       runOf(snapshot).diagnostics.shroudOutcome = "destroyed";
@@ -344,8 +380,10 @@ function directDamage(snapshot: MutableSnapshot, actor: MutableCombatant, target
   target.hp = Math.max(0, target.hp - amount);
   emitFact(context, snapshot.revision, "direct_damage", `${target.name} took ${amount} direct damage.`, { actorId: actor.id, targetId: target.id, amount });
   if (target.hp === 0) {
-    if (target.side === "heroes") target.downed = true;
-    else target.destroyed = true;
+    if (target.side === "heroes") {
+      target.downed = true;
+      applyAshenNames(snapshot, target.id, context);
+    } else target.destroyed = true;
   }
 }
 
@@ -398,11 +436,16 @@ function resolveEffects(snapshot: MutableSnapshot, actor: MutableCombatant, effe
         for (let index = originalTarget.blockLayers.length - 1; index >= 0 && remaining > 0; index -= 1) { const layer = originalTarget.blockLayers[index]!; const removed = Math.min(layer.amount, remaining); layer.amount -= removed; remaining -= removed; }
         originalTarget.blockLayers = originalTarget.blockLayers.filter((layer) => layer.amount > 0);
       }
-      else if (effect.kind === "applyCondition") addCondition(originalTarget, effect.conditionId, effect.stacks, effect.duration + (combat.activeCombatantId === originalTarget.id ? 1 : 0));
+      else if (effect.kind === "applyCondition") {
+        const becameExposed = effect.conditionId === "exposed" && originalTarget.side === "enemies" && !originalTarget.conditions.some((entry) => entry.id === "exposed");
+        addCondition(originalTarget, effect.conditionId, effect.stacks, effect.duration + (combat.activeCombatantId === originalTarget.id ? 1 : 0));
+        if (becameExposed) triggerExposedDraw(snapshot, context);
+      }
       else if (effect.kind === "removeCondition") { originalTarget.conditions = originalTarget.conditions.filter((entry) => entry.id !== effect.conditionId); if (effect.conditionId === "burn") originalTarget.burn = []; }
       else if (effect.kind === "createGuard") {
         combat.guards.push({ id: `${sourceId}:${snapshot.revision}`, guardingHeroId: actor.id, protectedHeroId: originalTarget.id, expiresAtGuardTurnStart: actor.turnsStarted + 1, createdAtRevision: snapshot.revision });
         if (heroHasModifier(snapshot, actor.id, "guard_self_block")) addBlock(snapshot, actor, 2, "guard_self_block", "ownerNextTurn");
+        if (heroHasModifier(snapshot, actor.id, "guard_ally_block")) addBlock(snapshot, originalTarget, 2, "guard_ally_block", "ownerNextTurn");
       }
       else if (effect.kind === "grantNextDamageBonus") originalTarget.nextDamageBonus += effect.amount;
       else if (effect.kind === "restoreResource") { const resource = combat.heroResources.find((entry) => entry.heroId === originalTarget.id); const hero = runOf(snapshot).heroes.find((entry) => entry.id === originalTarget.id); if (resource !== undefined && hero !== undefined) resource[effect.resource] = Math.min(effect.resource === "mana" ? hero.maxMana : hero.maxStamina, resource[effect.resource] + effect.amount); }
@@ -537,6 +580,7 @@ export function startCombat(snapshot: MutableSnapshot, pack: ValidatedContentPac
     }
     const sorted = stableSort(combatants, (entry) => entry.id, (left, right) => right.initiative - left.initiative);
     const cards = run.heroes.flatMap((hero) => buildHeroCards(snapshot, pack, hero, context));
+    run.flags = run.flags.filter((flag) => !flag.startsWith("hounds_pursuit_used:"));
     run.combat = {
       combatId: `${run.runId}:${encounterId}:${run.visitedNodeIds.length}`,
       encounterId,

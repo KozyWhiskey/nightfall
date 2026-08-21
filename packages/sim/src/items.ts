@@ -27,7 +27,7 @@ const CURSE_COVERED_MODIFIERS: Record<string, readonly string[]> = {
 
 const modifierLabels: Record<string, string> = {
   initiative_plus_1: "+1 initiative",
-  max_secondary_plus_1: "+1 max Stamina",
+  max_secondary_plus_1: "+1 maximum Stamina or Mana",
   spell_damage_plus_1: "+1 spell damage",
   card_block_plus_2: "+2 Block on the granted card",
   first_block_plus_2: "+2 Block on the first Block each combat",
@@ -56,7 +56,7 @@ const modifierLabels: Record<string, string> = {
   hollow: CURSE_SENTENCES.hollow!
 };
 
-function mechanicsFor(baseId: string, grantedCardId: string | undefined, modifiers: readonly string[], passiveIds: readonly string[] = []): ItemMechanicSnapshot {
+function mechanicsFor(pack: ValidatedContentPack, baseId: string, grantedCardId: string | undefined, modifiers: readonly string[], passiveIds: readonly string[] = []): ItemMechanicSnapshot {
   const passive: ItemMechanicSnapshot = {
     modifiers: [...new Set([...modifiers, ...passiveIds])],
     ...(grantedCardId === undefined ? {} : { grantedCardId })
@@ -79,9 +79,13 @@ function mechanicsFor(baseId: string, grantedCardId: string | undefined, modifie
   if (baseId === "wayfarers_coat") withBase.maxHpDelta = 3;
   if (baseId === "pilgrims_knot") withBase.maxStaminaDelta = 1;
   if (baseId === "cracked_way_lens") withBase.damageDelta = 1;
+  const grantedKind = grantedCardId === undefined ? undefined : pack.cards.find((entry) => entry.id === grantedCardId)?.kind;
   for (const modifier of modifiers) {
     if (modifier === "initiative_plus_1") withBase.initiativeDelta = (withBase.initiativeDelta ?? 0) + 1;
-    if (modifier === "max_secondary_plus_1") withBase.maxStaminaDelta = (withBase.maxStaminaDelta ?? 0) + 1;
+    if (modifier === "max_secondary_plus_1") {
+      if (grantedKind === "spell") withBase.maxManaDelta = (withBase.maxManaDelta ?? 0) + 1;
+      else withBase.maxStaminaDelta = (withBase.maxStaminaDelta ?? 0) + 1;
+    }
     if (modifier === "spell_damage_plus_1") withBase.damageDelta = (withBase.damageDelta ?? 0) + 1;
     if (modifier === "card_block_plus_2" || modifier === "first_block_plus_2") withBase.blockDelta = (withBase.blockDelta ?? 0) + 2;
     if (modifier === "retain") withBase.retain = true;
@@ -177,6 +181,8 @@ function buildDisplayDescription(
   for (const modifier of mechanics.modifiers) {
     if (coveredModifiers.has(modifier)) continue;
     if (modifier === curseId) continue;
+    // Covered by maxManaDelta / maxStaminaDelta lines above.
+    if (modifier === "max_secondary_plus_1") continue;
     const label = modifierLabels[modifier] ?? modifier.replaceAll("_", " ");
     if (!lines.some((line) => line.toLowerCase().includes(label.toLowerCase()))) lines.push(label);
   }
@@ -226,7 +232,7 @@ export function createItemInstance(
   const modifiers = selectedAffixes.flatMap((entry) => entry.modifiers);
   const affixName = [selectedAffixes.find((entry) => entry.affixKind === "prefix")?.display.name, definition.display.name, selectedAffixes.find((entry) => entry.affixKind === "suffix")?.display.name].filter(Boolean).join(" ");
   const mechanicSnapshot: ItemMechanicSnapshot = {
-    ...mechanicsFor(definitionId, definition.grantedCardId, modifiers, definition.passiveIds),
+    ...mechanicsFor(pack, definitionId, definition.grantedCardId, modifiers, definition.passiveIds),
     ...(definition.itemKind === "equipment" && definition.slot !== undefined ? { equipmentSlot: definition.slot } : {}),
     ...(definition.requiredSchools.length > 0 ? { requiredSchools: [...definition.requiredSchools] } : {})
   };
