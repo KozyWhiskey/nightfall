@@ -11,6 +11,7 @@ import {
   queueOrdinal,
   rotatedInitiativeOrder
 } from "./combatUi.js";
+import { isMarkedCarrier } from "./carrierChaseUi.js";
 
 function portraitFor(combatant: CombatantSnapshot) {
   if (combatant.side === "heroes") {
@@ -35,6 +36,7 @@ function TrackerRow({
   isNext,
   isPlaybackFocus,
   isLinked,
+  isCarrier,
   onLink
 }: {
   combatant: CombatantSnapshot;
@@ -45,6 +47,7 @@ function TrackerRow({
   isNext: boolean;
   isPlaybackFocus: boolean;
   isLinked: boolean;
+  isCarrier: boolean;
   onLink: (combatantId: string | null) => void;
 }) {
   const portrait = portraitFor(combatant);
@@ -64,7 +67,8 @@ function TrackerRow({
       isNow ? "is-now" : "",
       isNext ? "is-next" : "",
       isPlaybackFocus ? "is-playback-focus" : "",
-      isLinked ? "is-linked" : ""
+      isLinked ? "is-linked" : "",
+      isCarrier ? "is-carrier" : ""
     ].filter(Boolean).join(" ")}
     data-combatant-id={combatant.id}
     onMouseEnter={() => onLink(combatant.id)}
@@ -80,6 +84,7 @@ function TrackerRow({
     </div>
     <div className="initiative-copy">
       <strong>{combatant.name}</strong>
+      {isCarrier && <span className="initiative-carrier-badge">Carrier</span>}
       <span className="initiative-value" title="Initiative">Init {combatant.initiative}</span>
       {queueLabel !== undefined && <span className="initiative-queue-label">{queueLabel}</span>}
       {intent !== undefined && kind !== undefined ? <span className={`initiative-intent intent-${kind}`}>
@@ -131,6 +136,7 @@ export function InitiativeTracker({
           isNext={isNow ? false : isNext}
           isPlaybackFocus={playbackFocusId !== null && id === playbackFocusId}
           isLinked={id === linkedCombatantId}
+          isCarrier={isMarkedCarrier(combatant)}
           onLink={onLinkCombatant}
         />;
       })}

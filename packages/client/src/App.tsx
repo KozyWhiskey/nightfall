@@ -29,6 +29,7 @@ import {
   affixCountSummary
 } from "./rewardUi.js";
 import { presentLootFact } from "./lootFactUi.js";
+import { carrierRecoveredAnnouncement } from "./combat/carrierChaseUi.js";
 import { useNightfall } from "./store.js";
 
 function PillarRail({ lit }: { lit: number }) {
@@ -248,7 +249,8 @@ function RewardView({ snapshot, send }: ViewProps) {
       <p className="stat-line">Pack {counts.pack} · Sealed at waypoint {counts.sealed}</p>
     </section>
     <section className="bundle"><strong>Automatic bundle</strong><span>{Object.entries(decision.automatic).map(([id, amount]) => `${amount} ${titleCase(id)}`).join(" · ")}</span></section>
-    {carrier !== undefined && <div className="reward-carrier" aria-label="Marked carrier item">
+    {carrier !== undefined && <div className="reward-carrier is-carrier-fanfare" aria-label="Marked carrier item">
+      <p className="carrier-fanfare-line" role="status" aria-live="polite">{carrierRecoveredAnnouncement(carrier)}</p>
       <IdentifiedItemCard item={carrier} eyebrow={rarityEyebrow(carrier, "Marked carrier")} />
     </div>}
     {decision.carrierItemId !== undefined && carrier === undefined && <p className="carrier-note">A marked carrier dropped an exceptional item into the expedition pack.</p>}

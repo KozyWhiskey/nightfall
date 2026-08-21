@@ -1274,6 +1274,23 @@ button.route-node:hover:not(:disabled) {
 }
 .reward-carrier .offer-card {
   border-color: rgba(169, 130, 69, .7);
+  border-width: 2px;
+}
+.reward-carrier.is-carrier-fanfare {
+  animation: carrier-fanfare-in .85s ease-out 1;
+}
+.carrier-fanfare-line {
+  margin: 0 0 .55rem;
+  padding: .4rem .65rem;
+  border-left: 4px double var(--brass);
+  font-weight: 700;
+  font-size: .85rem;
+  color: var(--ink);
+  letter-spacing: .02em;
+}
+@keyframes carrier-fanfare-in {
+  0% { background: rgba(196, 163, 90, .2); transform: translateY(.35rem); }
+  100% { background: transparent; transform: translateY(0); }
 }
 .item-list .offer-effects { margin-top: .35rem; }
 .item-list .offer-effect-lead { margin: .35rem 0 0; }
@@ -1326,6 +1343,7 @@ button.route-node:hover:not(:disabled) {
 
 .combat-chrome {
   display: flex;
+  flex-wrap: wrap;
   align-items: end;
   justify-content: space-between;
   gap: 1rem;
@@ -1337,6 +1355,19 @@ button.route-node:hover:not(:disabled) {
 .combat-chrome-stats > div { display: grid; gap: .1rem; text-align: right; }
 .combat-chrome-stats span { color: var(--muted); font-size: .68rem; margin: 0; }
 .combat-chrome-stats strong { font-family: Palatino Linotype, Book Antiqua, Georgia, serif; font-size: 1.15rem; font-weight: 500; }
+.combat-carrier-status {
+  flex: 1 1 100%;
+  margin: 0;
+  padding: .45rem .7rem;
+  border: 1px solid var(--brass);
+  border-left-width: 4px;
+  border-left-style: double;
+  background: rgba(42, 36, 24, .45);
+  color: var(--ink);
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
 
 .dock-prompt {
   display: flex;
@@ -1589,7 +1620,32 @@ button.standee-figure { cursor: pointer; }
 .standee-chip-block { color: var(--aether); }
 .standee-chip-burn { color: var(--ember); }
 .standee-chip-guard { color: var(--brass); }
-.standee-chip-carrier { color: var(--ember); }
+.standee-chip-carrier {
+  color: var(--ember);
+  border: 1px solid var(--brass);
+  border-left-width: 3px;
+  font-weight: 700;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  font-size: .62rem;
+}
+.initiative-row.is-carrier {
+  border-left: 4px double var(--brass);
+  font-weight: 600;
+}
+.initiative-carrier-badge {
+  display: inline-block;
+  margin: .1rem 0 .15rem;
+  padding: .08rem .35rem;
+  border: 1px solid var(--brass);
+  border-left-width: 3px;
+  font-family: Consolas, monospace;
+  font-size: .58rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: rgba(42, 36, 24, .55);
+}
 
 /* —— Initiative tracker (vertical, right side) —— */
 .initiative-tracker {

@@ -7,6 +7,7 @@ import {
 } from "../decisionUi.js";
 import { CombatBattlefield } from "./CombatBattlefield.js";
 import { InitiativeTracker } from "./InitiativeTracker.js";
+import { markedCarrierFieldStatus } from "./carrierChaseUi.js";
 import { useTurnPlayback } from "./useTurnPlayback.js";
 
 type ViewProps = { snapshot: GameSnapshot; send: (type: CommandType, payload: Record<string, unknown>, actorId?: string) => Promise<void> };
@@ -139,6 +140,7 @@ export function CombatView({ snapshot, send }: ViewProps) {
 
   const recentCombatFacts = snapshot.latestFacts.slice(-3).reverse();
   const latestFact = recentCombatFacts[0];
+  const carrierStatus = markedCarrierFieldStatus(combat);
 
   return <main className={`combat-stage${targetMode !== null ? ` is-targeting-${targetMode}` : ""}${playback.busy ? " is-playback" : ""}`} aria-label={`Combat: ${encounterLabel}`}>
     <header className="combat-chrome">
@@ -147,6 +149,9 @@ export function CombatView({ snapshot, send }: ViewProps) {
         <div><span>Run Gloom</span><strong>{run.runGloom}</strong></div>
         <div><span>{turnStatusLabel}</span><strong>{actingCombatant?.name ?? active.name}{heroTurn && activeResources !== undefined && !playback.busy ? ` · ${activeResources.ap} AP` : ""}</strong></div>
       </div>
+      {carrierStatus !== undefined && (
+        <p className="combat-carrier-status" role="status">{carrierStatus}</p>
+      )}
     </header>
 
     <div className="combat-field">
