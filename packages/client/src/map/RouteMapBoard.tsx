@@ -8,6 +8,7 @@ import {
   ROUTE_NODE_SIZE,
   type LaidOutNode
 } from "./routeLayout.js";
+import { mapGreedHint } from "./mapGreedUi.js";
 
 function NodeGlyph({ kind }: { kind: ReturnType<typeof nodeIconKind> }) {
   switch (kind) {
@@ -76,6 +77,8 @@ export function RouteMapBoard({
               : laid.node.label.replace(/^\?\s*/, "");
             const stateText = nodeStateLabel(laid.state);
             const dangerNote = kind === "dangerous" ? " High-risk optional fight." : "";
+            const greedHint = mapGreedHint(laid.node.contentId);
+            const greedNote = greedHint !== undefined ? ` ${greedHint}.` : "";
             const available = laid.state === "available" && laid.edgeId !== undefined;
             const style = {
               left: laid.x - ROUTE_NODE_SIZE.width / 2,
@@ -84,7 +87,7 @@ export function RouteMapBoard({
               height: ROUTE_NODE_SIZE.height
             };
             const className = `route-node is-${laid.state} is-${kind}`;
-            const aria = `${category}: ${fullTitle}. ${stateText}.${dangerNote}`;
+            const aria = `${category}: ${fullTitle}. ${stateText}.${dangerNote}${greedNote}`;
 
             if (available) {
               return (
@@ -93,7 +96,7 @@ export function RouteMapBoard({
                   type="button"
                   className={className}
                   style={style}
-                  title={`${fullTitle} — ${stateText}${dangerNote}`}
+                  title={`${fullTitle} — ${stateText}${dangerNote}${greedHint !== undefined ? ` · ${greedHint}` : ""}`}
                   onClick={() => onChooseEdge(laid.edgeId!)}
                   aria-label={`${aria} Activate to travel`}
                 >
@@ -109,7 +112,7 @@ export function RouteMapBoard({
                 key={laid.id}
                 className={className}
                 style={style}
-                title={`${fullTitle} — ${stateText}${dangerNote}`}
+                title={`${fullTitle} — ${stateText}${dangerNote}${greedHint !== undefined ? ` · ${greedHint}` : ""}`}
                 aria-label={aria}
                 role="img"
               >
