@@ -194,6 +194,12 @@ export interface EquipCompareRow {
   readonly line: string;
 }
 
+/** Party inspector line: worn name or Empty plus optional delta. */
+export function partyEquipCompareLabel(row: EquipCompareRow): string {
+  const worn = row.equippedName ?? "Empty";
+  return row.delta !== undefined ? `vs worn: ${worn} · ${row.delta}` : `vs worn: ${worn}`;
+}
+
 /** Compare gear offer vs each eligible hero's worn piece in the matching slot. */
 export function equipCompareRows(
   offer: ItemInstance,

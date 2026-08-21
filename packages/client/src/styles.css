@@ -449,6 +449,15 @@ button.equip-slot:hover:not(:disabled) {
   font-size: .85rem;
 }
 .inventory-destination strong { color: var(--text); }
+.inventory-equip-compare {
+  margin: .35rem 0 0;
+  padding: .35rem .55rem;
+  border-left: 3px solid var(--brass);
+  color: var(--ink);
+  font-size: .8rem;
+  font-weight: 600;
+  letter-spacing: .01em;
+}
 .inventory-detail-divider {
   border: 0;
   border-top: 1px solid var(--line);

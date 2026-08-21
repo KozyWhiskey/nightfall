@@ -5,6 +5,8 @@ import { combatantArtSrc, silhouetteForHero } from "../art/artMap.js";
 import { materialLines, titleCase } from "../decisionUi.js";
 import {
   affixCountSummary,
+  equipCompareRows,
+  partyEquipCompareLabel,
   parseEffectSections,
   rarityGlyph
 } from "../rewardUi.js";
@@ -256,9 +258,18 @@ function LoadoutDetailPane({
         <ItemEffects description={focusItem.displaySnapshot.description} />
         {focusItem.itemKind === "equipment" && (() => {
           const eligibility = equipEligibility(hero, focusItem);
-          return eligibility.ok && eligibility.targetSlot !== undefined
-            ? <p className="inventory-destination">Goes in <strong>{SLOT_LABELS[eligibility.targetSlot]}</strong></p>
-            : <p className="inventory-hint">{eligibility.reason}</p>;
+          if (!eligibility.ok || eligibility.targetSlot === undefined) {
+            return <p className="inventory-hint">{eligibility.reason}</p>;
+          }
+          const compare = equipCompareRows(focusItem, [hero], holdings)[0];
+          return <>
+            <p className="inventory-destination">Goes in <strong>{SLOT_LABELS[eligibility.targetSlot]}</strong></p>
+            {compare !== undefined && (
+              <p className="inventory-equip-compare" aria-label="Compare to equipped">
+                {partyEquipCompareLabel(compare)}
+              </p>
+            )}
+          </>;
         })()}
         {focusItem.itemKind === "scroll" && (() => {
           const eligibility = learnEligibility(hero, focusItem);

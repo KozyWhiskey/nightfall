@@ -90,3 +90,16 @@ Sectioned descriptions, curse sentences, rarity glyphs/weight/affix-count.
 
 ### Cycle 6 — remaining first-use affixes
 `SIM-AFFIX-09..12`: first burn stack, Exposed/Retain discounts; Lumenforged copy honesty.
+
+
+### Follow-up session (2026-08-21 morning continue)
+
+Shipped remaining overnight backlog items one-by-one with tests:
+
+1. `loot-fact-celebration` — fact-log rarity celebration
+2. `marked-carrier-chase-presentation` — combat + reward chase beat
+3. `craft-forged-identity-celebration` — Overbind as vessel identity
+4. `map-greed-hints` — banded map tooltips
+5. `party-inspector-equip-compare` — bag vs worn compare in Party
+
+All five on branch `overnight/loot-gameplay-aaa`. Verify with `pnpm check:boundaries && pnpm test`.

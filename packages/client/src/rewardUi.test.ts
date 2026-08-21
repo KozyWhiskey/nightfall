@@ -9,6 +9,7 @@ import {
   nonInjectEffectLines,
   packAndSealedCounts,
   parseEffectSections,
+  partyEquipCompareLabel,
   rarityGlyph
 } from "./rewardUi.js";
 
@@ -176,6 +177,8 @@ describe("equipCompareRows", () => {
 
     const emptyRows = equipCompareRows(offer, [vanguard], []);
     expect(emptyRows[0]!.line).toBe("Kael · Body: Empty · +3 HP");
+    expect(partyEquipCompareLabel(emptyRows[0]!)).toBe("vs worn: Empty · +3 HP");
+    expect(partyEquipCompareLabel(rows[0]!)).toBe("vs worn: Old Coat · +2 HP");
   });
 });
 
