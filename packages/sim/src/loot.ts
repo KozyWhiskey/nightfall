@@ -24,7 +24,7 @@ function pickUniform<T>(entries: readonly T[], drawUnit: () => number): T {
 
 function grantedCardContext(pack: ValidatedContentPack, item: ItemDefinition) {
   const card = item.grantedCardId === undefined ? undefined : pack.cards.find((entry) => entry.id === item.grantedCardId);
-  const tags = card === undefined ? [] : [card.kind];
+  const tags: readonly string[] = card === undefined ? [] : [card.kind];
   const hasSecondary = card !== undefined && (card.cost.mana > 0 || card.cost.stamina > 0);
   return { card, tags, hasSecondary };
 }
