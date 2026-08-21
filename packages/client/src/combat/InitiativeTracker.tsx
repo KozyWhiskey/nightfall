@@ -80,6 +80,7 @@ function TrackerRow({
     </div>
     <div className="initiative-copy">
       <strong>{combatant.name}</strong>
+      <span className="initiative-value" title="Initiative">Init {combatant.initiative}</span>
       {queueLabel !== undefined && <span className="initiative-queue-label">{queueLabel}</span>}
       {intent !== undefined && kind !== undefined ? <span className={`initiative-intent intent-${kind}`}>
         <IntentGlyph src={intentArtSrc(kind)} textFallback={intentGlyphChar(kind)} />

@@ -1,9 +1,9 @@
 # Screens and Flows
 
 **Status:** Supporting screen inventory
-**Last updated:** 2026-07-19
+**Last updated:** 2026-08-20
 
-**Build 1 authority:** [Interaction Contract](interaction-contract.md) owns visible information, legal commands, confirmation, and persistence behavior. This document is a navigation inventory only; older future rows must not widen Build 1 scope.
+**Build 1 authority:** [Interaction Contract](interaction-contract.md) owns visible information, legal commands, confirmation, and persistence behavior. This document is a navigation inventory only; older future rows must not widen Build 1 scope. Event layout detail lives in [Readability — Event presentation](readability.md#event-presentation).
 
 ## Goal
 
@@ -32,8 +32,8 @@ Boot → Haven Hub → (Intro: settler Ember gift on first leave)
 | **Leg Map** | Approach / Delve / Return path choice; risk/reward previews |
 | **Waypoint** | After Delve boss — map claim; **chest** deposit; Ember→pillar rite; begin Return |
 | **Combat** | Initiative timeline, hands, intents, AP/mana |
-| **Event** | Choice UI (full screen) |
-| **Rest** | Recovery choices |
+| **Event** | Full-screen fork: **state strip** (Carried — at risk + relevant resources + Gloom band + party peek) → **event stage** (fiction) → **choice stack** (Cost / Outcome / Odds per option). Chronicle stays in the way-lantern. |
+| **Rest** | Recovery choices (may share choice-stack chrome with Event; Rest-specific gloom math stays in the stage/intro) |
 | **Shop** | **Future:** spend run resources |
 | **Craft** | Risk-tier craft confirm |
 | **Loot / Reward** | Gear & scroll decisions; deck impact preview; instance roll variance readable |
@@ -55,4 +55,5 @@ Greenfield client screens land in the `client` workspace per [../product/tech-de
 - [ ] Pillar state visible from Haven Hub without digging
 - [ ] Waypoint chest vs carried loot risk is readable
 - [ ] Craft risk tier visible before confirm
+- [ ] Event screen separates carried state from choice Cost / Outcome / Odds (see Readability)
 - [ ] First successful Return presents multiple valid Haven needs but enough resources for only one meaningful decision

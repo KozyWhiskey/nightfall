@@ -2,12 +2,14 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { CommandType, DecisionChoiceSnapshot, GameSnapshot, HeroSnapshot, ItemInstance } from "@nightfall/contracts";
 import {
   affordability,
+  choiceConfirmSummary,
+  choicePresentation,
   choiceRiskLabel,
   costLabel,
   gloomPressure,
   humanizeEventChoice,
   learnableScrolls,
-  materialLines,
+  relevantMaterials,
   titleCase
 } from "./decisionUi.js";
 import { RouteMapBoard } from "./map/RouteMapBoard.js";
@@ -198,6 +200,17 @@ function RewardView({ snapshot, send }: ViewProps) {
   </Page>;
 }
 
+function ChoiceStackSections({ choice }: { choice: DecisionChoiceSnapshot }) {
+  const presentation = choicePresentation(choice);
+  return <>
+    <dl className="choice-stack">
+      <div><dt>Cost</dt><dd>{presentation.cost}</dd></div>
+      {presentation.outcomes.length > 0 && <div><dt>Outcome</dt><dd><ul>{presentation.outcomes.map((line) => <li key={line}>{line}</li>)}</ul></dd></div>}
+      <div><dt>Odds</dt><dd><ul>{presentation.odds.map((line) => <li key={line}>{line}</li>)}</ul></dd></div>
+    </dl>
+  </>;
+}
+
 function ChoiceView({ snapshot, send, kind }: ViewProps & { kind: "event" | "rest" | "craft" }) {
   const run = snapshot.activeRun!;
   const decision = run.pendingDecision;
@@ -207,6 +220,7 @@ function ChoiceView({ snapshot, send, kind }: ViewProps & { kind: "event" | "res
   );
   const [heroId, setHeroId] = useState(run.heroes[0]?.id ?? "");
   const [itemId, setItemId] = useState(gearOptions[0]?.instanceId ?? "");
+  const [pendingRisky, setPendingRisky] = useState<DecisionChoiceSnapshot | null>(null);
 
   useEffect(() => {
     if (!run.heroes.some((hero) => hero.id === heroId)) setHeroId(run.heroes[0]?.id ?? "");
@@ -214,6 +228,9 @@ function ChoiceView({ snapshot, send, kind }: ViewProps & { kind: "event" | "res
   useEffect(() => {
     if (!gearOptions.some((item) => item.instanceId === itemId)) setItemId(gearOptions[0]?.instanceId ?? "");
   }, [gearOptions, itemId]);
+  useEffect(() => {
+    setPendingRisky(null);
+  }, [decision?.kind, snapshot.revision]);
 
   if (decision?.kind !== kind) return null;
   const heading = decision.kind === "event"
@@ -227,14 +244,23 @@ function ChoiceView({ snapshot, send, kind }: ViewProps & { kind: "event" | "res
     : decision.kind === "craft"
       ? "Costs and odds below are fixed before you confirm. Leaving the forge spends no inputs."
       : "Each option lists its exact cost, consequence, and chance bands before you choose.";
+  const pressure = gloomPressure(run.runGloom);
+  const materials = relevantMaterials(run, decision.choices);
+  const submitEvent = (choice: DecisionChoiceSnapshot) => {
+    void send("chooseEventOption", { optionId: choice.id, ...(choice.needsItemTarget ? { targetItemId: itemId } : {}) });
+    setPendingRisky(null);
+  };
   const choose = (choice: DecisionChoiceSnapshot) => {
     const check = affordability(run, choice.cost);
     if (!check.ok) return;
     if (choice.needsHeroTarget && heroId === "") return;
     if (choice.needsItemTarget && itemId === "") return;
     if (decision.kind === "event") {
-      if (choice.riskTier === "risky" && !globalThis.confirm(`${choice.label}: ${choice.detail}. Proceed?`)) return;
-      void send("chooseEventOption", { optionId: choice.id, ...(choice.needsItemTarget ? { targetItemId: itemId } : {}) });
+      if (choice.riskTier === "risky") {
+        setPendingRisky(choice);
+        return;
+      }
+      submitEvent(choice);
       return;
     }
     if (decision.kind === "rest") {
@@ -253,9 +279,20 @@ function ChoiceView({ snapshot, send, kind }: ViewProps & { kind: "event" | "res
   const needsItem = decision.choices.some((choice) => choice.needsItemTarget);
 
   return <Page eyebrow={kind === "event" ? "Unresolved memory" : "Preparation moment"} title={heading} intro={intro}>
-    <section className="decision-context" aria-label="Current expedition resources">
-      <div className="party-materials">{materialLines(run).map(({ id, amount }) => <div key={id}><span>{titleCase(id)}</span><strong>{amount}</strong></div>)}</div>
-      <p className="stat-line">Scrolls carried {learnableScrolls(snapshot).length} · Gear available {gearOptions.length} · Run Gloom {run.runGloom}</p>
+    <section className="decision-state-strip" aria-label="Carried at risk">
+      <div className="decision-state-head">
+        <span className="ownership-tag">Carried — at risk</span>
+        <p className="decision-gloom" role="status">Run Gloom <strong>{run.runGloom}</strong> · {pressure.band}</p>
+      </div>
+      <div className="decision-party-peek" aria-label="Party">
+        {run.heroes.map((hero) => <div key={hero.id} className="decision-hero-chip">
+          <strong>{hero.name}</strong>
+          <span>HP {hero.hp}/{hero.maxHp}</span>
+          {hero.injuries.length > 0 && <span className="warning">{hero.injuries.map(titleCase).join(", ")}</span>}
+        </div>)}
+      </div>
+      {materials.length > 0 && <div className="party-materials is-relevant" aria-label="Relevant materials">{materials.map(({ id, amount }) => <div key={id}><span>{titleCase(id)}</span><strong>{amount}</strong></div>)}</div>}
+      <p className="stat-line">Scrolls carried {learnableScrolls(snapshot).length} · Gear available {gearOptions.length}</p>
       {(needsHero || needsItem) && <div className="decision-targets">
         {needsHero && <label>Hero
           <select value={heroId} onChange={(event) => setHeroId(event.target.value)}>
@@ -269,17 +306,29 @@ function ChoiceView({ snapshot, send, kind }: ViewProps & { kind: "event" | "res
         </label>}
       </div>}
     </section>
+    {pendingRisky !== null && <section className="decision-confirm" role="alertdialog" aria-labelledby="risky-confirm-title" aria-describedby="risky-confirm-body">
+      <div>
+        <h2 id="risky-confirm-title">Confirm risky choice</h2>
+        <p id="risky-confirm-body" className="sr-only">{choiceConfirmSummary(pendingRisky)}</p>
+        <p className="decision-confirm-label">{pendingRisky.label}</p>
+        <ChoiceStackSections choice={pendingRisky} />
+      </div>
+      <div className="decision-confirm-actions">
+        <button type="button" className="quiet" onClick={() => setPendingRisky(null)}>Cancel</button>
+        <button type="button" className="primary" onClick={() => submitEvent(pendingRisky)}>Proceed</button>
+      </div>
+    </section>}
     <div className="choice-grid">{decision.choices.map((choice) => {
       const check = affordability(run, choice.cost);
       const risk = choiceRiskLabel(choice);
-      const disabled = !check.ok || (choice.needsHeroTarget && heroId === "") || (choice.needsItemTarget && itemId === "");
-      return <article key={choice.id} className={`offer-card${disabled ? " is-disabled" : ""}`}>
+      const disabled = pendingRisky !== null || !check.ok || (choice.needsHeroTarget && heroId === "") || (choice.needsItemTarget && itemId === "");
+      return <article key={choice.id} className={`offer-card choice-offer${disabled ? " is-disabled" : ""}`}>
         <div className="offer-meta">
           {risk !== undefined && <small className={`risk-tag is-${choice.riskTier}`}>{risk}</small>}
-          {choice.cost !== undefined && <small>{costLabel(choice.cost)}</small>}
+          {risk === undefined && kind === "event" && <small className="risk-tag is-safe">Guaranteed</small>}
         </div>
         <h2>{choice.label}</h2>
-        <p>{choice.detail}</p>
+        <ChoiceStackSections choice={choice} />
         {!check.ok && <p className="warning">{check.missing.join(" · ")}</p>}
         <button disabled={disabled} onClick={() => choose(choice)}>Choose {choice.label}</button>
       </article>;

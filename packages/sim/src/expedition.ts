@@ -43,7 +43,7 @@ function itemId(snapshot: MutableSnapshot, source: string): string {
   return `${runOf(snapshot).runId}:${source}:${snapshot.revision}:${runOf(snapshot).holdings.length}`;
 }
 
-function generateItem(snapshot: MutableSnapshot, pack: ValidatedContentPack, kind: "gear" | "scroll" | "supply", source: string, context: SimulationContext, minimumRarity: ItemInstance["rarityId"] = "salvaged"): MutableItem {
+function generateItem(snapshot: MutableSnapshot, pack: ValidatedContentPack, kind: "gear" | "scroll" | "supply", source: string, context: SimulationContext, minimumRarity: ItemInstance["rarityId"] = "salvaged", extraAffixes: readonly string[] = []): MutableItem {
   let definitionId: string;
   if (kind === "gear") {
     const pool = pack.items.filter((entry) => entry.itemKind === "equipment");
@@ -56,7 +56,10 @@ function generateItem(snapshot: MutableSnapshot, pack: ValidatedContentPack, kin
     definitionId = pool[drawInt(snapshot, "loot", 0, pool.length - 1, context)]!;
   }
   const rarity = kind === "supply" ? "salvaged" : rarityFromUnit(drawUnit(snapshot, "loot", context), minimumRarity);
-  const affixes = kind === "gear" && rarity !== "salvaged" ? ["quickened", ...(rarity === "rare" || rarity === "legendary" ? ["broken_gate"] : [])] : [];
+  const affixes = [
+    ...(kind === "gear" && rarity !== "salvaged" ? ["quickened", ...(rarity === "rare" || rarity === "legendary" ? ["broken_gate"] : [])] : []),
+    ...extraAffixes
+  ];
   return createItemInstance(pack, definitionId, rarity, snapshot.rngStates.loot, itemId(snapshot, source), { kind: "held_by_expedition", runId: runOf(snapshot).runId }, affixes) as MutableItem;
 }
 
@@ -100,29 +103,116 @@ function eventPack(pack: ValidatedContentPack, eventId: string): EventDefinition
   return event;
 }
 
+const FLAG_OUTCOME_LABELS: Record<string, string> = {
+  courier_escorted: "Next Rest: effective Gloom reduction is 6 less than base; successful Return grants 2 Emberglass and courier contact",
+  courier_ledger: "Next combat reward shows three identified alternatives",
+  next_combat_block: "Both heroes start next combat with 3 Block",
+  next_reward_three: "Next combat reward shows three identified alternatives",
+  grant_imbued_relic: "Gain one Imbued relic",
+  grant_imbued_relic_frayed: "Gain one Imbued relic with Frayed",
+  grant_rare_scroll: "Gain one Rare scroll",
+  grant_imbued_scroll: "Gain one Imbued scroll",
+  next_combat_one_strain: "One hero starts next combat Strained",
+  next_combat_exposed: "Both heroes start next combat Exposed",
+  voice_ambush: "Immediately enter ambush combat",
+  unstable_resin: "Gain unstable resin: next Safe Fuse needs only one scroll; created card is always Frayed; expires on Return or wipe",
+  safe_fuse_voucher: "Next Safe Fuse costs no Emberglass",
+  free_risky_overbind: "Free Risky Overbind on chosen gear (no Emberglass)"
+};
+
+const OUTCOME_BAND_LABELS: Record<string, string> = {
+  rare_scroll: "Rare scroll",
+  exposed: "Both heroes begin next combat Exposed",
+  steady: "Steady (no Strain)",
+  strained: "One hero Strained next combat",
+  imbued_relic: "Imbued relic",
+  ambush: "Ambush combat",
+  clean_relic: "Imbued relic (clean)",
+  frayed_relic: "Imbued relic with Frayed",
+  improvement: "Strong improvement",
+  improvement_overdrawn: "Improvement + Overdrawn",
+  improvement_frayed: "Improvement + Frayed",
+  improvement_hollow: "Improvement + Hollow"
+};
+
 function effectLabel(effect: EffectDefinition): string {
   if (effect.kind === "changeRunGloom") return `${effect.amount > 0 ? "+" : ""}${effect.amount} Run Gloom`;
   if (effect.kind === "grantMaterial") return `+${effect.amount} ${effect.materialId.replaceAll("_", " ")}`;
-  if (effect.kind === "addExpeditionFlag") return `gain ${effect.flagId.replaceAll("_", " ")}`;
-  if (effect.kind === "dealDirectDamage") return `${effect.amount} damage to the party`;
+  if (effect.kind === "addExpeditionFlag") return FLAG_OUTCOME_LABELS[effect.flagId] ?? `gain ${effect.flagId.replaceAll("_", " ")}`;
+  if (effect.kind === "dealDirectDamage") return `${effect.amount} direct damage to each living hero`;
   if (effect.kind === "heal") return effect.percentMax ? `heal ${Math.round(effect.amount * 100)}% max HP` : `heal ${effect.amount}`;
   return effect.kind.replaceAll(/([A-Z])/g, " $1").trim();
 }
 
-function eventChoices(event: EventDefinition) {
+function humanizeId(id: string): string {
+  return id.replaceAll("_", " ");
+}
+
+function outcomeBandLabel(id: string): string {
+  return OUTCOME_BAND_LABELS[id] ?? humanizeId(id);
+}
+
+function collectGrantMaterials(option: EventDefinition["options"][number]): Record<string, number> {
+  const grants: Record<string, number> = {};
+  const add = (effects: readonly EffectDefinition[]) => {
+    for (const effect of effects) {
+      if (effect.kind !== "grantMaterial") continue;
+      grants[effect.materialId] = (grants[effect.materialId] ?? 0) + effect.amount;
+    }
+  };
+  add(option.effects);
+  for (const outcome of option.outcomes) add(outcome.effects);
+  return grants;
+}
+
+function eventChoices(event: EventDefinition, pack: ValidatedContentPack) {
   return event.options.map((option) => {
     const costEntries = Object.entries(option.cost).filter(([, amount]) => amount > 0);
-    const costs = costEntries.map(([id, amount]) => `${amount} ${id.replaceAll("_", " ")}`).join(", ") || "No cost";
-    const outcomes = option.outcomes.length === 0
-      ? "Guaranteed result"
-      : option.outcomes.map((outcome) => `${outcome.weight}% ${outcome.id.replaceAll("_", " ")}`).join(" · ");
-    const effects = option.effects.map(effectLabel).join(" · ");
+    const costs = costEntries.map(([id, amount]) => `${amount} ${humanizeId(id)}`).join(", ") || "No cost";
+    const grantMaterials = collectGrantMaterials(option);
     const needsItemTarget = option.id === "toss_scroll" || (option.cost.target ?? 0) > 0 || (option.cost.gear ?? 0) > 0;
+
+    if (option.id === "toss_scroll") {
+      const recipe = pack.recipes.find((entry) => entry.id === "risky_overbind");
+      if (recipe === undefined) throw new Error("Missing risky_overbind recipe for Ember Pit toss");
+      const effectLines = ["Free Risky Overbind on the chosen gear (no Emberglass)"];
+      const outcomeBands = recipe.outcomes.map((outcome) => ({
+        id: outcome.id,
+        weight: outcome.weight,
+        label: outcomeBandLabel(outcome.id)
+      }));
+      const outcomes = outcomeBands.map((band) => `${band.weight}% ${band.label}`).join(" · ");
+      return {
+        id: option.id,
+        label: option.label,
+        detail: [costs, effectLines[0], outcomes].filter(Boolean).join(" · "),
+        effectLines,
+        outcomeBands,
+        ...(Object.keys(grantMaterials).length > 0 ? { grantMaterials } : {}),
+        ...(costEntries.length > 0 ? { cost: Object.fromEntries(costEntries) } : {}),
+        needsItemTarget: true,
+        riskTier: "risky" as const
+      };
+    }
+
+    const effectLines = option.effects.map(effectLabel);
+    const outcomeBands = option.outcomes.map((outcome) => ({
+      id: outcome.id,
+      weight: outcome.weight,
+      label: outcomeBandLabel(outcome.id)
+    }));
+    const outcomes = outcomeBands.length === 0
+      ? "Guaranteed result"
+      : outcomeBands.map((band) => `${band.weight}% ${band.label}`).join(" · ");
+    const effects = effectLines.join(" · ");
     const risky = option.outcomes.length > 0;
     return {
       id: option.id,
       label: option.label,
       detail: [costs, effects, outcomes].filter(Boolean).join(" · "),
+      effectLines,
+      outcomeBands,
+      ...(Object.keys(grantMaterials).length > 0 ? { grantMaterials } : {}),
       ...(costEntries.length > 0 ? { cost: Object.fromEntries(costEntries) } : {}),
       ...(needsItemTarget ? { needsItemTarget: true } : {}),
       ...(risky ? { riskTier: "risky" as const } : {})
@@ -140,7 +230,7 @@ function enterNode(snapshot: MutableSnapshot, pack: ValidatedContentPack, nodeId
   }
   if (node.type === "event" || node.type === "return_event") {
     const eventId = node.contentId!; const event = eventPack(pack, eventId);
-    run.phase = "event"; run.pendingDecision = { kind: "event", eventId, optionIds: [...event.optionIds], choices: eventChoices(event) }; snapshot.view = "event"; return;
+    run.phase = "event"; run.pendingDecision = { kind: "event", eventId, optionIds: [...event.optionIds], choices: eventChoices(event, pack) }; snapshot.view = "event"; return;
   }
   if (node.type === "rest") {
     const modifier = run.flags.includes("courier_escorted") ? 6 : 0;
@@ -351,10 +441,17 @@ function applyExpeditionEffects(snapshot: MutableSnapshot, pack: ValidatedConten
 
 function grantFlagRewards(snapshot: MutableSnapshot, pack: ValidatedContentPack, context: SimulationContext): void {
   const run = runOf(snapshot);
-  const mappings: [string, "gear" | "scroll", ItemInstance["rarityId"]][] = [["grant_rare_scroll", "scroll", "rare"], ["grant_imbued_scroll", "scroll", "imbued"], ["grant_imbued_relic", "gear", "imbued"]];
-  for (const [flag, kind, rarity] of mappings) {
+  const mappings: [string, "gear" | "scroll", ItemInstance["rarityId"], readonly string[]][] = [
+    ["grant_rare_scroll", "scroll", "rare", []],
+    ["grant_imbued_scroll", "scroll", "imbued", []],
+    ["grant_imbued_relic", "gear", "imbued", []],
+    ["grant_imbued_relic_frayed", "gear", "imbued", ["frayed"]]
+  ];
+  for (const [flag, kind, rarity, extraAffixes] of mappings) {
     if (!run.flags.includes(flag)) continue;
-    const item = generateItem(snapshot, pack, kind, flag, context, rarity); run.holdings.push(item); run.flags = run.flags.filter((entry) => entry !== flag);
+    const item = generateItem(snapshot, pack, kind, flag, context, rarity, extraAffixes);
+    run.holdings.push(item);
+    run.flags = run.flags.filter((entry) => entry !== flag);
   }
 }
 

@@ -419,12 +419,27 @@ export type PendingDecisionSnapshot =
   | { readonly kind: "return_choice"; readonly edgeIds: readonly string[] }
   | { readonly kind: "leadership"; readonly heroIds: readonly string[] };
 
+/** Weighted chance band disclosed on Event / Craft choice cards before confirm. */
+export interface DecisionOutcomeBand {
+  readonly id: string;
+  readonly weight: number;
+  /** Player-facing label (already humanized). */
+  readonly label: string;
+}
+
 export interface DecisionChoiceSnapshot {
   readonly id: string;
   readonly label: string;
+  /** Flat summary for logs / legacy confirm text. Prefer effectLines + outcomeBands in UI. */
   readonly detail: string;
   /** Material / scroll / gear counts required to choose this option. */
   readonly cost?: Readonly<Record<string, number>>;
+  /** Deterministic effect lines shown under OUTCOME (before any roll). */
+  readonly effectLines?: readonly string[];
+  /** Weighted bands shown under ODDS; empty/omitted means Guaranteed. */
+  readonly outcomeBands?: readonly DecisionOutcomeBand[];
+  /** Materials this option can grant (for state-strip relevance). */
+  readonly grantMaterials?: Readonly<Record<string, number>>;
   /** Player must pick a living hero before the command is submitted. */
   readonly needsHeroTarget?: boolean;
   /** Player must pick an expedition equipment item before the command is submitted. */

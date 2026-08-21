@@ -132,4 +132,41 @@ describe("Build 1 combat acceptance", () => {
     expect(weaverAfter.conditions.some((entry) => entry.id === "stun")).toBe(false);
     expect(after.activeCombatantId).toBe(vanguard.id);
   });
+
+  it("SIM-C02 playCard does not advance timelineCursor or activeCombatantId; endTurn does", () => {
+    let snapshot = startFixtureCombat(build1Pack, "roadside_trail", {
+      forcedStreams: { combatInitiative: [0.9, 0.9, 0, 0], combatIntent: [0, 0] }
+    });
+    const run = snapshot.activeRun!;
+    const combat = run.combat!;
+    const vanguard = run.heroes.find((hero) => hero.classId === "vanguard")!;
+    const weaver = run.heroes.find((hero) => hero.classId === "aether_weaver")!;
+    const hounds = combat.combatants.filter((entry) => entry.definitionId === "gloomfang_hound");
+    const hold = combat.cards.find((card) => card.ownerId === vanguard.id && card.definitionId === "hold_the_line")!;
+    combat.cards.filter((card) => card.ownerId === vanguard.id).forEach((card) => {
+      card.zone = card === hold ? "hand" : "draw";
+    });
+    combat.timeline = [vanguard.id, hounds[0]!.id, hounds[1]!.id, weaver.id];
+    setActiveHero(snapshot, vanguard.id);
+    const beforeCursor = snapshot.activeRun!.combat!.timelineCursor;
+    const beforeActive = snapshot.activeRun!.combat!.activeCombatantId;
+    const beforeRound = snapshot.activeRun!.combat!.round;
+
+    snapshot = accept(
+      snapshot,
+      command(snapshot, "playCard", { cardInstanceId: hold.cardInstanceId, targetId: weaver.id }, vanguard.id),
+      build1Pack
+    ) as MutableSnapshot;
+    const mid = snapshot.activeRun!.combat!;
+    expect(mid.timelineCursor).toBe(beforeCursor);
+    expect(mid.activeCombatantId).toBe(beforeActive);
+    expect(mid.round).toBe(beforeRound);
+
+    snapshot = accept(snapshot, command(snapshot, "endTurn", {}, vanguard.id), build1Pack, {
+      combatIntent: [0, 0]
+    }) as MutableSnapshot;
+    const after = snapshot.activeRun!.combat!;
+    expect(after.activeCombatantId).toBe(weaver.id);
+    expect(after.timelineCursor).not.toBe(beforeCursor);
+  });
 });

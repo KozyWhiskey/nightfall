@@ -44,10 +44,76 @@ function gatherShroud(): MutableSnapshot {
 }
 
 describe("Build 1 expedition acceptance", () => {
+  it("event pending decisions expose structured Cost / Outcome / Odds fields", () => {
+    const snapshot = cloneSnapshot(createEmbarkedSnapshot(build1Pack));
+    const run = snapshot.activeRun!;
+    run.phase = "map";
+    run.currentNodeId = "combat_1";
+    snapshot.view = "map";
+    const combatNode = run.nodes.find((entry) => entry.id === "combat_1")!;
+    combatNode.state = "resolved";
+    combatNode.visibility = "resolved";
+    const early = run.nodes.find((entry) => entry.id === "early_event")!;
+    early.contentId = "choir_in_the_bark";
+    early.visibility = "category_revealed";
+    const after = accept(snapshot, command(snapshot, "chooseMapEdge", { edgeId: "edge_03" }), build1Pack) as MutableSnapshot;
+    const decision = after.activeRun!.pendingDecision;
+    expect(decision?.kind).toBe("event");
+    if (decision?.kind !== "event") throw new Error("expected event");
+    expect(decision.eventId).toBe("choir_in_the_bark");
+    const byId = Object.fromEntries(decision.choices.map((choice) => [choice.id, choice]));
+    expect(byId.free_names?.effectLines).toEqual(expect.arrayContaining(["-10 Run Gloom", "Both heroes start next combat with 3 Block"]));
+    expect(byId.free_names?.outcomeBands).toEqual([
+      { id: "steady", weight: 50, label: "Steady (no Strain)" },
+      { id: "strained", weight: 50, label: "One hero Strained next combat" }
+    ]);
+    expect(byId.familiar_voice?.effectLines).toEqual([]);
+    expect(byId.familiar_voice?.outcomeBands?.map((band) => `${band.weight}% ${band.id}`)).toEqual([
+      "40% rare_scroll",
+      "30% imbued_relic",
+      "30% ambush"
+    ]);
+    expect(byId.black_resin?.effectLines?.[0]).toMatch(/unstable resin/i);
+    expect(byId.black_resin?.outcomeBands).toEqual([]);
+    expect(byId.black_resin?.riskTier).toBeUndefined();
+    expect(byId.free_names?.riskTier).toBe("risky");
+  });
+
+  it("Ember Pit toss_scroll discloses Risky Overbind odds before choose", () => {
+    const snapshot = cloneSnapshot(createEmbarkedSnapshot(build1Pack));
+    const run = snapshot.activeRun!;
+    run.phase = "map";
+    run.currentNodeId = "combat_5";
+    snapshot.view = "map";
+    const from = run.nodes.find((entry) => entry.id === "combat_5")!;
+    from.state = "resolved";
+    from.visibility = "resolved";
+    const pit = run.nodes.find((entry) => entry.id === "deep_event")!;
+    pit.contentId = "cache_ember_pit";
+    pit.visibility = "category_revealed";
+    // edge_12 is combat_5 -> deep_event
+    const after = accept(snapshot, command(snapshot, "chooseMapEdge", { edgeId: "edge_12" }), build1Pack) as MutableSnapshot;
+    const decision = after.activeRun!.pendingDecision;
+    expect(decision?.kind).toBe("event");
+    if (decision?.kind !== "event") throw new Error("expected event");
+    const toss = decision.choices.find((choice) => choice.id === "toss_scroll");
+    expect(toss?.riskTier).toBe("risky");
+    expect(toss?.needsItemTarget).toBe(true);
+    expect(toss?.effectLines).toEqual(["Free Risky Overbind on the chosen gear (no Emberglass)"]);
+    expect(toss?.outcomeBands).toEqual([
+      { id: "improvement", weight: 55, label: "Strong improvement" },
+      { id: "improvement_overdrawn", weight: 25, label: "Improvement + Overdrawn" },
+      { id: "improvement_frayed", weight: 15, label: "Improvement + Frayed" },
+      { id: "improvement_hollow", weight: 5, label: "Improvement + Hollow" }
+    ]);
+    const haul = decision.choices.find((choice) => choice.id === "haul");
+    expect(haul?.grantMaterials).toEqual({ emberglass: 3 });
+  });
+
   it("SIM-07 resolves every branch of the four expedition events with disclosed costs and flags", () => {
     const guaranteed = [
       ["last_courier", "escort"], ["last_courier", "ledger"], ["last_courier", "feed_lantern"],
-      ["fallen_waystation", "rekindle"], ["fallen_waystation", "salvage_lens"],
+      ["fallen_waystation", "rekindle"],
       ["choir_in_the_bark", "black_resin"], ["cache_ember_pit", "haul"], ["cache_ember_pit", "dig"]
     ] as const;
     for (const [eventId, optionId] of guaranteed) {
@@ -60,14 +126,26 @@ describe("Build 1 expedition acceptance", () => {
     }
     const randomBranches = [
       ["fallen_waystation", "memory_loop", 0.1, "rare_scroll"], ["fallen_waystation", "memory_loop", 0.9, "exposed"],
+      ["fallen_waystation", "salvage_lens", 0.1, "clean_relic"], ["fallen_waystation", "salvage_lens", 0.9, "frayed_relic"],
       ["choir_in_the_bark", "free_names", 0.1, "steady"], ["choir_in_the_bark", "free_names", 0.9, "strained"],
       ["choir_in_the_bark", "familiar_voice", 0.1, "rare_scroll"], ["choir_in_the_bark", "familiar_voice", 0.5, "imbued_relic"], ["choir_in_the_bark", "familiar_voice", 0.9, "ambush"]
     ] as const;
     for (const [eventId, optionId, roll, outcome] of randomBranches) {
       const before = eventFixture(eventId);
-      const after = accept(before, command(before, "chooseEventOption", { optionId }), build1Pack, { event: [roll], combatInitiative: [0.9, 0.9, 0, 0] }) as MutableSnapshot;
+      const after = accept(before, command(before, "chooseEventOption", { optionId }), build1Pack, { event: [roll], combatInitiative: [0.9, 0.9, 0, 0], loot: [0.4, 0.4] }) as MutableSnapshot;
       expect(after.latestFacts.find((fact) => fact.kind === "event_resolved")?.data.outcomeId).toBe(outcome);
       if (outcome === "ambush") expect(after.activeRun!.phase).toBe("combat");
+      if (outcome === "frayed_relic") {
+        const beforeIds = new Set(before.activeRun!.holdings.map((item) => item.instanceId));
+        const relic = after.activeRun!.holdings.find((item) => !beforeIds.has(item.instanceId) && item.itemKind === "equipment");
+        expect(relic?.curseId).toBe("frayed");
+        expect(relic?.mechanicSnapshot.selfDamage).toBe(1);
+      }
+      if (outcome === "clean_relic") {
+        const beforeIds = new Set(before.activeRun!.holdings.map((item) => item.instanceId));
+        const relic = after.activeRun!.holdings.find((item) => !beforeIds.has(item.instanceId) && item.itemKind === "equipment");
+        expect(relic?.curseId).toBeUndefined();
+      }
     }
   });
 

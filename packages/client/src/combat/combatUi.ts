@@ -1,4 +1,10 @@
-import type { CombatSnapshot, CombatantSnapshot, EnemyIntentSnapshot } from "@nightfall/contracts";
+import type {
+  BurnStack,
+  CombatSnapshot,
+  CombatantSnapshot,
+  EnemyIntentSnapshot,
+  GuardLink
+} from "@nightfall/contracts";
 import type { IntentArtKind } from "../art/artMap.js";
 
 export function intentKind(intent: { label: string; targetLabel: string; magnitude: number }): IntentArtKind {
@@ -19,9 +25,49 @@ export function intentKindLabel(kind: IntentArtKind): string {
 
 export function intentSummary(intent: EnemyIntentSnapshot): string {
   const kind = intentKind(intent);
-  if (intent.magnitude > 0) return `${intent.label} ${intent.magnitude}`;
-  if (kind === "defend") return intent.label;
-  return intent.label;
+  const core = intent.magnitude > 0 ? `${intent.label} ${intent.magnitude}` : intent.label;
+  const target = intent.targetLabel.trim();
+  if (target.length === 0) {
+    if (intent.magnitude > 0) return core;
+    if (kind === "defend") return intent.label;
+    return intent.label;
+  }
+  return `${core} · ${target}`;
+}
+
+export function burnStackCount(burn: readonly BurnStack[]): number {
+  return burn.length;
+}
+
+/** Readable Guard chips for a combatant (guardian and/or protected). */
+export function guardLabelsFor(
+  combatantId: string,
+  guards: readonly GuardLink[],
+  combatants: readonly Pick<CombatantSnapshot, "id" | "name">[]
+): string[] {
+  const nameOf = (id: string) => combatants.find((entry) => entry.id === id)?.name ?? "ally";
+  const labels: string[] = [];
+  for (const guard of guards) {
+    if (guard.guardingHeroId === combatantId) {
+      labels.push(`Guarding ${nameOf(guard.protectedHeroId)}`);
+    }
+    if (guard.protectedHeroId === combatantId) {
+      labels.push(`Guarded by ${nameOf(guard.guardingHeroId)}`);
+    }
+  }
+  return labels;
+}
+
+const CONDITION_TOOLTIPS: Readonly<Record<string, string>> = {
+  exposed: "Takes 25% more damage until this condition ends.",
+  weakened: "Deals 25% less damage until this condition ends.",
+  stun: "Skips the next complete turn, then Stun clears.",
+  strain: "Start-of-turn AP is reduced while Strained."
+};
+
+/** Short term explanation for a condition id (tooltip only; label stays title-cased). */
+export function conditionTooltip(conditionId: string): string {
+  return CONDITION_TOOLTIPS[conditionId] ?? conditionId.replaceAll("_", " ");
 }
 
 export function isTimelineCombatant(combatant: CombatantSnapshot): boolean {
@@ -42,10 +88,17 @@ export function rotatedInitiativeOrder(combat: CombatSnapshot): string[] {
 
 /** Enemies that acted between two combat snapshots (for client-side turn replay). */
 export function enemiesActedBetween(
-  previous: Pick<CombatSnapshot, "timeline" | "timelineCursor" | "combatants">,
-  next: Pick<CombatSnapshot, "timeline" | "timelineCursor" | "activeCombatantId" | "combatants">
+  previous: Pick<CombatSnapshot, "timeline" | "timelineCursor" | "activeCombatantId" | "round" | "combatants">,
+  next: Pick<CombatSnapshot, "timeline" | "timelineCursor" | "activeCombatantId" | "round" | "combatants">
 ): string[] {
-  if (previous.timelineCursor === next.timelineCursor && previous.timeline === next.timeline) return [];
+  // Host JSON always yields a new timeline array; compare turn position, not array identity.
+  if (
+    previous.timelineCursor === next.timelineCursor &&
+    previous.activeCombatantId === next.activeCombatantId &&
+    previous.round === next.round
+  ) {
+    return [];
+  }
   const acted: string[] = [];
   let cursor = previous.timelineCursor;
   for (let step = 0; step < previous.timeline.length; step += 1) {

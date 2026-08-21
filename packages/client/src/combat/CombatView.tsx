@@ -108,59 +108,84 @@ export function CombatView({ snapshot, send }: ViewProps) {
     if (combat.supplyUsed || selectedSupplyId === "" || livingHeroes.length === 0 || interactionLocked) return;
     const item = supplies.find((entry) => entry.instanceId === selectedSupplyId);
     if (item === undefined) return;
-    if (!globalThis.confirm("Use this supply? One supply action per combat, and the item is consumed.")) return;
-    if (livingHeroes.length === 1) {
-      void send("useSupply", { itemId: selectedSupplyId, targetId: livingHeroes[0]!.id }, active.id);
-      return;
-    }
+    // Inline dismissible warning via targeting banner (Cancel · Esc) — not window.confirm.
     setPending({ kind: "supply", itemId: selectedSupplyId, name: item.displaySnapshot.name });
+  };
+
+  const confirmSoloSupply = () => {
+    if (pending?.kind !== "supply" || livingHeroes.length !== 1) return;
+    void send("useSupply", { itemId: pending.itemId, targetId: livingHeroes[0]!.id }, active.id);
+    setPending(null);
   };
 
   const prompt = pending === null
     ? null
     : pending.kind === "basicAttack" ? `Choose a target for ${pending.name}`
-      : pending.kind === "supply" ? `Choose who receives ${pending.name}`
+      : pending.kind === "supply"
+        ? livingHeroes.length === 1
+          ? `One supply per combat · item consumed. Confirm use of ${pending.name} on ${livingHeroes[0]!.name}?`
+          : `One supply per combat · item consumed. Choose who receives ${pending.name}`
         : `Choose a target for ${pending.name}`;
 
   const actingCombatant = playback.actingCombatantId !== null
     ? combat.combatants.find((entry) => entry.id === playback.actingCombatantId)
     : undefined;
 
+  const turnStatusLabel = playback.busy
+    ? "Enemy turn"
+    : heroTurn
+      ? "Your turn"
+      : "Resolving";
+
+  const recentCombatFacts = snapshot.latestFacts.slice(-3).reverse();
+  const latestFact = recentCombatFacts[0];
+
   return <main className={`combat-stage${targetMode !== null ? ` is-targeting-${targetMode}` : ""}${playback.busy ? " is-playback" : ""}`} aria-label={`Combat: ${encounterLabel}`}>
     <header className="combat-chrome">
       <div><span>Combat · round {combat.round}</span><h1>{encounterLabel}</h1></div>
       <div className="combat-chrome-stats" aria-label="Turn status">
         <div><span>Run Gloom</span><strong>{run.runGloom}</strong></div>
-        <div><span>{playback.busy ? "Enemy phase" : heroTurn ? "Your turn" : "Resolving"}</span><strong>{actingCombatant?.name ?? active.name}{heroTurn && activeResources !== undefined && !playback.busy ? ` · ${activeResources.ap} AP` : ""}</strong></div>
+        <div><span>{turnStatusLabel}</span><strong>{actingCombatant?.name ?? active.name}{heroTurn && activeResources !== undefined && !playback.busy ? ` · ${activeResources.ap} AP` : ""}</strong></div>
       </div>
     </header>
 
-    {prompt !== null && <div className="targeting-banner" role="status">
-      <span>{prompt}</span>
-      <button type="button" className="quiet" onClick={() => setPending(null)}>Cancel · Esc</button>
-    </div>}
-
-    <div className="combat-main">
-      <CombatBattlefield
-        combat={combat}
-        heroes={run.heroes}
-        holdings={run.holdings}
-        playbackActingId={playback.actingCombatantId}
-        playbackIntent={playback.actingIntent}
-        targetMode={targetMode}
-        linkedCombatantId={linkedCombatantId}
-        onLinkCombatant={handleLinkCombatant}
-        onCombatantActivate={onCombatantActivate}
-      />
-      <InitiativeTracker
-        combat={combat}
-        playbackFocusId={playback.trackerFocusId}
-        linkedCombatantId={linkedCombatantId}
-        onLinkCombatant={handleLinkCombatant}
-      />
+    <div className="combat-field">
+      <div className="combat-main">
+        <CombatBattlefield
+          combat={combat}
+          heroes={run.heroes}
+          holdings={run.holdings}
+          playbackActingId={playback.actingCombatantId}
+          playbackIntent={playback.actingIntent}
+          targetMode={targetMode}
+          linkedCombatantId={linkedCombatantId}
+          onLinkCombatant={handleLinkCombatant}
+          onCombatantActivate={onCombatantActivate}
+        />
+        <InitiativeTracker
+          combat={combat}
+          playbackFocusId={playback.trackerFocusId}
+          linkedCombatantId={linkedCombatantId}
+          onLinkCombatant={handleLinkCombatant}
+        />
+      </div>
     </div>
 
-    <footer className={`combat-dock${!heroTurn || playback.busy ? " is-waiting" : ""}`}>
+    <footer className={`combat-dock${!heroTurn || playback.busy ? " is-waiting" : ""}${prompt !== null ? " is-prompting" : ""}`}>
+      <div className={`dock-prompt${prompt !== null ? " is-active" : ""}`} role="status" aria-live="polite">
+        {prompt !== null ? <>
+          <span>{prompt}</span>
+          <div className="dock-prompt-actions">
+            {pending?.kind === "supply" && livingHeroes.length === 1 && (
+              <button type="button" className="primary" onClick={confirmSoloSupply}>Use supply</button>
+            )}
+            <button type="button" className="quiet" onClick={() => setPending(null)}>Cancel · Esc</button>
+          </div>
+        </> : latestFact !== undefined
+          ? <span className="dock-prompt-fact">{latestFact.message}</span>
+          : <span className="dock-prompt-idle">Play a card or Basic · click a standee when a target is needed</span>}
+      </div>
+
       {playback.busy && actingCombatant !== undefined ? <p className="waiting-line playback-line">
         <span className="playback-pulse" aria-hidden="true" />
         {actingCombatant.name} — {playback.actingIntent?.label ?? "acting…"}

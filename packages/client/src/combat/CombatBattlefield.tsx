@@ -1,7 +1,13 @@
 import { useMemo } from "react";
 import type { CombatSnapshot, EnemyIntentSnapshot, HeroSnapshot, ItemInstance } from "@nightfall/contracts";
 import { titleCase } from "../decisionUi.js";
-import { initiativeQueueLabels, intentSummary, queueOrdinal, rotatedInitiativeOrder } from "./combatUi.js";
+import {
+  guardLabelsFor,
+  initiativeQueueLabels,
+  intentSummary,
+  queueOrdinal,
+  rotatedInitiativeOrder
+} from "./combatUi.js";
 import { CombatStandee } from "./CombatStandee.js";
 
 export function CombatBattlefield({
@@ -64,6 +70,7 @@ export function CombatBattlefield({
             resources={resources}
             maxMana={hero?.maxMana}
             maxStamina={hero?.maxStamina}
+            guardLabels={guardLabelsFor(combatant.id, combat.guards, combat.combatants)}
             isLinked={combatant.id === linkedCombatantId}
             onLink={onLinkCombatant}
             onActivate={() => onCombatantActivate(combatant.id, "heroes", true)}
@@ -96,6 +103,7 @@ export function CombatBattlefield({
             block={block}
             conditions={enemy.conditions}
             carrierNote={carrier !== undefined ? `Wielding ${titleCase(carrier.rarityId)}` : undefined}
+            guardLabels={guardLabelsFor(enemy.id, combat.guards, combat.combatants)}
             queueLabel={linkedCombatantId === enemy.id ? queueOrdinals.get(enemy.id) : queueLabels.get(enemy.id)}
             isLinked={enemy.id === linkedCombatantId}
             onLink={onLinkCombatant}

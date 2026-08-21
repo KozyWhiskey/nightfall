@@ -3,6 +3,7 @@ import type { CombatantSnapshot, EnemyIntentSnapshot } from "@nightfall/contract
 import { CombatPortrait } from "../art/ArtImage.js";
 import { combatantArtSrc, silhouetteForCombatant, silhouetteForHero } from "../art/artMap.js";
 import { titleCase } from "../decisionUi.js";
+import { burnStackCount, conditionTooltip } from "./combatUi.js";
 
 function CompactMeter({ label, value, max, tone }: { label: string; value: number; max: number; tone: string }) {
   const pct = max === 0 ? 0 : Math.max(0, Math.min(100, value / max * 100));
@@ -29,6 +30,7 @@ export function CombatStandee({
   maxMana,
   maxStamina,
   carrierNote,
+  guardLabels,
   queueLabel,
   isLinked,
   onActivate,
@@ -49,11 +51,13 @@ export function CombatStandee({
   maxMana?: number;
   maxStamina?: number;
   carrierNote?: string;
+  guardLabels?: readonly string[];
   queueLabel?: string;
   isLinked: boolean;
   onActivate?: () => void;
   onLink?: (combatantId: string | null) => void;
 }) {
+  const burnStacks = burnStackCount(combatant.burn);
   const panelId = useId();
   const [hovered, setHovered] = useState(false);
   const highlighted = hovered || isLinked || isActive || isActing;
@@ -115,11 +119,13 @@ export function CombatStandee({
           <CompactMeter label="MP" value={resources.mana} max={maxMana ?? resources.mana} tone="aether" />
           <CompactMeter label="ST" value={resources.stamina} max={maxStamina ?? resources.stamina} tone="iron" />
         </>}
-        {side === "enemies" && block > 0 && <p className="standee-chip standee-chip-block">Block {block}</p>}
+        {block > 0 && <p className="standee-chip standee-chip-block">Block {block}</p>}
       </div>
-      {(conditions.length > 0 || (injuries?.length ?? 0) > 0 || carrierNote !== undefined) && (
+      {(conditions.length > 0 || burnStacks > 0 || (injuries?.length ?? 0) > 0 || (guardLabels?.length ?? 0) > 0 || carrierNote !== undefined) && (
         <p className="standee-status">
-          {conditions.map((entry) => <span key={entry.id}>{titleCase(entry.id)}</span>)}
+          {conditions.map((entry) => <span key={entry.id} title={conditionTooltip(entry.id)}>{titleCase(entry.id)}</span>)}
+          {burnStacks > 0 && <span className="standee-chip standee-chip-burn" title="Burn deals damage at the start of this combatant's turn.">Burn {burnStacks}</span>}
+          {guardLabels?.map((label) => <span key={label} className="standee-chip standee-chip-guard">{label}</span>)}
           {injuries?.map((injury) => <span key={injury} className="warning">{titleCase(injury)}</span>)}
           {carrierNote !== undefined && <span className="standee-chip standee-chip-carrier">{carrierNote}</span>}
         </p>
