@@ -176,16 +176,21 @@ describe("Build 1 combat acceptance", () => {
       runGloom: 90,
       forcedStreams: { combatInitiative: [0.9, 0.9, 0, 0], ...intentPad }
     });
-    const firstId = snapshot.activeRun!.combat!.activeCombatantId;
-    const first = snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === firstId)!;
+    const combat = snapshot.activeRun!.combat!;
+    const heroes = combat.combatants.filter((entry) => entry.side === "heroes");
+    expect(heroes).toHaveLength(2);
+    expect(heroes.every((hero) => hero.conditions.some((entry) => entry.id === "strain"))).toBe(true);
+    const firstId = combat.activeCombatantId;
+    const first = combat.combatants.find((entry) => entry.id === firstId)!;
     expect(first.side).toBe("heroes");
-    expect(first.conditions.some((entry) => entry.id === "strain")).toBe(true);
-    expect(snapshot.activeRun!.combat!.heroResources.find((entry) => entry.heroId === firstId)!.ap).toBe(2);
+    expect(combat.heroResources.find((entry) => entry.heroId === firstId)!.ap).toBe(2);
 
     snapshot = accept(snapshot, command(snapshot, "endTurn", {}, firstId), build1Pack, intentPad) as MutableSnapshot;
-    const midId = snapshot.activeRun!.combat!.activeCombatantId;
+    const afterFirst = snapshot.activeRun!.combat!;
+    expect(afterFirst.combatants.find((entry) => entry.id === firstId)!.conditions.some((entry) => entry.id === "strain")).toBe(true);
+    const midId = afterFirst.activeCombatantId;
     expect(midId).not.toBe(firstId);
-    expect(snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === midId)!.side).toBe("heroes");
+    expect(afterFirst.combatants.find((entry) => entry.id === midId)!.side).toBe("heroes");
     snapshot = accept(snapshot, command(snapshot, "endTurn", {}, midId), build1Pack, intentPad) as MutableSnapshot;
 
     const second = snapshot.activeRun!.combat!;
