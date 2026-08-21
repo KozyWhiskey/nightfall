@@ -1,5 +1,5 @@
 # Notify a private Discord channel when a PR needs human approval.
-# Setup: Discord channel → Edit channel → Integrations → Webhooks → New Webhook → copy URL
+# Setup: Discord channel → Integrations → Webhooks → New Webhook → copy URL
 # then: gh secret set DISCORD_WEBHOOK_URL --repo KozyWhiskey/nightfall
 
 name: notify-needs-human
@@ -22,18 +22,29 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_USER: ${{ github.event.pull_request.user.login }}
         run: |
-          if [ -z "$WEBHOOK_URL" ]; then
+          set -euo pipefail
+          if [ -z "${WEBHOOK_URL}" ]; then
             echo "DISCORD_WEBHOOK_URL secret is not set; skipping notify."
             exit 0
           fi
-          BODY=$(jq -n \
-            --arg content "**Nightfall needs you** — new capability / design gate
+          python3 <<'PY'
+          import json, os, urllib.request
 
-PR #${PR_NUMBER}: ${PR_TITLE}
-Opened by: ${PR_USER}
-Label: \`needs-human\`
-${PR_URL}
-
-Review \`docs/specs/proposed/\`, then move to approved and add \`spec-approved\` when ready." \
-            '{content: $content}')
-          curl -fsS -H 'Content-Type: application/json' -d "$BODY" "$WEBHOOK_URL"
+          content = (
+              "**Nightfall needs you** — new capability / design gate\n\n"
+              f"PR #{os.environ['PR_NUMBER']}: {os.environ['PR_TITLE']}\n"
+              f"Opened by: {os.environ['PR_USER']}\n"
+              "Label: `needs-human`\n"
+              f"{os.environ['PR_URL']}\n\n"
+              "Review `docs/specs/proposed/`, then move to approved and add "
+              "`spec-approved` when ready."
+          )
+          req = urllib.request.Request(
+              os.environ["WEBHOOK_URL"],
+              data=json.dumps({"content": content}).encode(),
+              headers={"Content-Type": "application/json"},
+              method="POST",
+          )
+          with urllib.request.urlopen(req) as resp:
+              print("discord status", resp.status)
+          PY
