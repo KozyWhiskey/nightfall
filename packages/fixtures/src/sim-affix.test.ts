@@ -158,10 +158,100 @@ describe("Registry affix combat modifiers", () => {
     expect(totalBlockForFixture(blockSnap, vanguard.id)).toBe(12);
   });
 
-  it("SIM-AFFIX-08 first_block_plus_2 currently always applies via blockDelta (honest simplification)", () => {
+  it("SIM-AFFIX-08 first_block_plus_2 always applies via blockDelta; display omits false first claim", () => {
     const snapshot = startAffixCombat("kite_shield", ["lumenforged"], { slot: "offHand" });
     const brace = snapshot.activeRun!.combat!.cards.find((card) => card.definitionId === "brace")!;
     expect(brace.blockDelta).toBe(2);
+    const item = snapshot.activeRun!.holdings.find((entry) => entry.instanceId === brace.sourceId)!;
+    expect(item.displaySnapshot.description).toContain("+2 Block on the granted card");
+    expect(item.displaySnapshot.description.toLowerCase()).not.toContain("first block");
+  });
+
+  it("SIM-AFFIX-09 first_burn_plus_1 adds +1 stack on the first vessel Burn each combat", () => {
+    let snapshot = startAffixCombat("hewn_sword", ["cinderbound", "cinders"]);
+    const run = snapshot.activeRun!;
+    const vanguard = run.heroes.find((hero) => hero.classId === "vanguard")!;
+    const ironCut = run.combat!.cards.find((card) => card.ownerId === vanguard.id && card.definitionId === "iron_cut")!;
+    ironCut.zone = "hand";
+    const target = run.combat!.combatants.find((entry) => entry.side === "enemies")!;
+    setActiveHero(snapshot, vanguard.id);
+    snapshot = accept(snapshot, command(snapshot, "playCard", { cardInstanceId: ironCut.cardInstanceId, targetId: target.id }, vanguard.id), build1Pack) as MutableSnapshot;
+    expect(snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === target.id)!.burn).toHaveLength(2);
+    expect(snapshot.activeRun!.flags.some((flag) => flag.startsWith("first_burn_plus_1_used:"))).toBe(true);
+
+    const second = snapshot.activeRun!.combat!.cards.find((card) => card.ownerId === vanguard.id && card.definitionId === "iron_cut")!;
+    second.zone = "hand";
+    const resources = snapshot.activeRun!.combat!.heroResources.find((entry) => entry.heroId === vanguard.id)!;
+    resources.ap = 3;
+    resources.stamina = 6;
+    const other = snapshot.activeRun!.combat!.combatants.find((entry) => entry.side === "enemies" && entry.id !== target.id)!;
+    setActiveHero(snapshot, vanguard.id);
+    snapshot = accept(snapshot, command(snapshot, "playCard", { cardInstanceId: second.cardInstanceId, targetId: other.id }, vanguard.id), build1Pack) as MutableSnapshot;
+    expect(snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === other.id)!.burn).toHaveLength(1);
+  });
+
+  it("SIM-AFFIX-10 first_burn_plus_1 also boosts applyCondition Burn on vessel spells", () => {
+    let snapshot = startAffixCombat("cinder_scepter", ["cinders"], { heroClass: "aether_weaver", slot: "mainHand" });
+    const run = snapshot.activeRun!;
+    const weaver = run.heroes.find((hero) => hero.classId === "aether_weaver")!;
+    const lance = run.combat!.cards.find((card) => card.ownerId === weaver.id && card.definitionId === "ember_lance")!;
+    lance.zone = "hand";
+    const target = run.combat!.combatants.find((entry) => entry.side === "enemies")!;
+    setActiveHero(snapshot, weaver.id);
+    snapshot = accept(snapshot, command(snapshot, "playCard", { cardInstanceId: lance.cardInstanceId, targetId: target.id }, weaver.id), build1Pack) as MutableSnapshot;
+    expect(snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === target.id)!.burn).toHaveLength(2);
+  });
+
+  it("SIM-AFFIX-11 exposed_resource_discount reduces secondary cost once vs Exposed", () => {
+    let snapshot = startAffixCombat("hewn_sword", ["hound"]);
+    const run = snapshot.activeRun!;
+    const vanguard = run.heroes.find((hero) => hero.classId === "vanguard")!;
+    const ironCut = run.combat!.cards.find((card) => card.ownerId === vanguard.id && card.definitionId === "iron_cut")!;
+    ironCut.zone = "hand";
+    const target = run.combat!.combatants.find((entry) => entry.side === "enemies")!;
+    target.conditions = [{ id: "exposed", expiresAfterCompletedTurn: 99 }];
+    setActiveHero(snapshot, vanguard.id);
+    const staminaBefore = run.combat!.heroResources.find((entry) => entry.heroId === vanguard.id)!.stamina;
+    snapshot = accept(snapshot, command(snapshot, "playCard", { cardInstanceId: ironCut.cardInstanceId, targetId: target.id }, vanguard.id), build1Pack) as MutableSnapshot;
+    // iron_cut stamina 2 − 1 discount = 1
+    expect(staminaBefore - snapshot.activeRun!.combat!.heroResources.find((entry) => entry.heroId === vanguard.id)!.stamina).toBe(1);
+    expect(snapshot.activeRun!.flags.some((flag) => flag.startsWith("exposed_resource_discount_used:"))).toBe(true);
+
+    const second = snapshot.activeRun!.combat!.cards.find((card) => card.ownerId === vanguard.id && card.definitionId === "iron_cut")!;
+    second.zone = "hand";
+    const resources = snapshot.activeRun!.combat!.heroResources.find((entry) => entry.heroId === vanguard.id)!;
+    resources.ap = 3;
+    resources.stamina = 6;
+    const other = snapshot.activeRun!.combat!.combatants.find((entry) => entry.side === "enemies" && entry.id !== target.id)!;
+    other.conditions = [{ id: "exposed", expiresAfterCompletedTurn: 99 }];
+    setActiveHero(snapshot, vanguard.id);
+    snapshot = accept(snapshot, command(snapshot, "playCard", { cardInstanceId: second.cardInstanceId, targetId: other.id }, vanguard.id), build1Pack) as MutableSnapshot;
+    expect(6 - snapshot.activeRun!.combat!.heroResources.find((entry) => entry.heroId === vanguard.id)!.stamina).toBe(2);
+  });
+
+  it("SIM-AFFIX-12 retained_resource_discount reduces secondary cost on first retained vessel card", () => {
+    let snapshot = startAffixCombat("hewn_sword", ["long_vigil"]);
+    const run = snapshot.activeRun!;
+    const vanguard = run.heroes.find((hero) => hero.classId === "vanguard")!;
+    const ironCut = run.combat!.cards.find((card) => card.ownerId === vanguard.id && card.definitionId === "iron_cut")!;
+    ironCut.retain = true;
+    ironCut.zone = "hand";
+    const target = run.combat!.combatants.find((entry) => entry.side === "enemies")!;
+    setActiveHero(snapshot, vanguard.id);
+    const staminaBefore = run.combat!.heroResources.find((entry) => entry.heroId === vanguard.id)!.stamina;
+    snapshot = accept(snapshot, command(snapshot, "playCard", { cardInstanceId: ironCut.cardInstanceId, targetId: target.id }, vanguard.id), build1Pack) as MutableSnapshot;
+    expect(staminaBefore - snapshot.activeRun!.combat!.heroResources.find((entry) => entry.heroId === vanguard.id)!.stamina).toBe(1);
+    expect(snapshot.activeRun!.flags.some((flag) => flag.startsWith("retained_resource_discount_used:"))).toBe(true);
+
+    const second = snapshot.activeRun!.combat!.cards.find((card) => card.ownerId === vanguard.id && card.definitionId === "iron_cut")!;
+    second.retain = true;
+    second.zone = "hand";
+    const resources = snapshot.activeRun!.combat!.heroResources.find((entry) => entry.heroId === vanguard.id)!;
+    resources.ap = 3;
+    resources.stamina = 6;
+    setActiveHero(snapshot, vanguard.id);
+    snapshot = accept(snapshot, command(snapshot, "playCard", { cardInstanceId: second.cardInstanceId, targetId: target.id }, vanguard.id), build1Pack) as MutableSnapshot;
+    expect(6 - snapshot.activeRun!.combat!.heroResources.find((entry) => entry.heroId === vanguard.id)!.stamina).toBe(2);
   });
 
   it("SIM-AFFIX-SIG-01 vigils_promise Guard grants the protected ally 2 Block", () => {

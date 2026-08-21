@@ -272,6 +272,65 @@ function vesselItemForCard(snapshot: MutableSnapshot, card: MutableCard | undefi
   return runOf(snapshot).holdings.find((item) => item.instanceId === card.sourceId);
 }
 
+function claimCombatAffixFlag(snapshot: MutableSnapshot, flag: string): boolean {
+  const run = runOf(snapshot);
+  if (run.flags.includes(flag)) return false;
+  run.flags.push(flag);
+  return true;
+}
+
+function applyBurnFromVessel(
+  snapshot: MutableSnapshot,
+  vessel: ItemInstance | undefined,
+  target: MutableCombatant,
+  stacks: number,
+  duration: number
+): void {
+  let amount = stacks;
+  if (vessel !== undefined && vessel.mechanicSnapshot.modifiers.includes("first_burn_plus_1")) {
+    if (claimCombatAffixFlag(snapshot, `first_burn_plus_1_used:${vessel.instanceId}`)) amount += 1;
+  }
+  addCondition(target, "burn", amount, duration);
+}
+
+function vesselPlayCostDelta(
+  snapshot: MutableSnapshot,
+  definition: CardDefinition,
+  instance: MutableCard | undefined,
+  targetId: string | undefined
+): { costDelta: number; claimedFlags: string[] } {
+  let costDelta = instance?.costDelta ?? 0;
+  const claimedFlags: string[] = [];
+  const vessel = vesselItemForCard(snapshot, instance);
+  if (vessel === undefined || instance === undefined) return { costDelta, claimedFlags };
+  if (definition.cost.mana <= 0 && definition.cost.stamina <= 0) return { costDelta, claimedFlags };
+
+  const mods = vessel.mechanicSnapshot.modifiers;
+  const itemId = vessel.instanceId;
+  const run = runOf(snapshot);
+
+  if (mods.includes("retained_resource_discount") && instance.retain) {
+    const flag = `retained_resource_discount_used:${itemId}`;
+    if (!run.flags.includes(flag)) {
+      costDelta -= 1;
+      claimedFlags.push(flag);
+    }
+  }
+
+  if (mods.includes("exposed_resource_discount") && definition.kind === "attack") {
+    const flag = `exposed_resource_discount_used:${itemId}`;
+    if (!run.flags.includes(flag)) {
+      const target = targetId === undefined ? undefined : combatOf(snapshot).combatants.find((entry) => entry.id === targetId);
+      if (target?.conditions.some((entry) => entry.id === "exposed")) {
+        costDelta -= 1;
+        claimedFlags.push(flag);
+      }
+    }
+  }
+
+  return { costDelta, claimedFlags };
+}
+
 function heroHasRetainRefill(snapshot: MutableSnapshot, heroId: string): boolean {
   return heroHasModifier(snapshot, heroId, "retain_refill");
 }
@@ -419,7 +478,8 @@ function resolveEffects(snapshot: MutableSnapshot, actor: MutableCombatant, effe
       combat.combatants = combat.combatants.filter((entry) => entry.id !== entity.id); combat.combatants.push(entity);
       continue;
     }
-    const vesselMods = vesselItemForCard(snapshot, cardModifiers)?.mechanicSnapshot.modifiers ?? [];
+    const vessel = vesselItemForCard(snapshot, cardModifiers);
+    const vesselMods = vessel?.mechanicSnapshot.modifiers ?? [];
     for (const originalTarget of targets) {
       if (!isAlive(originalTarget) && !(effect.kind === "heal" && effect.revive)) continue;
       if (effect.kind === "dealDamage") {
@@ -427,7 +487,7 @@ function resolveEffects(snapshot: MutableSnapshot, actor: MutableCombatant, effe
         let amount = effect.amount + (cardModifiers?.damageDelta ?? 0);
         if (vesselMods.includes("exposed_damage_plus_2") && originalTarget.conditions.some((entry) => entry.id === "exposed")) amount += 2;
         dealDamage(snapshot, actor, originalTarget, amount, effect.scaling, effect.bypassBlock, directTargeted, sourceId, context);
-        if (vesselMods.includes("card_burn")) addCondition(resolveGuard(combat, originalTarget, directTargeted), "burn", 1, 2);
+        if (vesselMods.includes("card_burn")) applyBurnFromVessel(snapshot, vessel, resolveGuard(combat, originalTarget, directTargeted), 1, 2);
       }
       else if (effect.kind === "dealDirectDamage") directDamage(snapshot, actor, originalTarget, effect.amount, context);
       else if (effect.kind === "gainBlock") addBlock(snapshot, originalTarget, effect.amount + (cardModifiers?.blockDelta ?? 0), sourceId, effect.duration);
@@ -438,7 +498,9 @@ function resolveEffects(snapshot: MutableSnapshot, actor: MutableCombatant, effe
       }
       else if (effect.kind === "applyCondition") {
         const becameExposed = effect.conditionId === "exposed" && originalTarget.side === "enemies" && !originalTarget.conditions.some((entry) => entry.id === "exposed");
-        addCondition(originalTarget, effect.conditionId, effect.stacks, effect.duration + (combat.activeCombatantId === originalTarget.id ? 1 : 0));
+        const duration = effect.duration + (combat.activeCombatantId === originalTarget.id ? 1 : 0);
+        if (effect.conditionId === "burn") applyBurnFromVessel(snapshot, vessel, originalTarget, effect.stacks, duration);
+        else addCondition(originalTarget, effect.conditionId, effect.stacks, duration);
         if (becameExposed) triggerExposedDraw(snapshot, context);
       }
       else if (effect.kind === "removeCondition") { originalTarget.conditions = originalTarget.conditions.filter((entry) => entry.id !== effect.conditionId); if (effect.conditionId === "burn") originalTarget.burn = []; }
@@ -580,7 +642,12 @@ export function startCombat(snapshot: MutableSnapshot, pack: ValidatedContentPac
     }
     const sorted = stableSort(combatants, (entry) => entry.id, (left, right) => right.initiative - left.initiative);
     const cards = run.heroes.flatMap((hero) => buildHeroCards(snapshot, pack, hero, context));
-    run.flags = run.flags.filter((flag) => !flag.startsWith("hounds_pursuit_used:"));
+    run.flags = run.flags.filter((flag) =>
+      !flag.startsWith("hounds_pursuit_used:") &&
+      !flag.startsWith("first_burn_plus_1_used:") &&
+      !flag.startsWith("exposed_resource_discount_used:") &&
+      !flag.startsWith("retained_resource_discount_used:")
+    );
     run.combat = {
       combatId: `${run.runId}:${encounterId}:${run.visitedNodeIds.length}`,
       encounterId,
@@ -652,13 +719,14 @@ function validateTarget(snapshot: MutableSnapshot, actor: MutableCombatant, targ
 }
 
 function playDefinition(snapshot: MutableSnapshot, actor: MutableCombatant, resource: { ap: number; mana: number; stamina: number }, definition: CardDefinition, targetId: string | undefined, context: SimulationContext, instance?: MutableCard): ReasonCode | undefined {
-  const costDelta = instance?.costDelta ?? 0;
-  const manaCost = definition.cost.mana > 0 ? definition.cost.mana + costDelta : 0;
-  const staminaCost = definition.cost.stamina > 0 ? definition.cost.stamina + costDelta : 0;
+  const { costDelta, claimedFlags } = vesselPlayCostDelta(snapshot, definition, instance, targetId);
+  const manaCost = definition.cost.mana > 0 ? Math.max(0, definition.cost.mana + costDelta) : 0;
+  const staminaCost = definition.cost.stamina > 0 ? Math.max(0, definition.cost.stamina + costDelta) : 0;
   if (resource.ap < definition.cost.ap) return "insufficient_ap";
   if (resource.mana < manaCost || resource.stamina < staminaCost) return "insufficient_resource";
   if (!validateTarget(snapshot, actor, definition.targetSpec, targetId, context)) return "invalid_target";
   resource.ap -= definition.cost.ap; resource.mana -= manaCost; resource.stamina -= staminaCost;
+  for (const flag of claimedFlags) claimCombatAffixFlag(snapshot, flag);
   resolveEffects(snapshot, actor, definition.effects, targetId, definition.id, context, instance);
   if (instance !== undefined) instance.zone = instance.exhaust || definition.disposition === "exhaust" ? "exhaust" : "discard";
   runOf(snapshot).diagnostics.cardsPlayed += instance === undefined ? 0 : 1;
