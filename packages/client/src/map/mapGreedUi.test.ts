@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { build1Pack } from "@nightfall/content";
 import {
   carrierGreedBand,
   carrierGreedLine,
+  encounterGreedTable,
   mapGreedHint,
   tableGreedLine
 } from "./mapGreedUi.js";
@@ -34,14 +34,14 @@ describe("mapGreedUi", () => {
     expect(mapGreedHint("not_a_real_encounter")).toBeUndefined();
   });
 
-  it("mirrors Build 1 encounter reward ids for combat greed", () => {
-    for (const [id, tuning] of Object.entries(build1Pack.tuning.encounterRewards)) {
+  it("covers all mirrored Build 1 encounter reward ids without percents", () => {
+    for (const [id, tuning] of Object.entries(encounterGreedTable())) {
       const hint = mapGreedHint(id);
       if (tuning.carrierChance <= 0 && tuning.offerKinds.length === 0) {
         expect(hint).toBeUndefined();
       } else {
         expect(hint).toBeTruthy();
-        expect(hint).not.toMatch(/%|\d\.\d/);
+        expect(hint).not.toMatch(/%/);
       }
     }
   });

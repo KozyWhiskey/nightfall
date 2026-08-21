@@ -1,4 +1,15 @@
-import { build1Pack } from "@nightfall/content";
+/** Mirrors Build 1 `pack.tuning.encounterRewards` for map greed copy (client stays snapshot-safe). */
+const ENCOUNTER_GREED: Readonly<Record<string, { readonly carrierChance: number; readonly offerKinds: readonly string[] }>> = {
+  roadside_trail: { carrierChance: 0, offerKinds: ["gear", "scroll"] },
+  lost_mile: { carrierChance: 0.1, offerKinds: ["scroll", "scroll"] },
+  whisperwood_threshold: { carrierChance: 0.05, offerKinds: ["gear", "scroll"] },
+  rootbound_remains: { carrierChance: 0.18, offerKinds: ["gear", "gear"] },
+  houndpack_fog: { carrierChance: 0.25, offerKinds: ["scroll", "scroll"] },
+  stalking_choir: { carrierChance: 0.35, offerKinds: ["gear", "scroll"] },
+  lantern_approach: { carrierChance: 0.1, offerKinds: ["gear", "supply"] },
+  return_roadwardens: { carrierChance: 0, offerKinds: ["gear", "scroll"] },
+  voice_ambush: { carrierChance: 0, offerKinds: ["gear", "scroll"] }
+};
 
 export type CarrierGreedBand = "none" | "scarce" | "uncommon" | "likely";
 
@@ -32,11 +43,15 @@ export function tableGreedLine(offerKinds: readonly string[]): string | undefine
 /** Qualitative greed hint for a combat encounter content id. Never includes %. */
 export function mapGreedHint(contentId: string | undefined): string | undefined {
   if (contentId === undefined) return undefined;
-  const tuning = build1Pack.tuning.encounterRewards[contentId];
+  const tuning = ENCOUNTER_GREED[contentId];
   if (tuning === undefined) return undefined;
   const chase = carrierGreedLine(carrierGreedBand(tuning.carrierChance));
   const table = tableGreedLine(tuning.offerKinds);
   const parts = [chase, table].filter((entry): entry is string => entry !== undefined);
   if (parts.length === 0) return undefined;
   return parts.join(" · ");
+}
+
+export function encounterGreedTable(): typeof ENCOUNTER_GREED {
+  return ENCOUNTER_GREED;
 }

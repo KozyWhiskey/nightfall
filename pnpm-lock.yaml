@@ -50,9 +50,6 @@ importers:
 
   packages/client:
     dependencies:
-      '@nightfall/content':
-        specifier: workspace:*
-        version: link:../content
       '@nightfall/contracts':
         specifier: workspace:*
         version: link:../contracts

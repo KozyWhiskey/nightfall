@@ -33,7 +33,7 @@ function snapshotWith(holdings: ItemInstance[]): GameSnapshot {
       resources: { salvage: 0, emberglass: 0, rations: 0, timber: 0, stone: 0, wick: 0, ember_shard: 0 },
       buildings: [],
       heroes: [],
-      holdings: holdings.filter((entry) => entry.location.kind === "haven_stash" || entry.location.kind === "equipped"),
+      holdings: holdings.filter((entry) => entry.location.kind === "haven" || entry.location.kind === "equipped"),
       pendingLeadership: []
     },
     activeRun: {
