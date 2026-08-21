@@ -3,6 +3,11 @@ import type { CommandType, EquipmentSlot, GameSnapshot, HeroSnapshot, ItemInstan
 import { CombatPortrait } from "../art/ArtImage.js";
 import { combatantArtSrc, silhouetteForHero } from "../art/artMap.js";
 import { materialLines, titleCase } from "../decisionUi.js";
+import {
+  affixCountSummary,
+  parseEffectSections,
+  rarityGlyph
+} from "../rewardUi.js";
 import { DeckCardDetail, DeckPreviewPanel } from "./DeckPreviewPanel.js";
 import { ItemGlyph } from "./ItemGlyph.js";
 import {
@@ -29,15 +34,22 @@ import {
 
 type PanelMode = "loadout" | "deck";
 
-function effectLines(description: string): string[] {
-  return description.split(/\n+/).map((line) => line.trim()).filter((line) => line.length > 0);
-}
-
 function ItemEffects({ description }: { description: string }) {
-  const lines = effectLines(description);
-  if (lines.length === 0) return null;
-  if (lines.length === 1) return <p className="inventory-detail-effect">{lines[0]}</p>;
-  return <ul className="inventory-detail-effects" aria-label="Item effects">{lines.map((line) => <li key={line}>{line}</li>)}</ul>;
+  const sections = parseEffectSections(description);
+  if (sections.length === 0) return null;
+  return <div className="item-effect-sections" aria-label="Item effects">
+    {sections.map((section) => (
+      <section
+        key={section.id}
+        className={`item-effect-section is-section-${section.id}${section.id === "curse" ? " item-curse-chrome" : ""}`}
+      >
+        <h4 className="item-effect-section-title">{section.title}</h4>
+        {section.lines.length === 1
+          ? <p className={section.id === "curse" ? "item-curse-line inventory-detail-effect" : "inventory-detail-effect"}>{section.lines[0]}</p>
+          : <ul className="inventory-detail-effects" aria-label={section.title}>{section.lines.map((line) => <li key={line}>{line}</li>)}</ul>}
+      </section>
+    ))}
+  </div>;
 }
 
 function HeroSummary({ hero }: { hero: HeroSnapshot }) {
@@ -80,14 +92,15 @@ function InventoryCell({
 }) {
   return <button
     type="button"
-    className={`inventory-cell ${rarityClass(item.rarityId)}${selected ? " is-selected" : ""}${slotMatch ? " is-slot-match" : ""}${slotMuted ? " is-slot-muted" : ""}${draggable ? " is-draggable" : ""}${hintOk ? " is-ready" : ""}`}
+    className={`inventory-cell ${rarityClass(item.rarityId)}${selected ? " is-selected" : ""}${slotMatch ? " is-slot-match" : ""}${slotMuted ? " is-slot-muted" : ""}${draggable ? " is-draggable" : ""}${hintOk ? " is-ready" : ""}${item.curseId !== undefined ? " is-cursed" : ""}`}
     title={`${item.displaySnapshot.name} — ${hint}`}
-    aria-label={`${item.displaySnapshot.name}, ${itemKindLabel(item)}, ${hint}`}
+    aria-label={`${item.displaySnapshot.name}, ${itemKindLabel(item)}, ${affixCountSummary(item)}, ${hint}`}
     aria-pressed={selected}
     draggable={draggable || undefined}
     onDragStart={draggable ? onDragStart : undefined}
     onClick={onSelect}
   >
+    <span className="rarity-glyph inventory-cell-rarity" aria-hidden="true">{rarityGlyph(item.rarityId)}</span>
     <ItemGlyph item={item} />
     <strong>{itemShortName(item.displaySnapshot.name)}</strong>
     <small className={hintOk ? "is-destination" : ""}>{hintOk ? `→ ${hint}` : hint}</small>
@@ -125,10 +138,10 @@ function EquipSlotCell({
   const Tag = canManage ? "button" : "div";
   return <Tag
     type={canManage ? "button" : undefined}
-    className={`equip-slot ${rarityClass(item?.rarityId ?? "salvaged")}${filled ? " is-filled" : " is-empty"}${selected ? " is-selected" : ""}${itemTarget ? " is-item-target" : ""}${itemBlocked ? " is-item-blocked" : ""}${dropHint === "valid" ? " is-drop-valid" : ""}${dropHint === "invalid" ? " is-drop-invalid" : ""}`}
+    className={`equip-slot ${rarityClass(item?.rarityId ?? "salvaged")}${filled ? " is-filled" : " is-empty"}${selected ? " is-selected" : ""}${itemTarget ? " is-item-target" : ""}${itemBlocked ? " is-item-blocked" : ""}${dropHint === "valid" ? " is-drop-valid" : ""}${dropHint === "invalid" ? " is-drop-invalid" : ""}${item?.curseId !== undefined ? " is-cursed" : ""}`}
     style={{ gridArea: SLOT_GRID_AREA[slot] }}
     title={filled ? item.displaySnapshot.name : SLOT_LABELS[slot]}
-    aria-label={filled ? `${SLOT_LABELS[slot]}: ${item.displaySnapshot.name}, click to inspect` : `${SLOT_LABELS[slot]}, empty, click to see compatible gear`}
+    aria-label={filled ? `${SLOT_LABELS[slot]}: ${item.displaySnapshot.name}, ${affixCountSummary(item)}, click to inspect` : `${SLOT_LABELS[slot]}, empty, click to see compatible gear`}
     aria-pressed={selected || undefined}
     draggable={filled && canManage}
     onDragStart={filled && canManage ? onDragStart : undefined}
@@ -139,6 +152,7 @@ function EquipSlotCell({
   >
     <span className="equip-slot-label">{SLOT_SHORT_LABELS[slot]}</span>
     {filled ? <>
+      <span className="rarity-glyph equip-slot-rarity" aria-hidden="true">{rarityGlyph(item.rarityId)}</span>
       <ItemGlyph item={item} />
       <strong>{itemShortName(item.displaySnapshot.name)}</strong>
     </> : <span className="equip-slot-empty" aria-hidden="true">—</span>}
@@ -203,8 +217,11 @@ function LoadoutDetailPane({
         : <>
           <ItemGlyph item={equippedInSlot} large />
           <p className="inventory-detail-item-name">{equippedInSlot.displaySnapshot.name}</p>
+          <p className="rarity-meta">
+            <span className="rarity-glyph" aria-hidden="true">{rarityGlyph(equippedInSlot.rarityId)}</span>
+            {" "}{titleCase(equippedInSlot.rarityId)} · {affixCountSummary(equippedInSlot)}
+          </p>
           <ItemEffects description={equippedInSlot.displaySnapshot.description} />
-          {equippedInSlot.curseId !== undefined && <p className="warning">{titleCase(equippedInSlot.curseId)}</p>}
           <p className="inventory-hint">Worn by {hero.name}. Use the action bar below to unequip.</p>
         </>}
       {slotCandidates.length > 0 && <>
@@ -232,8 +249,11 @@ function LoadoutDetailPane({
         <ItemGlyph item={focusItem} large />
         <small>{itemKindLabel(focusItem)} · {ownershipLabel}</small>
         <h3>{focusItem.displaySnapshot.name}</h3>
+        <p className="rarity-meta">
+          <span className="rarity-glyph" aria-hidden="true">{rarityGlyph(focusItem.rarityId)}</span>
+          {" "}{titleCase(focusItem.rarityId)} · {affixCountSummary(focusItem)}
+        </p>
         <ItemEffects description={focusItem.displaySnapshot.description} />
-        {focusItem.curseId !== undefined && <p className="warning">{titleCase(focusItem.curseId)}</p>}
         {focusItem.itemKind === "equipment" && (() => {
           const eligibility = equipEligibility(hero, focusItem);
           return eligibility.ok && eligibility.targetSlot !== undefined

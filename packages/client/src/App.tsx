@@ -20,9 +20,13 @@ import {
   deckInjectLines,
   equipCompareRows,
   needsRareLeaveConfirm,
-  nonInjectEffectLines,
+  parseEffectSections,
+  rarityClassName,
+  rarityEyebrow,
+  rarityGlyph,
+  resolveCarrierItem,
   packAndSealedCounts,
-  resolveCarrierItem
+  affixCountSummary
 } from "./rewardUi.js";
 import { useNightfall } from "./store.js";
 
@@ -160,10 +164,21 @@ function MapView({ snapshot, send }: ViewProps) {
 }
 
 function ItemEffects({ description, omitInject = false }: { description: string; omitInject?: boolean }) {
-  const lines = omitInject ? nonInjectEffectLines(description) : description.split(/\n+/).map((line) => line.trim()).filter((line) => line.length > 0);
-  if (lines.length === 0) return null;
-  if (lines.length === 1) return <p className="offer-effect-lead">{lines[0]}</p>;
-  return <ul className="offer-effects" aria-label="Item effects">{lines.map((line) => <li key={line}>{line}</li>)}</ul>;
+  const sections = parseEffectSections(description, { omitInject });
+  if (sections.length === 0) return null;
+  return <div className="item-effect-sections" aria-label="Item effects">
+    {sections.map((section) => (
+      <section
+        key={section.id}
+        className={`item-effect-section is-section-${section.id}${section.id === "curse" ? " item-curse-chrome" : ""}`}
+      >
+        <h4 className="item-effect-section-title">{section.title}</h4>
+        {section.lines.length === 1
+          ? <p className={section.id === "curse" ? "item-curse-line" : "offer-effect-lead"}>{section.lines[0]}</p>
+          : <ul className="offer-effects" aria-label={section.title}>{section.lines.map((line) => <li key={line}>{line}</li>)}</ul>}
+      </section>
+    ))}
+  </div>;
 }
 
 function DeckInjectCallout({ description }: { description: string }) {
@@ -185,15 +200,18 @@ function IdentifiedItemCard({
   compareLines?: readonly string[];
   children?: ReactNode;
 }) {
-  return <article className="offer-card">
-    <small>{eyebrow}</small>
+  const cursed = item.curseId !== undefined;
+  return <article className={`offer-card ${rarityClassName(item.rarityId)}${cursed ? " is-cursed" : ""}`}>
+    <small>
+      <span className="rarity-glyph" aria-hidden="true">{rarityGlyph(item.rarityId)}</span>
+      {" "}{eyebrow}
+    </small>
     <h2>{item.displaySnapshot.name}</h2>
     <DeckInjectCallout description={item.displaySnapshot.description} />
     <ItemEffects description={item.displaySnapshot.description} omitInject />
     {compareLines !== undefined && compareLines.length > 0 && <ul className="equip-compare" aria-label="Compared to equipped">
       {compareLines.map((line) => <li key={line}>{line}</li>)}
     </ul>}
-    {item.curseId !== undefined && <span className="warning">{titleCase(item.curseId)}</span>}
     <p className="ownership-tag">Carried — at risk</p>
     {children}
   </article>;
@@ -201,7 +219,7 @@ function IdentifiedItemCard({
 
 function ItemList({ items, empty }: { items: readonly ItemInstance[]; empty: string }) {
   if (items.length === 0) return <p className="empty">{empty}</p>;
-  return <div className="item-list">{items.map((item) => <article key={item.instanceId}><div><small>{titleCase(item.rarityId)} · {titleCase(item.location.kind)}</small><strong>{item.displaySnapshot.name}</strong><ItemEffects description={item.displaySnapshot.description} /></div>{item.curseId !== undefined && <span className="warning">{titleCase(item.curseId)}</span>}</article>)}</div>;
+  return <div className="item-list">{items.map((item) => <article key={item.instanceId} className={`${rarityClassName(item.rarityId)}${item.curseId !== undefined ? " is-cursed" : ""}`}><div><small><span className="rarity-glyph" aria-hidden="true">{rarityGlyph(item.rarityId)}</span> {titleCase(item.rarityId)} · {affixCountSummary(item)} · {titleCase(item.location.kind)}</small><strong>{item.displaySnapshot.name}</strong><ItemEffects description={item.displaySnapshot.description} /></div></article>)}</div>;
 }
 
 function RewardView({ snapshot, send }: ViewProps) {
@@ -230,7 +248,7 @@ function RewardView({ snapshot, send }: ViewProps) {
     </section>
     <section className="bundle"><strong>Automatic bundle</strong><span>{Object.entries(decision.automatic).map(([id, amount]) => `${amount} ${titleCase(id)}`).join(" · ")}</span></section>
     {carrier !== undefined && <div className="reward-carrier" aria-label="Marked carrier item">
-      <IdentifiedItemCard item={carrier} eyebrow={`${titleCase(carrier.rarityId)} · Marked carrier`} />
+      <IdentifiedItemCard item={carrier} eyebrow={rarityEyebrow(carrier, "Marked carrier")} />
     </div>}
     {decision.carrierItemId !== undefined && carrier === undefined && <p className="carrier-note">A marked carrier dropped an exceptional item into the expedition pack.</p>}
     <div className="reward-grid">{decision.offers.map((offer) => {
@@ -240,7 +258,7 @@ function RewardView({ snapshot, send }: ViewProps) {
       return <IdentifiedItemCard
         key={offer.id}
         item={offer.item}
-        eyebrow={`${titleCase(offer.item.rarityId)} · ${titleCase(offer.kind)}`}
+        eyebrow={rarityEyebrow(offer.item, titleCase(offer.kind))}
         compareLines={compare}
       >
         <button onClick={() => void send("chooseReward", { offerId: offer.id })}>Take {offer.item.displaySnapshot.name}</button>

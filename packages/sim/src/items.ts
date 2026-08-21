@@ -13,6 +13,18 @@ const passiveLabels: Record<string, string> = {
   basic_attack_damage: "While equipped: +1 damage on basic attacks"
 };
 
+const CURSE_SENTENCES: Record<string, string> = {
+  frayed: "Curse — Frayed: Granted card deals 1 direct damage to its caster on play.",
+  hollow: "Curse — Hollow: Granted card Exhausts after use.",
+  overdrawn: "Curse — Overdrawn: Granted card costs +1 of its existing secondary resource."
+};
+
+const CURSE_COVERED_MODIFIERS: Record<string, readonly string[]> = {
+  frayed: ["self_damage_1"],
+  hollow: ["exhaust"],
+  overdrawn: ["secondary_cost_plus_1"]
+};
+
 const modifierLabels: Record<string, string> = {
   initiative_plus_1: "+1 initiative",
   max_secondary_plus_1: "+1 max Stamina",
@@ -39,9 +51,9 @@ const modifierLabels: Record<string, string> = {
   hybrid: "Hybrid craft result",
   imprint: "Imprint craft result",
   improvement: "Improved craft result",
-  overdrawn: "Curse: Overdrawn",
-  frayed: "Curse: Frayed",
-  hollow: "Curse: Hollow"
+  overdrawn: CURSE_SENTENCES.overdrawn!,
+  frayed: CURSE_SENTENCES.frayed!,
+  hollow: CURSE_SENTENCES.hollow!
 };
 
 function mechanicsFor(baseId: string, grantedCardId: string | undefined, modifiers: readonly string[], passiveIds: readonly string[] = []): ItemMechanicSnapshot {
@@ -115,11 +127,14 @@ function cardEffectSummary(card: CardDefinition): string {
 function buildDisplayDescription(
   pack: ValidatedContentPack,
   definition: ItemDefinition,
-  mechanics: ItemMechanicSnapshot
+  mechanics: ItemMechanicSnapshot,
+  curseId?: string
 ): string {
   if (definition.itemKind === "supply") return definition.display.description;
 
   const lines: string[] = [];
+  const curseSentence = curseId !== undefined ? CURSE_SENTENCES[curseId] : undefined;
+  const coveredModifiers = new Set(curseId !== undefined ? CURSE_COVERED_MODIFIERS[curseId] ?? [] : []);
   const grantedId = mechanics.grantedCardId ?? definition.grantedCardId;
   if (grantedId !== undefined) {
     const card = pack.cards.find((entry) => entry.id === grantedId);
@@ -149,11 +164,19 @@ function buildDisplayDescription(
   if ((mechanics.damageDelta ?? 0) > 0 && grantedId !== undefined) lines.push(`+${mechanics.damageDelta} damage on the granted card`);
   if ((mechanics.blockDelta ?? 0) > 0 && grantedId !== undefined) lines.push(`+${mechanics.blockDelta} Block on the granted card`);
   if (mechanics.retain) lines.push("Granted card retains");
-  if (mechanics.exhaust) lines.push("Granted card exhausts");
-  if ((mechanics.selfDamage ?? 0) > 0) lines.push(`Granted card deals ${mechanics.selfDamage} self damage`);
-  if ((mechanics.secondaryCostDelta ?? 0) > 0) lines.push(`+${mechanics.secondaryCostDelta} secondary cost on the granted card`);
+  if (mechanics.exhaust && !coveredModifiers.has("exhaust")) lines.push("Granted card exhausts");
+  if ((mechanics.selfDamage ?? 0) > 0 && !coveredModifiers.has("self_damage_1")) {
+    lines.push(`Granted card deals ${mechanics.selfDamage} self damage`);
+  }
+  if ((mechanics.secondaryCostDelta ?? 0) > 0 && !coveredModifiers.has("secondary_cost_plus_1")) {
+    lines.push(`+${mechanics.secondaryCostDelta} secondary cost on the granted card`);
+  }
+
+  if (curseSentence !== undefined) lines.push(curseSentence);
 
   for (const modifier of mechanics.modifiers) {
+    if (coveredModifiers.has(modifier)) continue;
+    if (modifier === curseId) continue;
     const label = modifierLabels[modifier] ?? modifier.replaceAll("_", " ");
     if (!lines.some((line) => line.toLowerCase().includes(label.toLowerCase()))) lines.push(label);
   }
@@ -179,7 +202,7 @@ export function enrichItemDisplay(pack: ValidatedContentPack, item: ItemInstance
     mechanicSnapshot,
     displaySnapshot: {
       ...item.displaySnapshot,
-      description: buildDisplayDescription(pack, definition, mechanicSnapshot)
+      description: buildDisplayDescription(pack, definition, mechanicSnapshot, item.curseId)
     }
   };
 }
@@ -221,7 +244,7 @@ export function createItemInstance(
     mechanicSnapshot,
     displaySnapshot: {
       name: affixName || definition.display.name,
-      description: buildDisplayDescription(pack, definition, mechanicSnapshot)
+      description: buildDisplayDescription(pack, definition, mechanicSnapshot, curse?.id)
     },
     location
   };

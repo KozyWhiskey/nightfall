@@ -341,9 +341,17 @@ button.equip-slot:hover:not(:disabled) {
 }
 .equip-slot small { display: none; }
 .equip-slot-empty { color: var(--muted); font-size: .85rem; line-height: 1; }
-.equip-slot.is-rarity-imbued { border-color: rgba(122, 196, 168, .45); }
-.equip-slot.is-rarity-rare { border-color: rgba(217, 154, 78, .55); }
-.equip-slot.is-rarity-legendary { border-color: rgba(232, 120, 88, .65); }
+.equip-slot.is-rarity-salvaged { border-width: 1px; font-weight: 400; }
+.equip-slot.is-rarity-imbued { border-width: 1px; border-color: rgba(122, 196, 168, .45); font-weight: 500; }
+.equip-slot.is-rarity-rare { border-width: 2px; border-color: rgba(217, 154, 78, .55); font-weight: 600; }
+.equip-slot.is-rarity-legendary { border-width: 3px; border-color: rgba(232, 120, 88, .65); font-weight: 700; }
+.equip-slot.is-cursed {
+  border-style: dashed;
+  box-shadow: inset 0 0 0 1px rgba(168, 93, 82, .35);
+}
+.equip-slot.is-filled.is-cursed {
+  border-style: dashed;
+}
 .equip-slot.is-drop-valid {
   border-color: rgba(122, 196, 168, .85);
   box-shadow: inset 0 0 0 1px rgba(122, 196, 168, .35);
@@ -555,6 +563,7 @@ button.equip-slot:hover:not(:disabled) {
   gap: .5rem;
 }
 .inventory-cell {
+  position: relative;
   display: grid;
   align-content: center;
   justify-items: center;
@@ -606,9 +615,20 @@ button.equip-slot:hover:not(:disabled) {
 }
 .inventory-cell small.is-destination { color: rgba(122, 196, 168, .95); }
 .inventory-cell .item-glyph { margin: 0 0 .05rem; width: 2rem; height: 2rem; }
-.inventory-cell.is-rarity-imbued { border-color: rgba(122, 196, 168, .45); }
-.inventory-cell.is-rarity-rare { border-color: rgba(217, 154, 78, .55); }
-.inventory-cell.is-rarity-legendary { border-color: rgba(232, 120, 88, .65); }
+.inventory-cell.is-rarity-salvaged { border-width: 1px; font-weight: 400; }
+.inventory-cell.is-rarity-imbued { border-width: 1px; border-color: rgba(122, 196, 168, .45); font-weight: 500; }
+.inventory-cell.is-rarity-rare { border-width: 2px; border-color: rgba(217, 154, 78, .55); font-weight: 600; }
+.inventory-cell.is-rarity-legendary { border-width: 3px; border-color: rgba(232, 120, 88, .65); font-weight: 700; }
+.inventory-cell.is-cursed {
+  border-style: dashed;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 3px,
+    rgba(168, 93, 82, .08) 3px,
+    rgba(168, 93, 82, .08) 4px
+  );
+}
 .inventory-cell.is-disabled { opacity: .55; cursor: default; }
 .inventory-cell.is-draggable { cursor: grab; }
 .inventory-detail {
@@ -1100,8 +1120,84 @@ button.route-node:hover:not(:disabled) {
   border: 1px solid rgba(169, 130, 69, .4);
   box-shadow: 0 4px 0 rgba(0, 0, 0, .22);
 }
+.offer-card.is-rarity-salvaged { border-width: 1px; font-weight: 400; }
+.offer-card.is-rarity-imbued { border-width: 1px; border-color: rgba(122, 196, 168, .45); font-weight: 500; }
+.offer-card.is-rarity-rare { border-width: 2px; border-color: rgba(217, 154, 78, .55); font-weight: 600; }
+.offer-card.is-rarity-legendary { border-width: 3px; border-color: rgba(232, 120, 88, .65); font-weight: 700; }
+.offer-card.is-cursed {
+  border-style: double;
+  border-color: rgba(168, 93, 82, .7);
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 5px,
+      rgba(168, 93, 82, .05) 5px,
+      rgba(168, 93, 82, .05) 6px
+    ),
+    linear-gradient(160deg, var(--panel-2), rgba(23, 44, 46, .55));
+}
 .offer-card h2, .reward-grid > article h2, .choice-grid > article h2 { font-size: 1.25rem; margin: 0; line-height: 1.15; }
 .offer-card small { color: var(--ember); }
+.rarity-glyph {
+  display: inline-block;
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ash);
+  min-width: .85ch;
+}
+.inventory-cell-rarity,
+.equip-slot-rarity {
+  position: absolute;
+  top: .2rem;
+  right: .28rem;
+  font-size: .7rem;
+  line-height: 1;
+  color: var(--muted);
+}
+.rarity-meta {
+  margin: 0;
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-size: .68rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--muted);
+}
+.item-effect-sections {
+  display: grid;
+  gap: .55rem;
+}
+.item-effect-section-title {
+  margin: 0 0 .2rem;
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-size: .62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+}
+.item-curse-chrome {
+  padding: .45rem .55rem;
+  border: 1px dashed rgba(168, 93, 82, .65);
+  border-left: 3px double rgba(168, 93, 82, .85);
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 4px,
+    rgba(168, 93, 82, .07) 4px,
+    rgba(168, 93, 82, .07) 5px
+  );
+}
+.item-curse-line,
+.item-curse-chrome .offer-effects li,
+.item-curse-chrome .inventory-detail-effects li {
+  color: #e6a895;
+}
+.item-curse-chrome .item-effect-section-title {
+  color: #e6a895;
+}
 .reward-grid button, .choice-grid button, .offer-card button { margin-top: auto; }
 .reward-grid p, .choice-grid p, .offer-card p { color: var(--muted); line-height: 1.45; margin: 0; font-size: .88rem; }
 .ownership-tag {

@@ -10,12 +10,103 @@ export function isDeckInjectLine(line: string): boolean {
   return /^Adds to deck\b/i.test(line) || /^Learn\b/i.test(line);
 }
 
+export function isCurseLine(line: string): boolean {
+  return /^Curse\s*[—:\-–]/i.test(line);
+}
+
+export function isPassiveLine(line: string): boolean {
+  if (/^While equipped:/i.test(line)) return true;
+  if (/while equipped\.?$/i.test(line)) return true;
+  if (/^Retain keeps a card between turns/i.test(line)) return true;
+  if (/^Only helps if you already have a card with Retain/i.test(line)) return true;
+  if (/^Physical scroll is consumed/i.test(line)) return true;
+  return false;
+}
+
+export type EffectSectionId = "granted" | "affixes" | "curse" | "passive";
+
+export interface EffectSection {
+  readonly id: EffectSectionId;
+  readonly title: string;
+  readonly lines: readonly string[];
+}
+
+const SECTION_TITLES: Record<EffectSectionId, string> = {
+  granted: "Granted",
+  affixes: "Affixes",
+  curse: "Curse",
+  passive: "Passive"
+};
+
+export function parseEffectSections(
+  description: string,
+  options: { omitInject?: boolean } = {}
+): EffectSection[] {
+  const buckets: Record<EffectSectionId, string[]> = {
+    granted: [],
+    affixes: [],
+    curse: [],
+    passive: []
+  };
+
+  for (const line of effectLines(description)) {
+    if (isDeckInjectLine(line)) {
+      if (!options.omitInject) buckets.granted.push(line);
+      continue;
+    }
+    if (isCurseLine(line)) {
+      buckets.curse.push(line);
+      continue;
+    }
+    if (isPassiveLine(line)) {
+      buckets.passive.push(line);
+      continue;
+    }
+    buckets.affixes.push(line);
+  }
+
+  return (["granted", "affixes", "curse", "passive"] as const)
+    .filter((id) => buckets[id].length > 0)
+    .map((id) => ({ id, title: SECTION_TITLES[id], lines: buckets[id] }));
+}
+
 export function deckInjectLines(description: string): string[] {
   return effectLines(description).filter(isDeckInjectLine);
 }
 
 export function nonInjectEffectLines(description: string): string[] {
   return effectLines(description).filter((line) => !isDeckInjectLine(line));
+}
+
+/** Non-color rarity mark: Salvaged → Legendary. */
+export const RARITY_GLYPH: Record<ItemInstance["rarityId"], string> = {
+  salvaged: "·",
+  imbued: "◇",
+  rare: "◆",
+  legendary: "▣"
+};
+
+export function rarityGlyph(rarityId: ItemInstance["rarityId"]): string {
+  return RARITY_GLYPH[rarityId];
+}
+
+export function rarityClassName(rarityId: ItemInstance["rarityId"]): string {
+  return `is-rarity-${rarityId}`;
+}
+
+/** Prefix + suffix + signature; curse noted separately (not counted as an affix). */
+export function affixCountSummary(item: ItemInstance): string {
+  const affixes = item.prefixIds.length + item.suffixIds.length + (item.signatureId !== undefined ? 1 : 0);
+  const affixLabel = `${affixes} affix${affixes === 1 ? "" : "es"}`;
+  if (item.curseId !== undefined) return `${affixLabel} · cursed`;
+  return affixLabel;
+}
+
+export function rarityEyebrow(item: ItemInstance, suffix?: string): string {
+  const rarity = titleCase(item.rarityId);
+  const count = affixCountSummary(item);
+  const base = `${rarity} · ${count}`;
+  return suffix !== undefined ? `${base} · ${suffix}` : base;
 }
 
 export function needsRareLeaveConfirm(offers: readonly RewardOffer[]): boolean {

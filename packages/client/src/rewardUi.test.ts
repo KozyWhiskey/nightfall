@@ -1,12 +1,15 @@
 import type { HeroSnapshot, ItemInstance, RewardOffer } from "@nightfall/contracts";
 import { describe, expect, it } from "vitest";
 import {
+  affixCountSummary,
   deckInjectLines,
   equipCompareDelta,
   equipCompareRows,
   needsRareLeaveConfirm,
   nonInjectEffectLines,
-  packAndSealedCounts
+  packAndSealedCounts,
+  parseEffectSections,
+  rarityGlyph
 } from "./rewardUi.js";
 
 function item(partial: Partial<ItemInstance> & Pick<ItemInstance, "instanceId" | "definitionId">): ItemInstance {
@@ -74,6 +77,41 @@ describe("deck inject lines", () => {
       "Learn Shield Bash · 2 AP — Deal 5"
     ]);
     expect(nonInjectEffectLines(description)).toEqual(["+3 max HP while equipped"]);
+  });
+});
+
+describe("parseEffectSections", () => {
+  it("groups Granted / Affixes / Curse / Passive with stable prefixes", () => {
+    const description = [
+      "Adds to deck: Iron Cut · 1 AP — Deal 6",
+      "+1 spell damage",
+      "Curse — Frayed: Granted card deals 1 direct damage to its caster on play.",
+      "+3 max HP while equipped"
+    ].join("\n");
+    const sections = parseEffectSections(description);
+    expect(sections.map((section) => section.id)).toEqual(["granted", "affixes", "curse", "passive"]);
+    expect(sections.find((section) => section.id === "curse")!.lines[0]).toContain("Curse — Frayed:");
+    expect(parseEffectSections(description, { omitInject: true }).map((section) => section.id)).toEqual([
+      "affixes",
+      "curse",
+      "passive"
+    ]);
+  });
+});
+
+describe("rarity and affix cues", () => {
+  it("exposes distinct glyphs and counts curse separately from affixes", () => {
+    expect(rarityGlyph("salvaged")).toBe("·");
+    expect(rarityGlyph("legendary")).toBe("▣");
+    expect(affixCountSummary(item({
+      instanceId: "1",
+      definitionId: "x",
+      prefixIds: ["a"],
+      suffixIds: ["b"],
+      signatureId: "sig",
+      curseId: "frayed"
+    }))).toBe("3 affixes · cursed");
+    expect(affixCountSummary(item({ instanceId: "2", definitionId: "y" }))).toBe("0 affixes");
   });
 });
 
