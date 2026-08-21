@@ -27,7 +27,7 @@ function equipVessel(snapshot: MutableSnapshot, heroId: string, definitionId: st
   }
   const item = createItemInstance(build1Pack, definitionId, "salvaged", 1, `fixture:${definitionId}`, { kind: "equipped", heroId, slotId: slot });
   hero.equipment[slot] = item.instanceId;
-  run.holdings.push(item);
+  run.holdings.push(item as never);
 }
 
 function startCombatWithVessel(heroClass: "vanguard" | "aether_weaver", definitionId: string, slot: EquipmentSlot, extraLearned: readonly string[] = []): MutableSnapshot {
@@ -200,10 +200,17 @@ describe("Build 1 combat acceptance", () => {
   });
 
   it("SIM-C04 Archivist's Focus draws one extra card at combat start", () => {
-    const snapshot = startCombatWithVessel("aether_weaver", "archivists_focus", "offHand", ["aether_needle"]);
+    let snapshot = startCombatWithVessel("aether_weaver", "archivists_focus", "offHand", ["aether_needle"]);
     const weaver = snapshot.activeRun!.heroes.find((hero) => hero.classId === "aether_weaver")!;
     expect(snapshot.activeRun!.combat!.activeCombatantId).toBe(weaver.id);
     expect(snapshot.activeRun!.combat!.cards.filter((card) => card.ownerId === weaver.id && card.zone === "hand")).toHaveLength(4);
+    snapshot = accept(snapshot, command(snapshot, "endTurn", {}, weaver.id), build1Pack, { combatIntent: [0, 0] }) as MutableSnapshot;
+    for (let attempts = 0; attempts < 8 && snapshot.activeRun!.combat!.activeCombatantId !== weaver.id; attempts += 1) {
+      const actorId = snapshot.activeRun!.combat!.activeCombatantId;
+      snapshot = accept(snapshot, command(snapshot, "endTurn", {}, actorId), build1Pack, { combatIntent: [0, 0] }) as MutableSnapshot;
+    }
+    expect(snapshot.activeRun!.combat!.activeCombatantId).toBe(weaver.id);
+    expect(snapshot.activeRun!.combat!.cards.filter((card) => card.ownerId === weaver.id && card.zone === "hand")).toHaveLength(3);
   });
 
   it("SIM-C05 Cracked Way-Lens adds +1 to spell card damage", () => {
@@ -212,23 +219,35 @@ describe("Build 1 combat acceptance", () => {
     const combat = snapshot.activeRun!.combat!;
     const bolt = combat.cards.find((card) => card.ownerId === weaver.id && card.definitionId === "aether_bolt")!;
     bolt.zone = "hand";
-    const target = combat.combatants.find((entry) => entry.side === "enemies")!;
-    target.blockLayers = [];
-    const before = target.hp;
+    const [spellTarget, basicTarget] = combat.combatants.filter((entry) => entry.side === "enemies");
+    spellTarget!.blockLayers = [];
+    basicTarget!.blockLayers = [];
+    const spellBefore = spellTarget!.hp;
+    const basicBefore = basicTarget!.hp;
     setActiveHero(snapshot, weaver.id);
     snapshot.activeRun!.combat!.heroResources.find((entry) => entry.heroId === weaver.id)!.mana = 10;
-    snapshot = accept(snapshot, command(snapshot, "playCard", { cardInstanceId: bolt.cardInstanceId, targetId: target.id }, weaver.id), build1Pack) as MutableSnapshot;
-    expect(snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === target.id)!.hp).toBe(before - 12);
+    snapshot = accept(snapshot, command(snapshot, "playCard", { cardInstanceId: bolt.cardInstanceId, targetId: spellTarget!.id }, weaver.id), build1Pack) as MutableSnapshot;
+    expect(snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === spellTarget!.id)!.hp).toBe(spellBefore - 12);
+    snapshot = accept(snapshot, command(snapshot, "useBasicAttack", { targetId: basicTarget!.id }, weaver.id), build1Pack) as MutableSnapshot;
+    expect(snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === basicTarget!.id)!.hp).toBe(basicBefore - 3);
   });
 
   it("SIM-C06 Ironweave Gloves add +1 to basic attack damage", () => {
-    let snapshot = startCombatWithVessel("vanguard", "ironweave_gloves", "gloves");
+    let snapshot = startCombatWithVessel("vanguard", "ironweave_gloves", "gloves", ["aether_bolt"]);
     const vanguard = snapshot.activeRun!.heroes.find((hero) => hero.classId === "vanguard")!;
-    const target = snapshot.activeRun!.combat!.combatants.find((entry) => entry.side === "enemies")!;
-    target.blockLayers = [];
-    const before = target.hp;
+    const combat = snapshot.activeRun!.combat!;
+    const bolt = combat.cards.find((card) => card.ownerId === vanguard.id && card.definitionId === "aether_bolt")!;
+    bolt.zone = "hand";
+    const [basicTarget, spellTarget] = combat.combatants.filter((entry) => entry.side === "enemies");
+    basicTarget!.blockLayers = [];
+    spellTarget!.blockLayers = [];
+    const basicBefore = basicTarget!.hp;
+    const spellBefore = spellTarget!.hp;
     setActiveHero(snapshot, vanguard.id);
-    snapshot = accept(snapshot, command(snapshot, "useBasicAttack", { targetId: target.id }, vanguard.id), build1Pack) as MutableSnapshot;
-    expect(snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === target.id)!.hp).toBe(before - 6);
+    snapshot.activeRun!.combat!.heroResources.find((entry) => entry.heroId === vanguard.id)!.mana = 10;
+    snapshot = accept(snapshot, command(snapshot, "useBasicAttack", { targetId: basicTarget!.id }, vanguard.id), build1Pack) as MutableSnapshot;
+    expect(snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === basicTarget!.id)!.hp).toBe(basicBefore - 6);
+    snapshot = accept(snapshot, command(snapshot, "playCard", { cardInstanceId: bolt.cardInstanceId, targetId: spellTarget!.id }, vanguard.id), build1Pack) as MutableSnapshot;
+    expect(snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === spellTarget!.id)!.hp).toBe(spellBefore - 8);
   });
 });

@@ -23,6 +23,16 @@ function itemInitiative(hero: HeroSnapshot, items: readonly ItemInstance[]): num
   return items.filter((item) => item.location.kind === "equipped" && item.location.heroId === hero.id).reduce((sum, item) => sum + (item.mechanicSnapshot.initiativeDelta ?? 0), 0);
 }
 
+function heroHasEquippedModifier(snapshot: MutableSnapshot, heroId: string, modifierId: string): boolean {
+  return runOf(snapshot).holdings.some((item) => item.location.kind === "equipped" && item.location.heroId === heroId && item.mechanicSnapshot.modifiers.includes(modifierId));
+}
+
+function equippedCardDamageFlat(snapshot: MutableSnapshot, heroId: string, definition: CardDefinition): number {
+  if (definition.kind === "spell" && heroHasEquippedModifier(snapshot, heroId, "spell_damage_flat")) return 1;
+  if (definition.kind === "basic" && heroHasEquippedModifier(snapshot, heroId, "basic_attack_damage")) return 1;
+  return 0;
+}
+
 export function effectSummary(definition: CardDefinition, stats?: { strength: number; intellect: number }, mods?: { damageDelta?: number; blockDelta?: number }): string {
   const damageBonus = mods?.damageDelta ?? 0;
   const blockBonus = mods?.blockDelta ?? 0;
@@ -56,6 +66,8 @@ function buildHeroCards(snapshot: MutableSnapshot, pack: ValidatedContentPack, h
   const ordered = sources.map((source, index) => {
     const definition = pack.cards.find((entry) => entry.id === source.definitionId)!;
     const costDelta = source.item?.mechanicSnapshot.secondaryCostDelta ?? 0;
+    const grantedDamageDelta = source.item?.mechanicSnapshot.damageDelta ?? 0;
+    const displayDamageDelta = grantedDamageDelta + equippedCardDamageFlat(snapshot, hero.id, definition);
     return ({
     cardInstanceId: `${hero.id}:${source.definitionId}:${index}`,
     definitionId: source.definitionId,
@@ -65,7 +77,7 @@ function buildHeroCards(snapshot: MutableSnapshot, pack: ValidatedContentPack, h
     retain: source.item?.mechanicSnapshot.retain ?? false,
     exhaust: source.item?.mechanicSnapshot.exhaust ?? false,
     costDelta: source.item?.mechanicSnapshot.secondaryCostDelta ?? 0,
-    damageDelta: source.item?.mechanicSnapshot.damageDelta ?? 0,
+    damageDelta: grantedDamageDelta,
     blockDelta: source.item?.mechanicSnapshot.blockDelta ?? 0,
     selfDamage: source.item?.mechanicSnapshot.selfDamage ?? 0,
     presentation: {
@@ -74,7 +86,7 @@ function buildHeroCards(snapshot: MutableSnapshot, pack: ValidatedContentPack, h
       manaCost: definition.cost.mana > 0 ? definition.cost.mana + costDelta : 0,
       staminaCost: definition.cost.stamina > 0 ? definition.cost.stamina + costDelta : 0,
       targetSpec: definition.targetSpec,
-      summary: effectSummary(definition, { strength: hero.attributes.str, intellect: hero.attributes.int }, { damageDelta: source.item?.mechanicSnapshot.damageDelta ?? 0, blockDelta: source.item?.mechanicSnapshot.blockDelta ?? 0 })
+      summary: effectSummary(definition, { strength: hero.attributes.str, intellect: hero.attributes.int }, { damageDelta: displayDamageDelta, blockDelta: source.item?.mechanicSnapshot.blockDelta ?? 0 })
     }
   }); });
   const shuffled = shuffle(snapshot, "combatDeck", ordered, context);
@@ -222,14 +234,15 @@ function drawOne(snapshot: MutableSnapshot, heroId: string, context: SimulationC
   draw[0]!.zone = "hand";
 }
 
-function heroHasRetainRefill(snapshot: MutableSnapshot, heroId: string): boolean {
-  return runOf(snapshot).holdings.some((item) => item.location.kind === "equipped" && item.location.heroId === heroId && item.mechanicSnapshot.modifiers.includes("retain_refill"));
-}
-
 function refillHand(snapshot: MutableSnapshot, heroId: string, pack: ValidatedContentPack, context: SimulationContext): void {
   const combat = combatOf(snapshot);
   let target = pack.tuning.handSize;
-  if (heroHasRetainRefill(snapshot, heroId) && !combat.retainRefillUsedHeroIds.includes(heroId)) {
+  const combatant = combat.combatants.find((entry) => entry.id === heroId);
+  if (heroHasEquippedModifier(snapshot, heroId, "combat_start_draw") && (combatant?.turnsCompleted ?? 0) === 0) {
+    target += 1;
+    emitFact(context, snapshot.revision, "item_passive", "Drew 1 extra card at combat start.", { heroId });
+  }
+  if (heroHasEquippedModifier(snapshot, heroId, "retain_refill") && !combat.retainRefillUsedHeroIds.includes(heroId)) {
     const retainedInHand = zoneCards(combat, heroId, "hand").filter((card) => card.retain).length;
     if (retainedInHand > 0) {
       target += 1;
@@ -341,7 +354,7 @@ function selectTargets(snapshot: MutableSnapshot, actor: MutableCombatant, targe
   return [stableSort(heroes, (entry) => entry.id, (left, right) => left.hp - right.hp)[0]!];
 }
 
-function resolveEffects(snapshot: MutableSnapshot, actor: MutableCombatant, effects: readonly EffectDefinition[], explicitTargetId: string | undefined, sourceId: string, context: SimulationContext, cardModifiers?: MutableCard): void {
+function resolveEffects(snapshot: MutableSnapshot, actor: MutableCombatant, effects: readonly EffectDefinition[], explicitTargetId: string | undefined, sourceId: string, context: SimulationContext, cardModifiers?: { damageDelta?: number; blockDelta?: number; selfDamage?: number }): void {
   const combat = combatOf(snapshot);
   for (const effect of effects) {
     const targets = selectTargets(snapshot, actor, effect.target, explicitTargetId, context);
@@ -375,7 +388,8 @@ function resolveEffects(snapshot: MutableSnapshot, actor: MutableCombatant, effe
       else if (effect.kind === "drawCards") for (let index = 0; index < effect.amount; index += 1) drawOne(snapshot, originalTarget.id, context);
     }
   }
-  if (cardModifiers !== undefined && cardModifiers.selfDamage > 0) directDamage(snapshot, actor, actor, cardModifiers.selfDamage, context);
+  const selfDamage = cardModifiers?.selfDamage ?? 0;
+  if (selfDamage > 0) directDamage(snapshot, actor, actor, selfDamage, context);
 }
 
 function expireAtTurnStart(combat: ReturnType<typeof combatOf>, actor: MutableCombatant): void {
@@ -516,9 +530,10 @@ export function startCombat(snapshot: MutableSnapshot, pack: ValidatedContentPac
         const classDefinition = pack.classes.find((entry) => entry.id === hero.classId)!;
         const attack = pack.cards.find((entry) => entry.id === classDefinition.basicActionIds[0])!;
         const basicBlock = pack.cards.find((entry) => entry.id === classDefinition.basicActionIds[1])!;
+        const attackFlat = equippedCardDamageFlat(snapshot, hero.id, attack);
         return {
           heroId: hero.id,
-          attack: { definitionId: attack.id, name: attack.display.name, apCost: attack.cost.ap, targetSpec: "enemy" as const, summary: effectSummary(attack, { strength: hero.attributes.str, intellect: hero.attributes.int }) },
+          attack: { definitionId: attack.id, name: attack.display.name, apCost: attack.cost.ap, targetSpec: "enemy" as const, summary: effectSummary(attack, { strength: hero.attributes.str, intellect: hero.attributes.int }, { damageDelta: attackFlat }) },
           block: { definitionId: basicBlock.id, name: basicBlock.display.name, apCost: basicBlock.cost.ap, targetSpec: "self" as const, summary: effectSummary(basicBlock, { strength: hero.attributes.str, intellect: hero.attributes.int }) }
         };
       }),
@@ -580,7 +595,11 @@ function playDefinition(snapshot: MutableSnapshot, actor: MutableCombatant, reso
   if (resource.mana < manaCost || resource.stamina < staminaCost) return "insufficient_resource";
   if (!validateTarget(snapshot, actor, definition.targetSpec, targetId, context)) return "invalid_target";
   resource.ap -= definition.cost.ap; resource.mana -= manaCost; resource.stamina -= staminaCost;
-  resolveEffects(snapshot, actor, definition.effects, targetId, definition.id, context, instance);
+  resolveEffects(snapshot, actor, definition.effects, targetId, definition.id, context, {
+    damageDelta: (instance?.damageDelta ?? 0) + equippedCardDamageFlat(snapshot, actor.id, definition),
+    blockDelta: instance?.blockDelta ?? 0,
+    selfDamage: instance?.selfDamage ?? 0
+  });
   if (instance !== undefined) instance.zone = instance.exhaust || definition.disposition === "exhaust" ? "exhaust" : "discard";
   runOf(snapshot).diagnostics.cardsPlayed += instance === undefined ? 0 : 1;
   if (definition.alwaysAvailable) runOf(snapshot).diagnostics.basicActions += 1;

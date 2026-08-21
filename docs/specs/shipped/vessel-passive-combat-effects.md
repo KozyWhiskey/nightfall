@@ -1,7 +1,7 @@
 # Registry vessel passives must apply in combat
 
 **Kind:** bug  
-**Status:** approved  
+**Status:** shipped  
 **Last updated:** 2026-08-21  
 **Decision Register:** `content.pack`  
 **Related:** [Build 1 Content Registry](../../content/vertical-slice-content-registry.md), [Combat Simulation Contract](../../systems/combat-simulation-contract.md) (damage formula / start-of-combat effects), [Content Data Contract](../../systems/content-data-contract.md)
@@ -33,17 +33,17 @@ Setup order step 7 applies start-of-combat effects after the timeline exists. Af
 
 - `packages/sim/src/combat.ts` — first-turn extra draw; spell flat bonus on spell cards; basic-attack flat bonus on Basics
 - `packages/sim/src/items.ts` — if mechanic snapshots need a real damage/draw field instead of a label-only modifier (optional, only if combat reads it)
-- `packages/fixtures/src/sim-combat.test.ts` — `SIM-C04`, `SIM-C05`, `SIM-C06` (failing until the fix)
+- `packages/fixtures/src/sim-combat.test.ts` — `SIM-C04`, `SIM-C05`, `SIM-C06`
 
 ## Acceptance criteria
 
-- [ ] `SIM-C04`: Weaver with `archivists_focus` equipped has 4 cards in hand on their first combat turn (deck has at least 4 cards). Later refills in that combat stay at hand size 3 unless other rules apply
-- [ ] `SIM-C05`: Weaver with `cracked_way_lens` plays Aether Bolt for 12 damage (7 + INT 4 + 1), not 11. Physical Basics on that hero stay at 1 + STR
-- [ ] `SIM-C06`: Vanguard with `ironweave_gloves` deals 6 with Basic Attack (1 + STR 4 + 1), not 5. Spell cards on that hero are unchanged by the gloves
-- [ ] Named streams only; never `Math.random()`
-- [ ] `pnpm test` covers the change
-- [ ] `pnpm check:boundaries` still passes
-- [ ] Out of scope listed below is untouched
+- [x] `SIM-C04`: Weaver with `archivists_focus` equipped has 4 cards in hand on their first combat turn (deck has at least 4 cards). Later refills in that combat stay at hand size 3 unless other rules apply
+- [x] `SIM-C05`: Weaver with `cracked_way_lens` plays Aether Bolt for 12 damage (7 + INT 4 + 1), not 11. Physical Basics on that hero stay at 1 + STR
+- [x] `SIM-C06`: Vanguard with `ironweave_gloves` deals 6 with Basic Attack (1 + STR 4 + 1), not 5. Spell cards on that hero are unchanged by the gloves
+- [x] Named streams only; never `Math.random()`
+- [x] `pnpm test` covers the change
+- [x] `pnpm check:boundaries` still passes
+- [x] Out of scope listed below is untouched
 
 ## Out of scope
 
