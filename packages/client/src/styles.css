@@ -80,7 +80,20 @@ small, .stage-chrome > div > span, .page-heading > span, .meter span, .save-stat
 .save-state > span.pulse { background: var(--ember); animation: pulse 1s infinite alternate; }
 .fact-log { margin-top: auto; border-top: 1px solid var(--line); padding-top: 1rem; }
 .fact-log h2 { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; font-family: Consolas, monospace; color: var(--ember); margin: 0 0 .8rem; }
-.fact-log p { color: var(--muted); font-size: .78rem; line-height: 1.45; border-left: 1px solid var(--brass); padding-left: .7rem; }
+.fact-log p,
+.fact-log-row { color: var(--muted); font-size: .78rem; line-height: 1.45; border-left: 1px solid var(--brass); padding-left: .7rem; margin: 0 0 .55rem; display: flex; flex-direction: column; gap: .2rem; }
+.fact-log-rarity { font-family: Consolas, monospace; font-size: .68rem; letter-spacing: .04em; text-transform: uppercase; color: var(--ink); font-weight: 600; }
+.fact-log-message { color: inherit; }
+.fact-log-row.is-loot-notable { border-left-width: 3px; font-weight: 600; color: var(--ink); }
+.fact-log-row.is-rarity-imbued.is-loot-notable { border-left-color: #5a9e9a; }
+.fact-log-row.is-rarity-rare.is-loot-notable { border-left-width: 4px; border-left-color: #c4a35a; }
+.fact-log-row.is-rarity-legendary.is-loot-notable { border-left-width: 5px; border-left-color: var(--ember); }
+.fact-log-row.is-loot-cursed { border-left-style: dashed; }
+.fact-log-row.is-loot-celebrate { animation: loot-fact-pulse .9s ease-out 1; }
+@keyframes loot-fact-pulse {
+  0% { background: rgba(196, 163, 90, .18); }
+  100% { background: transparent; }
+}
 .party-launch, .rail-party {
   border-color: rgba(169, 130, 69, .55);
   text-align: left;

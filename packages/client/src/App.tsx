@@ -28,6 +28,7 @@ import {
   packAndSealedCounts,
   affixCountSummary
 } from "./rewardUi.js";
+import { presentLootFact } from "./lootFactUi.js";
 import { useNightfall } from "./store.js";
 
 function PillarRail({ lit }: { lit: number }) {
@@ -536,7 +537,15 @@ export function App() {
         <button type="button" className={`party-launch${partyOpen ? " is-active" : ""}`} onClick={() => setPartyOpen(true)} aria-expanded={partyOpen}>
           Party & packs
         </button>
-        {recentFacts.length > 0 && <section className="fact-log" aria-live="polite"><h2>What changed</h2>{recentFacts.map((fact) => <p key={fact.id}>{fact.message}</p>)}</section>}
+        {recentFacts.length > 0 && <section className="fact-log" aria-live="polite"><h2>What changed</h2>{recentFacts.map((fact) => {
+          const presented = presentLootFact(snapshot, fact);
+          return <p key={fact.id} className={presented.className}>
+            {presented.glyph !== undefined && presented.rarityLabel !== undefined && (
+              <span className="fact-log-rarity" aria-hidden="true">{presented.glyph} {presented.rarityLabel}</span>
+            )}
+            <span className="fact-log-message">{presented.message}</span>
+          </p>;
+        })}</section>}
       </div>
       {railCollapsed && <div className="lantern-rail">
         <div className="rail-pillars" title={`${snapshot.haven.litPillars} of 10 pillars lit`} aria-label={`${snapshot.haven.litPillars} of 10 Haven pillars lit`}>
