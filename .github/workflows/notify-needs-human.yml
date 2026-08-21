@@ -40,7 +40,7 @@ jobs:
             exit 0
           fi
           python3 <<'PY'
-          import json, os, urllib.request
+          import json, os, urllib.error, urllib.request
 
           if os.environ.get("EVENT_NAME") == "workflow_dispatch":
               number = os.environ["INPUT_PR"]
@@ -62,12 +62,22 @@ jobs:
               "Review `docs/specs/proposed/`, then move to approved and add "
               "`spec-approved` when ready."
           )
+          webhook = os.environ["WEBHOOK_URL"].strip()
+          if "discord.com/api/webhooks/" not in webhook and "discordapp.com/api/webhooks/" not in webhook:
+              raise SystemExit("DISCORD_WEBHOOK_URL does not look like a Discord webhook URL")
           req = urllib.request.Request(
-              os.environ["WEBHOOK_URL"],
+              webhook,
               data=json.dumps({"content": content}).encode(),
-              headers={"Content-Type": "application/json"},
+              headers={
+                  "Content-Type": "application/json",
+                  "User-Agent": "nightfall-github-actions (needs-human notify)",
+              },
               method="POST",
           )
-          with urllib.request.urlopen(req) as resp:
-              print("discord status", resp.status)
+          try:
+              with urllib.request.urlopen(req) as resp:
+                  print("discord status", resp.status)
+          except urllib.error.HTTPError as err:
+              body = err.read().decode("utf-8", errors="replace")
+              raise SystemExit(f"Discord webhook HTTP {err.code}: {body}") from err
           PY
