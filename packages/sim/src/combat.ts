@@ -41,7 +41,8 @@ export function effectSummary(definition: CardDefinition, stats?: { strength: nu
     if (effect.kind === "dealDamage") {
       const scaling = effect.scaling === "strength" ? (stats?.strength ?? 0) : effect.scaling === "intellect" ? (stats?.intellect ?? 0) : 0;
       const total = Math.max(0, effect.amount + scaling + damageBonus);
-      return `Deal ${total} ${effect.damageType} damage`;
+      const rider = effect.condition === undefined ? "" : ` if ${effect.condition}`;
+      return `Deal ${total} ${effect.damageType} damage${rider}`;
     }
     if (effect.kind === "gainBlock") return `Gain ${effect.amount + blockBonus} Block`;
     if (effect.kind === "applyCondition") return `Apply ${effect.stacks} ${effect.conditionId}`;
@@ -494,6 +495,7 @@ function resolveEffects(snapshot: MutableSnapshot, actor: MutableCombatant, effe
     const vesselMods = vessel?.mechanicSnapshot.modifiers ?? [];
     for (const originalTarget of targets) {
       if (!isAlive(originalTarget) && !(effect.kind === "heal" && effect.revive)) continue;
+      if (effect.condition !== undefined && !originalTarget.conditions.some((entry) => entry.id === effect.condition)) continue;
       if (effect.kind === "dealDamage") {
         const directTargeted = ["enemy", "ally", "lowestHpHero", "lowestBlockHero", "randomLivingHero"].includes(effect.target);
         let amount = effect.amount + (cardModifiers?.damageDelta ?? 0);
