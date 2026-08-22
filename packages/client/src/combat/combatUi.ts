@@ -62,7 +62,8 @@ const CONDITION_TOOLTIPS: Readonly<Record<string, string>> = {
   exposed: "Takes 25% more damage until this condition ends.",
   weakened: "Deals 25% less damage until this condition ends.",
   stun: "Skips the next complete turn, then Stun clears.",
-  strain: "Start-of-turn AP is reduced while Strained."
+  strain: "Start-of-turn AP is reduced while Strained.",
+  burn: "Each stack deals 2 damage at the end of this combatant's turn, then loses one duration."
 };
 
 /** Short term explanation for a condition id (tooltip only; label stays title-cased). */

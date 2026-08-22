@@ -1,7 +1,7 @@
 # Burn standee tooltip uses Poison timing
 
 **Kind:** bug  
-**Status:** approved  
+**Status:** shipped  
 **Last updated:** 2026-08-22  
 **Decision Register:** `ux.interaction`  
 **Related:** [Combat Simulation Contract](../../systems/combat-simulation-contract.md) (Burn / Poison rows), [Interaction Contract](../../ux/interaction-contract.md)
@@ -36,13 +36,13 @@ Combat must-show includes condition/tooltips. A tooltip that states Poison’s s
 
 ## Acceptance criteria
 
-- [ ] `conditionTooltip("burn")` matches end-of-turn timing and does not mention start-of-turn
-- [ ] `CombatStandee` Burn chip title uses that helper (no hardcoded Poison timing)
-- [ ] Existing Exposed / Weakened / Stun / Strain tooltips stay accurate
-- [ ] Client Vitest covers the Burn tooltip
-- [ ] `pnpm test` covers the change
-- [ ] `pnpm check:boundaries` still passes
-- [ ] Out of scope listed below is untouched
+- [x] `conditionTooltip("burn")` matches end-of-turn timing and does not mention start-of-turn
+- [x] `CombatStandee` Burn chip title uses that helper (no hardcoded Poison timing)
+- [x] Existing Exposed / Weakened / Stun / Strain tooltips stay accurate
+- [x] Client Vitest covers the Burn tooltip
+- [x] `pnpm test` covers the change
+- [x] `pnpm check:boundaries` still passes
+- [x] Out of scope listed below is untouched
 
 ## Out of scope
 
