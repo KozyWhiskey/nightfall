@@ -135,5 +135,7 @@ describe("conditionTooltip", () => {
     expect(conditionTooltip("weakened")).toMatch(/less damage/i);
     expect(conditionTooltip("stun")).toMatch(/skips/i);
     expect(conditionTooltip("strain")).toMatch(/AP/i);
+    expect(conditionTooltip("burn")).toMatch(/end of/i);
+    expect(conditionTooltip("burn")).not.toMatch(/start of/i);
   });
 });
