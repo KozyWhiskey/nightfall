@@ -1,7 +1,7 @@
 # Crack Open Exposed +3 rider is missing
 
 **Kind:** bug  
-**Status:** approved  
+**Status:** shipped  
 **Last updated:** 2026-08-22  
 **Decision Register:** `content.pack`  
 **Related:** [First Scroll Pool](../../content/spells/first-scroll-pool.md), [Build 1 Content Registry](../../content/vertical-slice-content-registry.md), [Combat Simulation Contract](../../systems/combat-simulation-contract.md) (modifier order)
@@ -34,14 +34,14 @@ Combat Simulation Contract — modifier order: add flat bonuses, then Weakened, 
 
 ## Acceptance criteria
 
-- [ ] `SIM-C07`: Vanguard plays learned `crack_open` at an unblocked Gloomfang Hound with no Exposed: HP loss is 8
-- [ ] `SIM-C07`: same card at an unblocked Exposed Hound: HP loss is 13 (`floor((8 + 3) × 1.25)`), not 10
-- [ ] Clean-target damage stays 8 (the +3 must not apply without Exposed)
-- [ ] Card hand `summary` mentions the Exposed +3 rider
-- [ ] Named streams only; never `Math.random()`
-- [ ] `pnpm test` covers the change
-- [ ] `pnpm check:boundaries` still passes
-- [ ] Out of scope listed below is untouched
+- [x] `SIM-C07`: Vanguard plays learned `crack_open` at an unblocked Gloomfang Hound with no Exposed: HP loss is 8
+- [x] `SIM-C07`: same card at an unblocked Exposed Hound: HP loss is 13 (`floor((8 + 3) × 1.25)`), not 10
+- [x] Clean-target damage stays 8 (the +3 must not apply without Exposed)
+- [x] Card hand `summary` mentions the Exposed +3 rider
+- [x] Named streams only; never `Math.random()`
+- [x] `pnpm test` covers the change
+- [x] `pnpm check:boundaries` still passes
+- [x] Out of scope listed below is untouched
 
 ## Out of scope
 
