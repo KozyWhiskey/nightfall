@@ -17,11 +17,12 @@ export function createEmbarkedSnapshot(pack: ValidatedContentPack, seed = 12345)
   return accept(snapshot, command(snapshot, "commitEmbark"), pack, { map: [0.1, 0.1] });
 }
 
-export function startFixtureCombat(pack: ValidatedContentPack, encounterId: string, options: { seed?: number; runGloom?: number; forcedStreams?: ForcedStreams } = {}): MutableSnapshot {
+export function startFixtureCombat(pack: ValidatedContentPack, encounterId: string, options: { seed?: number; runGloom?: number; flags?: readonly string[]; forcedStreams?: ForcedStreams } = {}): MutableSnapshot {
   const embarked = createEmbarkedSnapshot(pack, options.seed ?? 12345);
   const mutable = cloneSnapshot(embarked);
   if (mutable.activeRun === undefined) throw new Error("Fixture failed to embark");
   mutable.activeRun.runGloom = options.runGloom ?? 0;
+  if (options.flags !== undefined && options.flags.length > 0) mutable.activeRun.flags = [...mutable.activeRun.flags, ...options.flags];
   mutable.activeRun.phase = "combat";
   startCombat(mutable, pack, encounterId, createContext(options.forcedStreams));
   return mutable;
