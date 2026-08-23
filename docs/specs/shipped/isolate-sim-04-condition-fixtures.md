@@ -1,7 +1,7 @@
 # Isolate SIM-04 condition fixtures
 
 **Kind:** enhancement  
-**Status:** approved  
+**Status:** shipped  
 **Last updated:** 2026-08-23  
 **Decision Register:** `build.acceptance`  
 **Related:** [Build 1 Acceptance Plan](../../product/build-1-acceptance-plan.md) `SIM-04`, [Combat Simulation Contract](../../systems/combat-simulation-contract.md) (condition timing, targeting, special cases)
@@ -45,27 +45,27 @@ Targeting:
 
 ## Acceptance criteria
 
-- [ ] `SIM-C08` Exposed apply / expire / party start:
+- [x] `SIM-C08` Exposed apply / expire / party start:
   - Play `piercing_thrust` (equip `gloomwood_spear` or add it as a learned card) at an unblocked Hound; Hound has Exposed
   - Follow-up Vanguard Basic Attack (or Iron Cut) deals `floor(raw × 1.25)` vs the same unblocked Exposed Hound
   - After that Hound completes one turn, Exposed is gone and a later hit uses raw damage
   - Reapplication refreshes expiry (second `piercing_thrust` before expiry does not stack a second Exposed row)
   - `next_combat_exposed` before `startCombat` puts Exposed on **both** living heroes
-- [ ] `SIM-C08` Weakened expiry: Shield Bash applies Weakened; after the target completes one turn, Weakened is gone and outgoing damage is no longer `×0.75` (apply-only is already in `SIM-04`)
-- [ ] `SIM-C09` Burn timing / stacks / Exposed-on-Burn / party-wide:
+- [x] `SIM-C08` Weakened expiry: Shield Bash applies Weakened; after the target completes one turn, Weakened is gone and outgoing damage is no longer `×0.75` (apply-only is already in `SIM-04`)
+- [x] `SIM-C09` Burn timing / stacks / Exposed-on-Burn / party-wide:
   - Weaver Ember Spark at an unblocked Hound: after the Ember damage (4), the Hound has 1 Burn stack; at that Hound's first `endTurn` / `finishTurn` it loses 2 HP and keeps 1 stack; at the second it loses 2 HP and Burn is gone
   - Ember Spark does not add INT to the Burn tick
   - With Exposed on the burner, the tick is `floor(stacks × 2 × 1.25)` (1 stack → 2; 2 stacks → 5)
   - Learned `ashfall` applies 1 Burn stack to **every** living enemy
-- [ ] `SIM-C10` Guard does not redirect party-wide damage:
+- [x] `SIM-C10` Guard does not redirect party-wide damage:
   - Whisperwood Threshold (`mist_chanter`); Vanguard `hold_the_line` on Weaver; force Chanter `lament` (`allEnemies` / 3 gloom)
   - Weaver **and** Vanguard both lose HP from Lament; Guard does not move Weaver's share onto Vanguard
   - Do not re-assert `SIM-02` targeted redirect / Guard expiry
-- [ ] Named streams only; never `Math.random()`
-- [ ] `pnpm test` covers the change
-- [ ] `pnpm check:boundaries` still passes
-- [ ] Out of scope listed below is untouched
-- [ ] Existing `SIM-04` may stay as the Gloom Block + Weakened-apply + fixture-revive smoke; do not weaken it
+- [x] Named streams only; never `Math.random()`
+- [x] `pnpm test` covers the change
+- [x] `pnpm check:boundaries` still passes
+- [x] Out of scope listed below is untouched
+- [x] Existing `SIM-04` may stay as the Gloom Block + Weakened-apply + fixture-revive smoke; do not weaken it
 
 ## Out of scope
 
