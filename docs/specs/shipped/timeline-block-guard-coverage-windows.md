@@ -1,7 +1,7 @@
 # Timeline Block / Guard coverage windows
 
 **Kind:** enhancement  
-**Status:** approved  
+**Status:** shipped  
 **Last updated:** 2026-08-23  
 **Decision Register:** `ux.interaction`  
 **Related:** [Combat Simulation Contract](../../systems/combat-simulation-contract.md) (setup UI + Block/Guard timing), [Build 1 Interaction Contract](../../ux/interaction-contract.md) (combat hierarchy), [Build 1 Acceptance Plan](../../product/build-1-acceptance-plan.md) `SIM-02`
@@ -48,14 +48,14 @@ Do not change `packages/sim`. Do not recompute damage, initiative, or targeting 
 
 ## Acceptance criteria
 
-- [ ] A pure helper derived from `CombatSnapshot` returns, for a late Vanguard with Block > 0 while another hero is active: the enemy ids that act before Vanguard's next turn start, and a flag/label that current Block still covers those turns
-- [ ] The same helper, when Vanguard is Guarding Weaver: Weaver's row (or the covered enemy rows) shows that Guard still covers those same upcoming enemy turns, until Vanguard's next turn start
-- [ ] `InitiativeTracker` shows the coverage window without requiring the player to hover a standee; color is not the only signal
-- [ ] Timeline still shows portrait/silhouette, initiative value, and enemy next intent (do not regress shipped tracker facts)
-- [ ] Client Vitest covers the helper with a constructed snapshot (no live host, no `Math.random()`)
-- [ ] `pnpm test` covers the change
-- [ ] `pnpm check:boundaries` still passes
-- [ ] Out of scope listed below is untouched
+- [x] A pure helper derived from `CombatSnapshot` returns, for a late Vanguard with Block > 0 while another hero is active: the enemy ids that act before Vanguard's next turn start, and a flag/label that current Block still covers those turns
+- [x] The same helper, when Vanguard is Guarding Weaver: Weaver's row (or the covered enemy rows) shows that Guard still covers those same upcoming enemy turns, until Vanguard's next turn start
+- [x] `InitiativeTracker` shows the coverage window without requiring the player to hover a standee; color is not the only signal
+- [x] Timeline still shows portrait/silhouette, initiative value, and enemy next intent (do not regress shipped tracker facts)
+- [x] Client Vitest covers the helper with a constructed snapshot (no live host, no `Math.random()`)
+- [x] `pnpm test` covers the change
+- [x] `pnpm check:boundaries` still passes
+- [x] Out of scope listed below is untouched
 
 ## Out of scope
 
@@ -64,7 +64,6 @@ Do not change `packages/sim`. Do not recompute damage, initiative, or targeting 
 - Burn chip tooltip copy (open PR #4)
 - Standee Block / Guard / Burn chips (already shipped)
 - Poison, revival cards, injury −1 AP, E2E-02
-- Implementing the helper or tracker UI in this scout PR
 
 ## Test plan
 
