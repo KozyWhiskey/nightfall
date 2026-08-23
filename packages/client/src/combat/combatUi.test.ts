@@ -1,12 +1,21 @@
-import type { CombatantSnapshot, EnemyIntentSnapshot } from "@nightfall/contracts";
+import type { CombatSnapshot, CombatantSnapshot, EnemyIntentSnapshot } from "@nightfall/contracts";
 import { describe, expect, it } from "vitest";
-import { enemiesActedBetween, guardLabelsFor, intentSummary, conditionTooltip } from "./combatUi.js";
+import {
+  conditionTooltip,
+  defenseCoverageWindows,
+  enemiesActedBetween,
+  enemyDefenseCoverageText,
+  guardLabelsFor,
+  heroDefenseCoverageText,
+  intentSummary
+} from "./combatUi.js";
 
 function combatant(
   id: string,
   side: CombatantSnapshot["side"],
   kind: CombatantSnapshot["kind"] = side === "heroes" ? "hero" : "enemy",
-  name = id
+  name = id,
+  overrides: Partial<CombatantSnapshot> = {}
 ): CombatantSnapshot {
   return {
     id,
@@ -29,7 +38,29 @@ function combatant(
     downed: false,
     destroyed: false,
     nextDamageBonus: 0,
-    targetable: true
+    targetable: true,
+    ...overrides
+  };
+}
+
+function snapshot(partial: Partial<CombatSnapshot> & Pick<
+  CombatSnapshot,
+  "combatants" | "timeline" | "timelineCursor" | "activeCombatantId"
+>): CombatSnapshot {
+  return {
+    combatId: "c1",
+    encounterId: "roadside",
+    round: 1,
+    heroResources: [],
+    cards: [],
+    basicActions: [],
+    intents: [],
+    guards: [],
+    supplyUsed: false,
+    retainRefillUsedHeroIds: [],
+    bossTurn: 0,
+    outcome: "active",
+    ...partial
   };
 }
 
@@ -135,5 +166,86 @@ describe("conditionTooltip", () => {
     expect(conditionTooltip("weakened")).toMatch(/less damage/i);
     expect(conditionTooltip("stun")).toMatch(/skips/i);
     expect(conditionTooltip("strain")).toMatch(/AP/i);
+  });
+});
+
+describe("defenseCoverageWindows", () => {
+  const weaver = combatant("weaver", "heroes", "hero", "Mara");
+  const hound1 = combatant("hound-1", "enemies", "enemy", "Hound");
+  const hound2 = combatant("hound-2", "enemies", "enemy", "Hound");
+  const vanguard = combatant("vanguard", "heroes", "hero", "Rook", {
+    turnsStarted: 0,
+    blockLayers: [{
+      id: "vanguard:block",
+      sourceId: "basic-block",
+      amount: 6,
+      createdAtRevision: 1,
+      expiresAtOwnerTurnStart: 1,
+      special: "normal"
+    }]
+  });
+  const lateVanguardGuard = {
+    id: "hold:1",
+    guardingHeroId: "vanguard",
+    protectedHeroId: "weaver",
+    expiresAtGuardTurnStart: 1,
+    createdAtRevision: 1
+  } as const;
+
+  it("marks upcoming hound turns as Block-covered for a late Vanguard and Guard-covered for Weaver", () => {
+    const combat = snapshot({
+      combatants: [weaver, hound1, hound2, vanguard],
+      timeline: ["weaver", "hound-1", "hound-2", "vanguard"],
+      timelineCursor: 0,
+      activeCombatantId: "weaver",
+      guards: [lateVanguardGuard]
+    });
+
+    const windows = defenseCoverageWindows(combat);
+    const vanguardWindow = windows.find((entry) => entry.heroId === "vanguard");
+    const weaverWindow = windows.find((entry) => entry.heroId === "weaver");
+
+    expect(vanguardWindow?.enemyIds).toEqual(["hound-1", "hound-2"]);
+    expect(vanguardWindow?.blockAmount).toBe(6);
+    expect(vanguardWindow?.blockCovers).toBe(true);
+    expect(vanguardWindow?.blockCoveredEnemyIds).toEqual(["hound-1", "hound-2"]);
+    expect(vanguardWindow?.guardCovers).toBe(false);
+
+    expect(weaverWindow?.enemyIds).toEqual(["hound-1", "hound-2"]);
+    expect(weaverWindow?.guardCovers).toBe(true);
+    expect(weaverWindow?.guardCoveredEnemyIds).toEqual(["hound-1", "hound-2"]);
+    expect(weaverWindow?.guardLabel).toBe("Guarded by Rook");
+    expect(weaverWindow?.blockCovers).toBe(false);
+
+    expect(heroDefenseCoverageText(vanguardWindow!)).toBe("Block 6 covers next 2 enemy turns");
+    expect(heroDefenseCoverageText(weaverWindow!)).toBe("Guarded by Rook covers next 2 enemy turns");
+    expect(enemyDefenseCoverageText(windows, "hound-1")).toBe("Covered by Block · Guard");
+    expect(enemyDefenseCoverageText(windows, "hound-2")).toBe("Covered by Block · Guard");
+  });
+
+  it("lists no remaining Block window after Vanguard's turn start expires Block", () => {
+    const activeVanguard = combatant("vanguard", "heroes", "hero", "Rook", {
+      turnsStarted: 1,
+      blockLayers: []
+    });
+    const combat = snapshot({
+      combatants: [weaver, hound1, hound2, activeVanguard],
+      timeline: ["weaver", "hound-1", "hound-2", "vanguard"],
+      timelineCursor: 3,
+      activeCombatantId: "vanguard",
+      guards: []
+    });
+
+    const windows = defenseCoverageWindows(combat);
+    const vanguardWindow = windows.find((entry) => entry.heroId === "vanguard");
+    const weaverWindow = windows.find((entry) => entry.heroId === "weaver");
+
+    expect(vanguardWindow?.blockAmount).toBe(0);
+    expect(vanguardWindow?.blockCovers).toBe(false);
+    expect(vanguardWindow?.blockCoveredEnemyIds).toEqual([]);
+    expect(heroDefenseCoverageText(vanguardWindow!)).toBeUndefined();
+    expect(weaverWindow?.guardCovers).toBe(false);
+    expect(weaverWindow?.enemyIds).toEqual([]);
+    expect(enemyDefenseCoverageText(windows, "hound-1")).toBeUndefined();
   });
 });
