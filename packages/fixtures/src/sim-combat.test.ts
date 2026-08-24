@@ -323,6 +323,7 @@ describe("Build 1 combat acceptance", () => {
     const hound1After = afterFirst.combatants.find((entry) => entry.id === hounds[0]!.id)!;
     const vanguardAfterFirst = afterFirst.combatants.find((entry) => entry.id === vanguard.id)!;
     expect(vanguardAfterFirst.hp).toBe(20);
+    expect(totalBlockForFixture(snapshot, vanguard.id)).toBe(4);
     expect(hound1After.conditions.some((entry) => entry.id === "weakened")).toBe(true);
     const hound2Intent = afterFirst.intents.find((entry) => entry.enemyId === hounds[1]!.id)!;
     hound2Intent.intentId = "circle";
@@ -332,5 +333,51 @@ describe("Build 1 combat acceptance", () => {
     snapshot = accept(snapshot, command(snapshot, "endTurn", {}, vanguard.id), build1Pack, intentPad) as MutableSnapshot;
     const afterSecond = snapshot.activeRun!.combat!;
     expect(afterSecond.combatants.find((entry) => entry.id === vanguard.id)!.hp).toBe(17);
+  });
+
+  it("SIM-C11 Still Wall Weakened is one-shot on the first fully absorbed enemy", () => {
+    const embarked = createEmbarkedSnapshot(build1Pack, 12345);
+    const snapshot0 = cloneSnapshot(embarked);
+    if (snapshot0.activeRun === undefined) throw new Error("Expected run");
+    const vanguardHero = snapshot0.activeRun.heroes.find((hero) => hero.classId === "vanguard")!;
+    vanguardHero.learnedCardIds = [...vanguardHero.learnedCardIds, "still_wall"];
+    snapshot0.activeRun.phase = "combat";
+    startCombat(snapshot0, build1Pack, "roadside_trail", createContext({
+      combatInitiative: [0.9, 0.9, 0, 0],
+      combatIntent: [0, 0, 0, 0, 0, 0, 0, 0]
+    }));
+    let snapshot = snapshot0;
+    const run = snapshot.activeRun!;
+    const combat = run.combat!;
+    const vanguard = run.heroes.find((hero) => hero.classId === "vanguard")!;
+    const weaver = run.heroes.find((hero) => hero.classId === "aether_weaver")!;
+    const hounds = combat.combatants.filter((entry) => entry.definitionId === "gloomfang_hound");
+    const wall = combat.cards.find((card) => card.ownerId === vanguard.id && card.definitionId === "still_wall")!;
+    combat.cards.filter((card) => card.ownerId === vanguard.id).forEach((card) => {
+      card.zone = card === wall ? "hand" : "draw";
+    });
+    combat.timeline = [vanguard.id, hounds[0]!.id, weaver.id, hounds[1]!.id];
+    combat.combatants.find((entry) => entry.id === vanguard.id)!.hp = 20;
+    combat.combatants.find((entry) => entry.id === weaver.id)!.hp = 99;
+    setActiveHero(snapshot, vanguard.id);
+    snapshot.activeRun!.combat!.heroResources.find((entry) => entry.heroId === vanguard.id)!.stamina = 10;
+    snapshot = accept(
+      snapshot,
+      command(snapshot, "playCard", { cardInstanceId: wall.cardInstanceId }, vanguard.id),
+      build1Pack
+    ) as MutableSnapshot;
+    const intentPad = { combatIntent: [0, 0, 0, 0, 0, 0, 0, 0] as const };
+    snapshot = accept(snapshot, command(snapshot, "endTurn", {}, vanguard.id), build1Pack, intentPad) as MutableSnapshot;
+    const afterFirst = snapshot.activeRun!.combat!;
+    expect(afterFirst.combatants.find((entry) => entry.id === hounds[0]!.id)!.conditions.some((entry) => entry.id === "weakened")).toBe(true);
+    expect(totalBlockForFixture(snapshot, vanguard.id)).toBe(4);
+    const hound2Intent = afterFirst.intents.find((entry) => entry.enemyId === hounds[1]!.id)!;
+    hound2Intent.intentId = "raking_bite";
+    hound2Intent.label = "Raking Bite";
+    snapshot = accept(snapshot, command(snapshot, "endTurn", {}, weaver.id), build1Pack, intentPad) as MutableSnapshot;
+    const afterSecond = snapshot.activeRun!.combat!;
+    expect(afterSecond.combatants.find((entry) => entry.id === vanguard.id)!.hp).toBe(20);
+    expect(afterSecond.combatants.find((entry) => entry.id === hounds[0]!.id)!.conditions.some((entry) => entry.id === "weakened")).toBe(true);
+    expect(afterSecond.combatants.find((entry) => entry.id === hounds[1]!.id)!.conditions.some((entry) => entry.id === "weakened")).toBe(false);
   });
 });
