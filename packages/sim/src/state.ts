@@ -16,6 +16,34 @@ export function deriveHeroPools(definition: ClassDefinition, attributes: HeroSna
   };
 }
 
+/** Absolute maxima from class + attributes + equipped deltas. Raises do not refill; lowers clamp current pools. */
+export function applyEquippedPools(
+  pack: ValidatedContentPack,
+  hero: {
+    id: string;
+    classId: string;
+    attributes: HeroSnapshot["attributes"];
+    maxHp: number;
+    hp: number;
+    maxMana: number;
+    mana: number;
+    maxStamina: number;
+    stamina: number;
+  },
+  holdings: readonly ItemInstance[]
+): void {
+  const definition = pack.classes.find((entry) => entry.id === hero.classId);
+  if (definition === undefined) throw new Error(`Missing class ${hero.classId}`);
+  const equipped = holdings.filter((item) => item.location.kind === "equipped" && item.location.heroId === hero.id);
+  const pools = deriveHeroPools(definition, hero.attributes, equipped);
+  hero.maxHp = pools.maxHp;
+  hero.maxMana = pools.maxMana;
+  hero.maxStamina = pools.maxStamina;
+  hero.hp = Math.min(hero.hp, hero.maxHp);
+  hero.mana = Math.min(hero.mana, hero.maxMana);
+  hero.stamina = Math.min(hero.stamina, hero.maxStamina);
+}
+
 export function createHero(pack: ValidatedContentPack, classId: "vanguard" | "aether_weaver", id: string, name: string): HeroSnapshot {
   const definition = pack.classes.find((entry) => entry.id === classId);
   if (definition === undefined) throw new Error(`Missing class ${classId}`);

@@ -1,7 +1,7 @@
 # Equipped max HP and max Stamina never reach combat
 
 **Kind:** bug  
-**Status:** approved  
+**Status:** shipped  
 **Last updated:** 2026-08-24  
 **Decision Register:** `content.pack`  
 **Related:** [Build 1 Content Registry](../../content/vertical-slice-content-registry.md), [Combat Simulation Contract](../../systems/combat-simulation-contract.md) (setup step 2; equipment maxima special case)
@@ -40,14 +40,14 @@ Special case:
 
 ## Acceptance criteria
 
-- [ ] `SIM-C12`: Vanguard with `wayfarers_coat` equipped has `maxHp === 37` on the hero sheet and the combatant; current HP stays 34
-- [ ] `SIM-C12`: Weaver with `pilgrims_knot` equipped has `maxStamina === 5` on the hero sheet; current Stamina stays 4
-- [ ] Live `equipItem` (map/reward/Haven holdings, not a fixture mutate) updates those maxima before the next `startCombat`
-- [ ] Unequip clamps current HP/Mana/Stamina down when a maximum falls
-- [ ] Named streams only; never `Math.random()`
-- [ ] `pnpm test` covers the change
-- [ ] `pnpm check:boundaries` still passes
-- [ ] Out of scope listed below is untouched
+- [x] `SIM-C12`: Vanguard with `wayfarers_coat` equipped has `maxHp === 37` on the hero sheet and the combatant; current HP stays 34
+- [x] `SIM-C12`: Weaver with `pilgrims_knot` equipped has `maxStamina === 5` on the hero sheet; current Stamina stays 4
+- [x] Live `equipItem` (map/reward/Haven holdings, not a fixture mutate) updates those maxima before the next `startCombat`
+- [x] Unequip clamps current HP/Mana/Stamina down when a maximum falls
+- [x] Named streams only; never `Math.random()`
+- [x] `pnpm test` covers the change
+- [x] `pnpm check:boundaries` still passes
+- [x] Out of scope listed below is untouched
 
 ## Out of scope
 
@@ -67,6 +67,6 @@ Helper already used by `SIM-C04`–`C06`: embark, equip the vessel onto the matc
 - Knot on Weaver `relic1`: assert hero `maxStamina` 5.
 - Separate live path: `createItemInstance` as `held_by_expedition`, `equipItem` command, assert the hero sheet before combat.
 
-Browser is not correctness authority. CI red on `SIM-C12` is intentional until the implementer lands.
+Browser is not correctness authority.
 
 kind: bug
