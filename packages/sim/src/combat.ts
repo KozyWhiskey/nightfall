@@ -421,13 +421,19 @@ function dealDamage(snapshot: MutableSnapshot, actor: MutableCombatant, original
       const absorbed = Math.min(layer.amount, remaining);
       layer.amount -= absorbed;
       remaining -= absorbed;
-      if (absorbed > 0 && layer.sourceId === "still_wall" && remaining === 0) stillWallAbsorbed = true;
+      if (absorbed > 0 && layer.sourceId === "still_wall" && remaining === 0) {
+        stillWallAbsorbed = true;
+        layer.sourceId = "still_wall_spent";
+      }
     }
     target.blockLayers = target.blockLayers.filter((layer) => layer.amount > 0);
   }
   target.hp = Math.max(0, target.hp - remaining);
   emitFact(context, snapshot.revision, "damage", `${actor.name} dealt ${calculated} damage to ${target.name}.`, { actorId: actor.id, targetId: target.id, amount: calculated, hpDamage: remaining, redirected: target.id !== originalTarget.id });
-  if (stillWallAbsorbed) addCondition(actor, "weakened", 1, 1);
+  if (stillWallAbsorbed) {
+    const duration = 1 + (combat.activeCombatantId === actor.id ? 1 : 0);
+    addCondition(actor, "weakened", 1, duration);
+  }
   if (target.hp === 0) {
     if (target.side === "heroes") {
       target.downed = true;
