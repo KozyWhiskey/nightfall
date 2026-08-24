@@ -22,6 +22,7 @@ Shipped specs whose acceptance tests passed. Newest first.
 
 ### Map, events, and combat UX
 
+- [timeline-block-guard-coverage-windows.md](timeline-block-guard-coverage-windows.md) — Timeline shows Block/Guard coverage windows (`enhancement`)
 - [map-greed-hints.md](map-greed-hints.md) — Banded chase / table language on the route map (`enhancement`)
 - [marked-carrier-chase-presentation.md](marked-carrier-chase-presentation.md) — Marked carriers as the combat/reward chase beat (`enhancement`)
 - [event-decision-ux-clarity.md](event-decision-ux-clarity.md) — Event decision honesty (`enhancement`)
