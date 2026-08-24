@@ -284,4 +284,35 @@ describe("Build 1 combat acceptance", () => {
     snapshot = accept(snapshot, command(snapshot, "playCard", { cardInstanceId: bolt.cardInstanceId, targetId: spellTarget!.id }, vanguard.id), build1Pack) as MutableSnapshot;
     expect(snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === spellTarget!.id)!.hp).toBe(spellBefore - 8);
   });
+
+  it("SIM-C12 Wayfarer's Coat +3 max HP and Pilgrim's Knot +1 max Stamina apply when equipped", () => {
+    const coat = startCombatWithVessel("vanguard", "wayfarers_coat", "body");
+    const coatHero = coat.activeRun!.heroes.find((hero) => hero.classId === "vanguard")!;
+    const coatCombatant = coat.activeRun!.combat!.combatants.find((entry) => entry.id === coatHero.id)!;
+    expect(coatHero.maxHp).toBe(37);
+    expect(coatCombatant.maxHp).toBe(37);
+    expect(coatCombatant.hp).toBe(34);
+
+    const knot = startCombatWithVessel("aether_weaver", "pilgrims_knot", "relic1");
+    const knotHero = knot.activeRun!.heroes.find((hero) => hero.classId === "aether_weaver")!;
+    expect(knotHero.maxStamina).toBe(5);
+    expect(knot.activeRun!.combat!.heroResources.find((entry) => entry.heroId === knotHero.id)!.stamina).toBe(4);
+
+    let snapshot = cloneSnapshot(createEmbarkedSnapshot(build1Pack, 12345));
+    const run = snapshot.activeRun!;
+    const vanguard = run.heroes.find((hero) => hero.classId === "vanguard")!;
+    const item = createItemInstance(build1Pack, "wayfarers_coat", "salvaged", 1, "fixture:live-coat", {
+      kind: "held_by_expedition",
+      runId: run.runId
+    });
+    run.holdings.push(item as never);
+    snapshot = accept(
+      snapshot,
+      command(snapshot, "equipItem", { heroId: vanguard.id, itemId: item.instanceId }),
+      build1Pack
+    ) as MutableSnapshot;
+    const equipped = snapshot.activeRun!.heroes.find((hero) => hero.id === vanguard.id)!;
+    expect(equipped.maxHp).toBe(37);
+    expect(equipped.hp).toBe(34);
+  });
 });
