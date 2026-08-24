@@ -61,7 +61,7 @@ Do not change `packages/sim`. Do not recompute damage, initiative, or targeting 
 
 - Changing Block / Guard sim timing
 - Isolating SIM-04 Burn / Exposed / Guard party-wide fixtures (separate enhancement)
-- Burn chip tooltip copy (open PR #4)
+- Burn chip tooltip copy (shipped)
 - Standee Block / Guard / Burn chips (already shipped)
 - Poison, revival cards, injury −1 AP, E2E-02
 

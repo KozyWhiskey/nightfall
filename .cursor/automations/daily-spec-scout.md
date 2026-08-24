@@ -27,7 +27,7 @@ Find gaps between accepted design and **main**. Write change-specs. Open at most
    - Memories record it as already proposed, implemented, or shipped (examples on main: stun-skips-turn, strain-ap-lasts-whole-combat, vessel-passive-combat-effects).
 4. If you cannot list open PRs, do **not** open new PRs. Write one memory that listing failed, then stop.
 
-Do not re-open Crack Open, Burn tooltip, timeline coverage windows, SIM-04 isolate fixtures, equip pool stats, or Still Wall Weakened while those PRs are still open.
+Shipped on main (skip unless docs/specs/shipped/ is missing them): crack-open-exposed-bonus, combat-burn-tooltip-end-of-turn, timeline-block-guard-coverage-windows, isolate-sim-04-condition-fixtures, equip-item-pool-stats, still-wall-weakened-duration.
 
 ## Scope this run
 Diff those contracts against:

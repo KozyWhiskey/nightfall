@@ -72,8 +72,8 @@ Targeting:
 - Changing `packages/sim` condition, Guard, or Burn rules (already implemented)
 - Strain duration (`SIM-C03` shipped)
 - Targeted Guard redirect / expiry (`SIM-02`)
-- Crack Open Exposed +3 rider (open PR #3 / `SIM-C07`)
-- Burn chip tooltip copy (open PR #4)
+- Crack Open Exposed +3 rider (`SIM-C07`, shipped)
+- Burn chip tooltip copy (shipped)
 - Poison (contract: no Build 1 content)
 - Revival targeting / Downed-cannot-take-damage live path (latent until a `heal.revive` card; `reviveForFixture` is not targeting)
 - Injury definitions, Quiet House, Keep Watch
