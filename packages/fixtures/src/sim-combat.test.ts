@@ -81,6 +81,7 @@ function endUntilCompleted(snapshot: MutableSnapshot, combatantId: string, compl
 }
 
 describe("Build 1 combat acceptance", () => {
+
   it("SIM-01 resolves the two-Hound opening, Basics, recovery, and Combat 1 reward", () => {
     let snapshot = startFixtureCombat(build1Pack, "roadside_trail", { forcedStreams: { combatInitiative: [0.9, 0.9, 0, 0], combatIntent: [0, 0] } });
     const run = snapshot.activeRun!; const combat = run.combat!;
@@ -402,20 +403,10 @@ describe("Build 1 combat acceptance", () => {
     const havenEquipped = haven.haven.heroes.find((hero) => hero.id === havenVanguard.id)!;
     expect(havenEquipped.maxHp).toBe(37);
     expect(havenEquipped.hp).toBe(34);
+  });
+
   it("SIM-C08 isolates Exposed apply, expiry, refresh, party start, and Weakened expiry", () => {
     let snapshot = startCombatWithLearned("vanguard", ["piercing_thrust"]);
-  it("SIM-C11 Still Wall Weakened lasts until the absorbing enemy's next completed turn", () => {
-    const embarked = createEmbarkedSnapshot(build1Pack, 12345);
-    const snapshot0 = cloneSnapshot(embarked);
-    if (snapshot0.activeRun === undefined) throw new Error("Expected run");
-    const vanguardHero = snapshot0.activeRun.heroes.find((hero) => hero.classId === "vanguard")!;
-    vanguardHero.learnedCardIds = [...vanguardHero.learnedCardIds, "still_wall"];
-    snapshot0.activeRun.phase = "combat";
-    startCombat(snapshot0, build1Pack, "roadside_trail", createContext({
-      combatInitiative: [0.9, 0.9, 0, 0],
-      combatIntent: [0, 0, 0, 0, 0, 0, 0, 0]
-    }));
-    let snapshot = snapshot0;
     const run = snapshot.activeRun!;
     const combat = run.combat!;
     const vanguard = run.heroes.find((hero) => hero.classId === "vanguard")!;
@@ -607,6 +598,8 @@ describe("Build 1 combat acceptance", () => {
     const afterWeaver = snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === weaver.id)!;
     expect(beforeVanguard - afterVanguard.hp).toBe(3);
     expect(beforeWeaver - afterWeaver.hp).toBe(3);
+  });
+
   it("SIM-C07 Crack Open deals +3 only when the target is Exposed", () => {
     const playCrackOpen = (exposed: boolean): { damage: number; summary: string } => {
       const embarked = createEmbarkedSnapshot(build1Pack, 12345);
@@ -634,6 +627,25 @@ describe("Build 1 combat acceptance", () => {
     expect(clean.damage).toBe(8);
     expect(playCrackOpen(true).damage).toBe(13);
     expect(clean.summary).toMatch(/exposed/i);
+  });
+
+  it("SIM-C11 Still Wall Weakened lasts until the absorbing enemy's next completed turn", () => {
+    const embarked = createEmbarkedSnapshot(build1Pack, 12345);
+    const snapshot0 = cloneSnapshot(embarked);
+    if (snapshot0.activeRun === undefined) throw new Error("Expected run");
+    const vanguardHero = snapshot0.activeRun.heroes.find((hero) => hero.classId === "vanguard")!;
+    vanguardHero.learnedCardIds = [...vanguardHero.learnedCardIds, "still_wall"];
+    snapshot0.activeRun.phase = "combat";
+    startCombat(snapshot0, build1Pack, "roadside_trail", createContext({
+      combatInitiative: [0.9, 0.9, 0, 0],
+      combatIntent: [0, 0, 0, 0, 0, 0, 0, 0]
+    }));
+    let snapshot = snapshot0;
+    const run = snapshot.activeRun!;
+    const combat = run.combat!;
+    const vanguard = run.heroes.find((hero) => hero.classId === "vanguard")!;
+    const weaver = run.heroes.find((hero) => hero.classId === "aether_weaver")!;
+    const hounds = combat.combatants.filter((entry) => entry.definitionId === "gloomfang_hound");
     const wall = combat.cards.find((card) => card.ownerId === vanguard.id && card.definitionId === "still_wall")!;
     combat.cards.filter((card) => card.ownerId === vanguard.id).forEach((card) => {
       card.zone = card === wall ? "hand" : "draw";
