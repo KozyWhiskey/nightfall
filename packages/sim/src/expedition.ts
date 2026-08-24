@@ -6,10 +6,9 @@ import { applyCombatCommand, startCombat, syncHeroesFromCombat } from "./combat.
 import { createItemInstance, itemSlotForDefinition, rarityFromUnit } from "./items.js";
 import { legendaryEligibleDefinitionIds, rollGearAffixIds } from "./loot.js";
 import { chooseWeighted, drawInt, drawUnit } from "./rng.js";
-import { createFoundingParty, createRouteNodes, deriveHeroPools } from "./state.js";
+import { applyEquippedPools, createFoundingParty, createRouteNodes, deriveHeroPools } from "./state.js";
 
 type MutableItem = DeepMutable<ItemInstance>;
-type MutableHero = DeepMutable<HeroSnapshot>;
 
 const materialKeys = ["salvage", "emberglass", "rations", "timber", "stone", "wick", "ember_shard"] as const;
 type MaterialKey = (typeof materialKeys)[number];
@@ -588,17 +587,12 @@ export function cancelCraft(snapshot: MutableSnapshot, context: SimulationContex
   return undefined;
 }
 
-function recomputeHero(pack: ValidatedContentPack, hero: MutableHero, run: ReturnType<typeof runOf>): void {
-  const definition = pack.classes.find((entry) => entry.id === hero.classId)!; const equipped = run.holdings.filter((item) => item.location.kind === "equipped" && item.location.heroId === hero.id); const pools = deriveHeroPools(definition, hero.attributes, equipped);
-  hero.maxHp = pools.maxHp; hero.maxMana = pools.maxMana; hero.maxStamina = pools.maxStamina; hero.hp = Math.min(hero.hp, hero.maxHp); hero.mana = Math.min(hero.mana, hero.maxMana); hero.stamina = Math.min(hero.stamina, hero.maxStamina);
-}
-
 export function assignTemporaryStat(snapshot: MutableSnapshot, pack: ValidatedContentPack, command: CommandEnvelope, context: SimulationContext): ReasonCode | undefined {
   const run = runOf(snapshot); const decision = run.pendingDecision;
   if (run.phase !== "temporary_growth" || decision?.kind !== "temporary_growth") return "invalid_phase";
   const heroId = typeof command.payload.heroId === "string" ? command.payload.heroId : ""; const stat = command.payload.stat as AttributeId; const hero = run.heroes.find((entry) => entry.id === heroId);
   if (hero === undefined || hero.temporaryAttribute !== undefined || !(["vit", "dex", "str", "int"] as const).includes(stat)) return "invalid_target";
-  hero.temporaryAttribute = stat; hero.attributes[stat] += 1; recomputeHero(pack, hero, run); decision.heroIds = decision.heroIds.filter((id) => id !== heroId);
+  hero.temporaryAttribute = stat; hero.attributes[stat] += 1; applyEquippedPools(pack, hero, run.holdings); decision.heroIds = decision.heroIds.filter((id) => id !== heroId);
   emitFact(context, snapshot.revision, "temporary_growth", `${hero.name} gained temporary ${stat.toUpperCase()}.`, { heroId, stat });
   if (decision.heroIds.length === 0) resolveCurrentNodeToMap(snapshot); return undefined;
 }
@@ -655,7 +649,7 @@ function successfulReturn(snapshot: MutableSnapshot, pack: ValidatedContentPack,
   for (const key of materialKeys) snapshot.haven.resources[key] += run.materials[key];
   for (const hero of run.heroes) {
     if (hero.temporaryAttribute !== undefined) { hero.attributes[hero.temporaryAttribute] -= 1; delete hero.temporaryAttribute; }
-    hero.learnedCardIds = [...new Set([...hero.learnedCardIds, ...hero.runLearnedCardIds])].sort(); hero.runLearnedCardIds = []; recomputeHero(pack, hero, run); hero.hp = hero.maxHp; hero.mana = hero.maxMana; hero.stamina = hero.maxStamina; hero.downed = false; hero.pendingLeadership += 1;
+    hero.learnedCardIds = [...new Set([...hero.learnedCardIds, ...hero.runLearnedCardIds])].sort(); hero.runLearnedCardIds = []; applyEquippedPools(pack, hero, run.holdings); hero.hp = hero.maxHp; hero.mana = hero.maxMana; hero.stamina = hero.maxStamina; hero.downed = false; hero.pendingLeadership += 1;
   }
   snapshot.haven.heroes = run.heroes;
   const snuffed = 10 - snapshot.haven.litPillars; snapshot.haven.gloom = clamp(Math.max(snuffed, snapshot.haven.gloom + residualGloom(run.runGloom)), snuffed, 10);
@@ -746,6 +740,7 @@ export function preparationCommand(snapshot: MutableSnapshot, pack: ValidatedCon
     if (slot === undefined || hero.equipment[slot] !== null) return "item_unavailable";
     hero.equipment[slot] = item.instanceId;
     item.location = { kind: "equipped", heroId: hero.id, slotId: slot };
+    applyEquippedPools(pack, hero, holdings);
     const grantedCardId = item.mechanicSnapshot.grantedCardId ?? definition.grantedCardId;
     const cardHint = grantedCardId === undefined ? item.displaySnapshot.name : `${grantedCardId.replaceAll("_", " ")} added to deck`;
     emitFact(context, snapshot.revision, "item_equipped", `${hero.name} equipped ${item.displaySnapshot.name}. ${cardHint}.`, { heroId: hero.id, itemId: item.instanceId, slotId: slot });
@@ -760,6 +755,7 @@ export function preparationCommand(snapshot: MutableSnapshot, pack: ValidatedCon
     if (item === undefined) return "item_unavailable";
     hero.equipment[slot] = null;
     item.location = run === undefined ? { kind: "haven", havenId: snapshot.haven.id } : { kind: "held_by_expedition", runId: run.runId };
+    applyEquippedPools(pack, hero, holdings);
     emitFact(context, snapshot.revision, "item_unequipped", `${hero.name} unequipped ${item.displaySnapshot.name}.`, { heroId: hero.id, itemId: item.instanceId, slotId: String(slot) });
     return undefined;
   }

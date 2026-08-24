@@ -5,6 +5,7 @@ import { clamp, emitFact, stableSort } from "./internal.js";
 import { createItemInstance } from "./items.js";
 import { rollGearAffixIds } from "./loot.js";
 import { chooseWeighted, drawInt, drawUnit, shuffle } from "./rng.js";
+import { applyEquippedPools } from "./state.js";
 
 type MutableCombatant = DeepMutable<CombatantSnapshot>;
 type MutableCard = DeepMutable<CardInstanceSnapshot>;
@@ -641,6 +642,7 @@ export function startCombat(snapshot: MutableSnapshot, pack: ValidatedContentPac
     if (carrier !== undefined) run.holdings.push(carrier as DeepMutable<ItemInstance>);
     const combatants: MutableCombatant[] = [];
     for (const hero of run.heroes) {
+      applyEquippedPools(pack, hero, run.holdings);
       const initiativeBonus = itemInitiative(hero, run.holdings);
       const variance = drawInt(snapshot, "combatInitiative", pack.tuning.initiativeVariance.min, pack.tuning.initiativeVariance.max, context);
       combatants.push(combatantFromHero(hero, hero.attributes.dex * 2 + initiativeBonus + variance, initiativeBonus));

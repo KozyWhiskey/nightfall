@@ -2,6 +2,7 @@ Shipped specs whose acceptance tests passed. Newest first.
 
 ### Combat rules
 
+- [equip-item-pool-stats.md](equip-item-pool-stats.md) — Equipped max HP and max Stamina apply without refill (`bug`)
 - [combat-burn-tooltip-end-of-turn.md](combat-burn-tooltip-end-of-turn.md) — Burn standee tooltip says end-of-turn (`bug`)
 - [strain-ap-lasts-whole-combat.md](strain-ap-lasts-whole-combat.md) — Strain −1 AP lasts the whole combat (`bug`)
 - [stun-skips-turn.md](stun-skips-turn.md) — Stun skips the next complete turn (`bug`)
