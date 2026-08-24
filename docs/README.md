@@ -103,6 +103,7 @@ In-repo source of truth for **what the game should be**. Implementation and tech
 | Doc | Status |
 |-----|--------|
 | [build-1-architecture.md](architecture/build-1-architecture.md) | Accepted Build 1 architecture decision |
+| [local-development.md](architecture/local-development.md) | Operational runbook (host HTTP, env, saves, loot pipeline) |
 
 ### Templates
 | Doc | Status |

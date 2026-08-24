@@ -16,7 +16,7 @@ Former local Supabase port map is preserved under [`docs/_archive/prototype-supa
 
 | Port | Role (Build 1) |
 |------|----------------|
-| **3050** | Vite client UI — `http://192.168.68.71:3050` / `http://127.0.0.1:3050` |
-| **3051** | Local host HTTP API during `pnpm dev` (`/api/health`, `/api/snapshot`, `/api/commands`) |
+| **3050** | Vite client UI during `pnpm dev` — `http://192.168.68.71:3050` / `http://127.0.0.1:3050` / `http://hermes.local:3050`. Vite binds `0.0.0.0` and proxies `/api` to loopback **3051**. |
+| **3051** | Local host HTTP API during `pnpm dev` only (`/api/health`, `/api/snapshot`, `/api/commands`). Bound to `127.0.0.1` — not a LAN address. |
 
-`pnpm start` after `pnpm build` serves the built client from `@nightfall/local-host` and defaults `NIGHTFALL_PORT` to **3050**. Override with `NIGHTFALL_PORT` / `NIGHTFALL_HOST`.
+`pnpm start` after `pnpm build` serves the built client from `@nightfall/local-host` and defaults `NIGHTFALL_PORT` to **3050** on `NIGHTFALL_HOST` (default `127.0.0.1`). For LAN play of the built host, set `NIGHTFALL_HOST=0.0.0.0`. Env vars, save path, and troubleshooting: [docs/architecture/local-development.md](docs/architecture/local-development.md).
