@@ -124,7 +124,7 @@ export function CombatStandee({
       {(conditions.length > 0 || burnStacks > 0 || (injuries?.length ?? 0) > 0 || (guardLabels?.length ?? 0) > 0 || carrierNote !== undefined) && (
         <p className="standee-status">
           {conditions.map((entry) => <span key={entry.id} title={conditionTooltip(entry.id)}>{titleCase(entry.id)}</span>)}
-          {burnStacks > 0 && <span className="standee-chip standee-chip-burn" title="Burn deals damage at the start of this combatant's turn.">Burn {burnStacks}</span>}
+          {burnStacks > 0 && <span className="standee-chip standee-chip-burn" title={conditionTooltip("burn")}>Burn {burnStacks}</span>}
           {guardLabels?.map((label) => <span key={label} className="standee-chip standee-chip-guard">{label}</span>)}
           {injuries?.map((injury) => <span key={injury} className="warning">{titleCase(injury)}</span>)}
           {carrierNote !== undefined && <span className="standee-chip standee-chip-carrier">{carrierNote}</span>}
