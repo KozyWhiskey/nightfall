@@ -1,8 +1,8 @@
 # Gear and Affixes
 
 **Status:** Draft  
-**Last updated:** 2026-07-17  
-**Related:** [cards-and-decks.md](cards-and-decks.md), [spellcraft.md](spellcraft.md), [economy.md](economy.md)
+**Last updated:** 2026-08-24  
+**Related:** [cards-and-decks.md](cards-and-decks.md), [spellcraft.md](spellcraft.md), [economy.md](economy.md), [local-development.md](../architecture/local-development.md#loot-and-affix-pipeline)
 
 ## Goal
 
@@ -78,6 +78,16 @@ The Haven **Cinder Forge** and in-run craft nodes can:
 | Characteristic | Behavioral mods / card injections / on-hit rules |
 
 Characteristics that inject cards must list the card ID they add.
+
+## Build 1 implementation
+
+Player-facing rules above; this is how the current sim actually rolls and applies gear. Full ops notes: [local-development.md](../architecture/local-development.md#loot-and-affix-pipeline).
+
+- **Stream:** named `loot` only (`packages/sim/src/loot.ts`, `items.ts`, `expedition.ts`, `combat.ts`).
+- **Budgets:** Salvaged none; Imbued one prefix (70%) or suffix; Rare prefix+suffix and 15% curse; Legendary curated signature + prefix+suffix and 25% curse. Compatibility filters reject tag mismatches, granted-card requirements, Overdrawn without a secondary cost, and stacking draw/retain modules.
+- **Carried drops:** `combat.maybeCreateCarrier` uses `pack.encounters[].carrierChance` and per-enemy base lists, then freezes an Imbued instance on `location.kind === "carried_by_enemy"`. Map greed copy is a **hand-mirrored** table in the client — do not import the content pack from React.
+- **Combat:** equipped `mechanicSnapshot.modifiers` and numeric deltas resolve in `combat.ts` (initiative, vessel play costs, first-use flags on `run.flags`, vessel passives). Display enrichment on the host does not replace those mechanics.
+- **Fixtures:** `packages/fixtures/src/sim-loot.test.ts`, `sim-affix.test.ts`, `sim-item-display.test.ts`.
 
 ## Equip / trade rules (locked)
 
