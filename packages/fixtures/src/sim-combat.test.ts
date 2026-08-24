@@ -42,6 +42,44 @@ function startCombatWithVessel(heroClass: "vanguard" | "aether_weaver", definiti
   return snapshot;
 }
 
+const roadsideStreams = { combatInitiative: [0.9, 0.9, 0, 0], combatIntent: [0, 0, 0, 0, 0, 0, 0, 0] } as const;
+const whisperStreams = { combatInitiative: [0.9, 0.9, 0, 0, 0], combatIntent: [0, 0, 0, 0, 0, 0, 0, 0] } as const;
+
+function startCombatWithLearned(heroClass: "vanguard" | "aether_weaver", extraLearned: readonly string[]): MutableSnapshot {
+  const embarked = createEmbarkedSnapshot(build1Pack, 12345);
+  const snapshot = cloneSnapshot(embarked);
+  if (snapshot.activeRun === undefined) throw new Error("Fixture failed to embark");
+  const hero = snapshot.activeRun.heroes.find((entry) => entry.classId === heroClass)!;
+  hero.learnedCardIds = [...hero.learnedCardIds, ...extraLearned];
+  snapshot.activeRun.phase = "combat";
+  startCombat(snapshot, build1Pack, "roadside_trail", createContext(roadsideStreams));
+  return snapshot;
+}
+
+function putInHand(snapshot: MutableSnapshot, ownerId: string, definitionId: string) {
+  const card = snapshot.activeRun!.combat!.cards.find((entry) => entry.ownerId === ownerId && entry.definitionId === definitionId)!;
+  card.zone = "hand";
+  return card;
+}
+
+function endUntilActor(snapshot: MutableSnapshot, actorId: string): MutableSnapshot {
+  let next = snapshot;
+  for (let attempts = 0; attempts < 12 && next.activeRun!.combat!.activeCombatantId !== actorId; attempts += 1) {
+    const currentId = next.activeRun!.combat!.activeCombatantId;
+    next = accept(next, command(next, "endTurn", {}, currentId), build1Pack, roadsideStreams) as MutableSnapshot;
+  }
+  return next;
+}
+
+function endUntilCompleted(snapshot: MutableSnapshot, combatantId: string, completed: number): MutableSnapshot {
+  let next = snapshot;
+  for (let attempts = 0; attempts < 12 && next.activeRun!.combat!.combatants.find((entry) => entry.id === combatantId)!.turnsCompleted < completed; attempts += 1) {
+    const currentId = next.activeRun!.combat!.activeCombatantId;
+    next = accept(next, command(next, "endTurn", {}, currentId), build1Pack, roadsideStreams) as MutableSnapshot;
+  }
+  return next;
+}
+
 describe("Build 1 combat acceptance", () => {
   it("SIM-01 resolves the two-Hound opening, Basics, recovery, and Combat 1 reward", () => {
     let snapshot = startFixtureCombat(build1Pack, "roadside_trail", { forcedStreams: { combatInitiative: [0.9, 0.9, 0, 0], combatIntent: [0, 0] } });
@@ -364,5 +402,198 @@ describe("Build 1 combat acceptance", () => {
     const havenEquipped = haven.haven.heroes.find((hero) => hero.id === havenVanguard.id)!;
     expect(havenEquipped.maxHp).toBe(37);
     expect(havenEquipped.hp).toBe(34);
+  it("SIM-C08 isolates Exposed apply, expiry, refresh, party start, and Weakened expiry", () => {
+    let snapshot = startCombatWithLearned("vanguard", ["piercing_thrust"]);
+    const run = snapshot.activeRun!;
+    const combat = run.combat!;
+    const vanguard = run.heroes.find((hero) => hero.classId === "vanguard")!;
+    const weaver = run.heroes.find((hero) => hero.classId === "aether_weaver")!;
+    const hounds = combat.combatants.filter((entry) => entry.definitionId === "gloomfang_hound");
+    const hound = hounds[0]!;
+    combat.timeline = [vanguard.id, hound.id, weaver.id, hounds[1]!.id];
+    combat.combatants.filter((entry) => entry.side === "heroes").forEach((hero) => { hero.maxHp = 999; hero.hp = 999; });
+    hound.blockLayers = [];
+    const thrust = putInHand(snapshot, vanguard.id, "piercing_thrust");
+    setActiveHero(snapshot, vanguard.id);
+    snapshot = accept(snapshot, command(snapshot, "playCard", { cardInstanceId: thrust.cardInstanceId, targetId: hound.id }, vanguard.id), build1Pack) as MutableSnapshot;
+    const afterThrust = snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === hound.id)!;
+    expect(afterThrust.conditions.filter((entry) => entry.id === "exposed")).toHaveLength(1);
+
+    afterThrust.blockLayers = [];
+    const exposedHp = afterThrust.hp;
+    snapshot = accept(snapshot, command(snapshot, "useBasicAttack", { targetId: hound.id }, vanguard.id), build1Pack) as MutableSnapshot;
+    expect(snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === hound.id)!.hp).toBe(exposedHp - 6);
+
+    snapshot.activeRun!.combat!.intents.forEach((intent) => { intent.intentId = "circle"; intent.label = "Circle"; intent.magnitude = 4; });
+    snapshot = endUntilCompleted(snapshot, hound.id, 1);
+    const afterHoundTurn = snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === hound.id)!;
+    expect(afterHoundTurn.conditions.some((entry) => entry.id === "exposed")).toBe(false);
+
+    snapshot = endUntilActor(snapshot, vanguard.id);
+    const rawTarget = snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === hound.id)!;
+    rawTarget.blockLayers = [];
+    const rawHp = rawTarget.hp;
+    snapshot = accept(snapshot, command(snapshot, "useBasicAttack", { targetId: hound.id }, vanguard.id), build1Pack) as MutableSnapshot;
+    expect(snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === hound.id)!.hp).toBe(rawHp - 5);
+
+    let refresh = startCombatWithLearned("vanguard", ["piercing_thrust"]);
+    const refreshVanguard = refresh.activeRun!.heroes.find((hero) => hero.classId === "vanguard")!;
+    const refreshHound = refresh.activeRun!.combat!.combatants.find((entry) => entry.side === "enemies")!;
+    refreshHound.blockLayers = [];
+    const firstRefresh = putInHand(refresh, refreshVanguard.id, "piercing_thrust");
+    setActiveHero(refresh, refreshVanguard.id);
+    refresh = accept(refresh, command(refresh, "playCard", { cardInstanceId: firstRefresh.cardInstanceId, targetId: refreshHound.id }, refreshVanguard.id), build1Pack) as MutableSnapshot;
+    const secondRefresh = putInHand(refresh, refreshVanguard.id, "piercing_thrust");
+    refresh.activeRun!.combat!.heroResources.find((entry) => entry.heroId === refreshVanguard.id)!.stamina = 6;
+    refresh = accept(refresh, command(refresh, "playCard", { cardInstanceId: secondRefresh.cardInstanceId, targetId: refreshHound.id }, refreshVanguard.id), build1Pack) as MutableSnapshot;
+    expect(refresh.activeRun!.combat!.combatants.find((entry) => entry.id === refreshHound.id)!.conditions.filter((entry) => entry.id === "exposed")).toHaveLength(1);
+
+    const party = startFixtureCombat(build1Pack, "roadside_trail", { flags: ["next_combat_exposed"], forcedStreams: roadsideStreams });
+    const partyHeroes = party.activeRun!.combat!.combatants.filter((entry) => entry.side === "heroes");
+    expect(partyHeroes).toHaveLength(2);
+    expect(partyHeroes.every((hero) => hero.conditions.some((entry) => entry.id === "exposed"))).toBe(true);
+
+    let weakened = startFixtureCombat(build1Pack, "roadside_trail", { forcedStreams: roadsideStreams });
+    const weakenedRun = weakened.activeRun!;
+    const weakenedCombat = weakenedRun.combat!;
+    const bashVanguard = weakenedRun.heroes.find((hero) => hero.classId === "vanguard")!;
+    const bashWeaver = weakenedRun.heroes.find((hero) => hero.classId === "aether_weaver")!;
+    const bashHounds = weakenedCombat.combatants.filter((entry) => entry.definitionId === "gloomfang_hound");
+    const weakenedHound = bashHounds[0]!;
+    weakenedCombat.timeline = [bashVanguard.id, weakenedHound.id, bashWeaver.id, bashHounds[1]!.id];
+    const shieldBash = putInHand(weakened, bashVanguard.id, "shield_bash");
+    setActiveHero(weakened, bashVanguard.id);
+    weakened = accept(weakened, command(weakened, "playCard", { cardInstanceId: shieldBash.cardInstanceId, targetId: weakenedHound.id }, bashVanguard.id), build1Pack) as MutableSnapshot;
+    expect(weakened.activeRun!.combat!.combatants.find((entry) => entry.id === weakenedHound.id)!.conditions.some((entry) => entry.id === "weakened")).toBe(true);
+    const lunge = weakened.activeRun!.combat!.intents.find((entry) => entry.enemyId === weakenedHound.id)!;
+    lunge.intentId = "lunge"; lunge.label = "Lunge"; lunge.magnitude = 5;
+    weakened.activeRun!.combat!.intents.filter((entry) => entry.enemyId !== weakenedHound.id).forEach((intent) => { intent.intentId = "circle"; intent.label = "Circle"; intent.magnitude = 4; });
+    weakened = endUntilCompleted(weakened, weakenedHound.id, 1);
+    expect(weakened.activeRun!.combat!.combatants.find((entry) => entry.id === weakenedHound.id)!.conditions.some((entry) => entry.id === "weakened")).toBe(false);
+    const weaverBefore = weakened.activeRun!.combat!.combatants.find((entry) => entry.id === bashWeaver.id)!.hp;
+    weakened = endUntilCompleted(weakened, weakenedHound.id, 2);
+    expect(weaverBefore - weakened.activeRun!.combat!.combatants.find((entry) => entry.id === bashWeaver.id)!.hp).toBe(5);
+  });
+
+  it("SIM-C09 isolates Burn timing, stacks, Exposed-on-Burn, and Ashfall party apply", () => {
+    let snapshot = startFixtureCombat(build1Pack, "roadside_trail", { forcedStreams: roadsideStreams });
+    const run = snapshot.activeRun!;
+    const combat = run.combat!;
+    const weaver = run.heroes.find((hero) => hero.classId === "aether_weaver")!;
+    const vanguard = run.heroes.find((hero) => hero.classId === "vanguard")!;
+    const hounds = combat.combatants.filter((entry) => entry.definitionId === "gloomfang_hound");
+    const burned = hounds[0]!;
+    combat.timeline = [weaver.id, burned.id, vanguard.id, hounds[1]!.id];
+    combat.combatants.filter((entry) => entry.side === "heroes").forEach((hero) => { hero.maxHp = 999; hero.hp = 999; });
+    burned.blockLayers = [];
+    const spark = putInHand(snapshot, weaver.id, "ember_spark");
+    setActiveHero(snapshot, weaver.id);
+    snapshot.activeRun!.combat!.heroResources.find((entry) => entry.heroId === weaver.id)!.mana = 6;
+    const hpAfterEmberExpected = burned.hp - 4;
+    snapshot = accept(snapshot, command(snapshot, "playCard", { cardInstanceId: spark.cardInstanceId, targetId: burned.id }, weaver.id), build1Pack) as MutableSnapshot;
+    const afterSpark = snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === burned.id)!;
+    expect(afterSpark.hp).toBe(hpAfterEmberExpected);
+    expect(afterSpark.burn).toHaveLength(1);
+    snapshot.activeRun!.combat!.intents.forEach((intent) => { intent.intentId = "circle"; intent.label = "Circle"; intent.magnitude = 4; });
+    snapshot = endUntilCompleted(snapshot, burned.id, 1);
+    const afterFirstTick = snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === burned.id)!;
+    expect(afterFirstTick.hp).toBe(hpAfterEmberExpected - 2);
+    expect(afterFirstTick.burn).toHaveLength(1);
+    snapshot = endUntilCompleted(snapshot, burned.id, 2);
+    const afterSecondTick = snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === burned.id)!;
+    expect(afterSecondTick.hp).toBe(hpAfterEmberExpected - 4);
+    expect(afterSecondTick.burn).toHaveLength(0);
+
+    let exposedBurn = startCombatWithLearned("vanguard", ["piercing_thrust"]);
+    const exposedRun = exposedBurn.activeRun!;
+    const exposedCombat = exposedRun.combat!;
+    const thrustVanguard = exposedRun.heroes.find((hero) => hero.classId === "vanguard")!;
+    const sparkWeaver = exposedRun.heroes.find((hero) => hero.classId === "aether_weaver")!;
+    const exposedHounds = exposedCombat.combatants.filter((entry) => entry.definitionId === "gloomfang_hound");
+    const exposedHound = exposedHounds[0]!;
+    exposedCombat.timeline = [sparkWeaver.id, thrustVanguard.id, exposedHound.id, exposedHounds[1]!.id];
+    exposedCombat.combatants.filter((entry) => entry.side === "heroes").forEach((hero) => { hero.maxHp = 999; hero.hp = 999; });
+    exposedHound.blockLayers = [];
+    const firstSpark = putInHand(exposedBurn, sparkWeaver.id, "ember_spark");
+    setActiveHero(exposedBurn, sparkWeaver.id);
+    exposedBurn.activeRun!.combat!.heroResources.find((entry) => entry.heroId === sparkWeaver.id)!.mana = 6;
+    exposedBurn = accept(exposedBurn, command(exposedBurn, "playCard", { cardInstanceId: firstSpark.cardInstanceId, targetId: exposedHound.id }, sparkWeaver.id), build1Pack) as MutableSnapshot;
+    exposedBurn = endUntilActor(exposedBurn, thrustVanguard.id);
+    const exposedThrust = putInHand(exposedBurn, thrustVanguard.id, "piercing_thrust");
+    exposedBurn = accept(exposedBurn, command(exposedBurn, "playCard", { cardInstanceId: exposedThrust.cardInstanceId, targetId: exposedHound.id }, thrustVanguard.id), build1Pack) as MutableSnapshot;
+    const oneStack = exposedBurn.activeRun!.combat!.combatants.find((entry) => entry.id === exposedHound.id)!;
+    expect(oneStack.conditions.some((entry) => entry.id === "exposed")).toBe(true);
+    expect(oneStack.burn).toHaveLength(1);
+    const oneStackHp = oneStack.hp;
+    exposedBurn.activeRun!.combat!.intents.forEach((intent) => { intent.intentId = "circle"; intent.label = "Circle"; intent.magnitude = 4; });
+    exposedBurn = endUntilCompleted(exposedBurn, exposedHound.id, 1);
+    expect(exposedBurn.activeRun!.combat!.combatants.find((entry) => entry.id === exposedHound.id)!.hp).toBe(oneStackHp - 2);
+
+    let twoStack = startCombatWithLearned("vanguard", ["piercing_thrust"]);
+    const twoRun = twoStack.activeRun!;
+    const twoCombat = twoRun.combat!;
+    const twoVanguard = twoRun.heroes.find((hero) => hero.classId === "vanguard")!;
+    const twoWeaver = twoRun.heroes.find((hero) => hero.classId === "aether_weaver")!;
+    const twoHounds = twoCombat.combatants.filter((entry) => entry.definitionId === "gloomfang_hound");
+    const twoHound = twoHounds[0]!;
+    twoCombat.timeline = [twoWeaver.id, twoVanguard.id, twoHound.id, twoHounds[1]!.id];
+    twoCombat.combatants.filter((entry) => entry.side === "heroes").forEach((hero) => { hero.maxHp = 999; hero.hp = 999; });
+    twoHound.blockLayers = [];
+    twoStack.activeRun!.combat!.heroResources.find((entry) => entry.heroId === twoWeaver.id)!.mana = 6;
+    const sparkA = putInHand(twoStack, twoWeaver.id, "ember_spark");
+    setActiveHero(twoStack, twoWeaver.id);
+    twoStack = accept(twoStack, command(twoStack, "playCard", { cardInstanceId: sparkA.cardInstanceId, targetId: twoHound.id }, twoWeaver.id), build1Pack) as MutableSnapshot;
+    const sparkB = putInHand(twoStack, twoWeaver.id, "ember_spark");
+    twoStack = accept(twoStack, command(twoStack, "playCard", { cardInstanceId: sparkB.cardInstanceId, targetId: twoHound.id }, twoWeaver.id), build1Pack) as MutableSnapshot;
+    twoStack = endUntilActor(twoStack, twoVanguard.id);
+    const twoThrust = putInHand(twoStack, twoVanguard.id, "piercing_thrust");
+    twoStack = accept(twoStack, command(twoStack, "playCard", { cardInstanceId: twoThrust.cardInstanceId, targetId: twoHound.id }, twoVanguard.id), build1Pack) as MutableSnapshot;
+    const twoBefore = twoStack.activeRun!.combat!.combatants.find((entry) => entry.id === twoHound.id)!;
+    expect(twoBefore.conditions.some((entry) => entry.id === "exposed")).toBe(true);
+    expect(twoBefore.burn).toHaveLength(2);
+    const twoHp = twoBefore.hp;
+    twoStack.activeRun!.combat!.intents.forEach((intent) => { intent.intentId = "circle"; intent.label = "Circle"; intent.magnitude = 4; });
+    twoStack = endUntilCompleted(twoStack, twoHound.id, 1);
+    expect(twoStack.activeRun!.combat!.combatants.find((entry) => entry.id === twoHound.id)!.hp).toBe(twoHp - 5);
+
+    let ashfall = startCombatWithLearned("aether_weaver", ["ashfall"]);
+    const ashWeaver = ashfall.activeRun!.heroes.find((hero) => hero.classId === "aether_weaver")!;
+    const ashEnemies = ashfall.activeRun!.combat!.combatants.filter((entry) => entry.side === "enemies");
+    ashfall.activeRun!.combat!.timeline = [ashWeaver.id, ...ashfall.activeRun!.combat!.timeline.filter((id) => id !== ashWeaver.id)];
+    ashEnemies.forEach((enemy) => { enemy.blockLayers = []; });
+    const ashCard = putInHand(ashfall, ashWeaver.id, "ashfall");
+    setActiveHero(ashfall, ashWeaver.id);
+    ashfall.activeRun!.combat!.heroResources.find((entry) => entry.heroId === ashWeaver.id)!.mana = 6;
+    ashfall = accept(ashfall, command(ashfall, "playCard", { cardInstanceId: ashCard.cardInstanceId }, ashWeaver.id), build1Pack) as MutableSnapshot;
+    const livingEnemies = ashfall.activeRun!.combat!.combatants.filter((entry) => entry.side === "enemies" && !entry.destroyed && entry.hp > 0);
+    expect(livingEnemies.length).toBeGreaterThanOrEqual(2);
+    expect(livingEnemies.every((enemy) => enemy.burn.length === 1)).toBe(true);
+  });
+
+  it("SIM-C10 Guard does not redirect party-wide Lament", () => {
+    let snapshot = startFixtureCombat(build1Pack, "whisperwood_threshold", { forcedStreams: whisperStreams });
+    const run = snapshot.activeRun!;
+    const combat = run.combat!;
+    const vanguard = run.heroes.find((hero) => hero.classId === "vanguard")!;
+    const weaver = run.heroes.find((hero) => hero.classId === "aether_weaver")!;
+    const chanter = combat.combatants.find((entry) => entry.definitionId === "mist_chanter")!;
+    combat.timeline = [vanguard.id, chanter.id, weaver.id, ...combat.timeline.filter((id) => id !== vanguard.id && id !== chanter.id && id !== weaver.id)];
+    const hold = putInHand(snapshot, vanguard.id, "hold_the_line");
+    setActiveHero(snapshot, vanguard.id);
+    snapshot = accept(snapshot, command(snapshot, "playCard", { cardInstanceId: hold.cardInstanceId, targetId: weaver.id }, vanguard.id), build1Pack) as MutableSnapshot;
+    expect(snapshot.activeRun!.combat!.guards).toHaveLength(1);
+    const vanguardCombatant = snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === vanguard.id)!;
+    vanguardCombatant.blockLayers = [];
+    const weaverCombatant = snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === weaver.id)!;
+    weaverCombatant.blockLayers = [];
+    const beforeVanguard = vanguardCombatant.hp;
+    const beforeWeaver = weaverCombatant.hp;
+    const revealed = snapshot.activeRun!.combat!.intents.find((entry) => entry.enemyId === chanter.id)!;
+    revealed.intentId = "lament"; revealed.label = "Lament"; revealed.magnitude = 3;
+    snapshot = accept(snapshot, command(snapshot, "endTurn", {}, vanguard.id), build1Pack, whisperStreams) as MutableSnapshot;
+    const afterVanguard = snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === vanguard.id)!;
+    const afterWeaver = snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === weaver.id)!;
+    expect(beforeVanguard - afterVanguard.hp).toBe(3);
+    expect(beforeWeaver - afterWeaver.hp).toBe(3);
   });
 });
