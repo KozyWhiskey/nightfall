@@ -3,6 +3,9 @@ import type { CombatSnapshot, CombatantSnapshot, EnemyIntentSnapshot } from "@ni
 import { CombatPortrait, IntentGlyph } from "../art/ArtImage.js";
 import { combatantArtSrc, intentArtSrc, silhouetteForCombatant, silhouetteForHero } from "../art/artMap.js";
 import {
+  defenseCoverageWindows,
+  enemyDefenseCoverageText,
+  heroDefenseCoverageText,
   initiativeQueueLabels,
   intentGlyphChar,
   intentKind,
@@ -32,6 +35,7 @@ function TrackerRow({
   intent,
   queueIndex,
   queueLabel,
+  coverageLabel,
   isNow,
   isNext,
   isPlaybackFocus,
@@ -43,6 +47,7 @@ function TrackerRow({
   intent: EnemyIntentSnapshot | undefined;
   queueIndex: number;
   queueLabel?: string;
+  coverageLabel?: string;
   isNow: boolean;
   isNext: boolean;
   isPlaybackFocus: boolean;
@@ -93,6 +98,7 @@ function TrackerRow({
       </span> : combatant.side === "heroes"
         ? <span className="initiative-intent is-hero-turn">Hero turn</span>
         : <span className="initiative-intent is-muted">—</span>}
+      {coverageLabel !== undefined && <span className="initiative-queue-label" title={coverageLabel}>{coverageLabel}</span>}
     </div>
     {isNow && <span className="initiative-now-label">Now</span>}
     {isLinked && !isNow && <span className="initiative-link-label">{queueOrdinal(queueIndex)}</span>}
@@ -113,6 +119,19 @@ export function InitiativeTracker({
   const order = rotatedInitiativeOrder(combat);
   const focusId = playbackFocusId ?? combat.activeCombatantId;
   const queueLabels = useMemo(() => initiativeQueueLabels(combat), [combat]);
+  const coverageLabels = useMemo(() => {
+    const windows = defenseCoverageWindows(combat);
+    const labels = new Map<string, string>();
+    for (const window of windows) {
+      const heroText = heroDefenseCoverageText(window);
+      if (heroText !== undefined) labels.set(window.heroId, heroText);
+    }
+    for (const id of order) {
+      const enemyText = enemyDefenseCoverageText(windows, id);
+      if (enemyText !== undefined) labels.set(id, enemyText);
+    }
+    return labels;
+  }, [combat, order]);
 
   return <aside className={`initiative-tracker${linkedCombatantId !== null ? " has-linked-row" : ""}`} aria-label="Initiative order">
     <header className="initiative-tracker-head">
@@ -132,6 +151,7 @@ export function InitiativeTracker({
           intent={intent}
           queueIndex={index}
           queueLabel={queueLabels.get(id)}
+          coverageLabel={coverageLabels.get(id)}
           isNow={isNow}
           isNext={isNow ? false : isNext}
           isPlaybackFocus={playbackFocusId !== null && id === playbackFocusId}

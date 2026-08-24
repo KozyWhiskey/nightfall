@@ -158,3 +158,101 @@ export function initiativeQueueLabels(combat: CombatSnapshot): ReadonlyMap<strin
   });
   return labels;
 }
+
+export interface DefenseCoverageWindow {
+  readonly heroId: string;
+  readonly enemyIds: readonly string[];
+  readonly blockAmount: number;
+  readonly blockCovers: boolean;
+  readonly blockCoveredEnemyIds: readonly string[];
+  readonly guardCovers: boolean;
+  readonly guardCoveredEnemyIds: readonly string[];
+  readonly guardLabel: string | undefined;
+}
+
+function livingHeroes(combat: CombatSnapshot): CombatantSnapshot[] {
+  return combat.combatants.filter(
+    (entry) => entry.side === "heroes" && entry.kind === "hero" && !entry.downed && !entry.destroyed
+  );
+}
+
+function blockAmountOf(combatant: CombatantSnapshot): number {
+  return combatant.blockLayers.reduce((sum, layer) => sum + layer.amount, 0);
+}
+
+/** Upcoming living enemies that resolve before `heroId`'s next turn start. */
+export function upcomingEnemiesBeforeNextTurnStart(combat: CombatSnapshot, heroId: string): string[] {
+  const order = rotatedInitiativeOrder(combat);
+  const heroIndex = order.indexOf(heroId);
+  if (heroIndex < 0) return [];
+  const end = heroIndex === 0 ? order.length : heroIndex;
+  const enemyIds: string[] = [];
+  for (let index = 1; index < end; index += 1) {
+    const id = order[index]!;
+    const combatant = combat.combatants.find((entry) => entry.id === id);
+    if (combatant !== undefined && combatant.side === "enemies" && isTimelineCombatant(combatant)) {
+      enemyIds.push(id);
+    }
+  }
+  return enemyIds;
+}
+
+/**
+ * Snapshot-derived Block/Guard coverage windows.
+ * Does not recompute damage, initiative, or targeting — reads published layers and Guard links.
+ */
+export function defenseCoverageWindows(combat: CombatSnapshot): readonly DefenseCoverageWindow[] {
+  return livingHeroes(combat).map((hero) => {
+    const enemyIds = upcomingEnemiesBeforeNextTurnStart(combat, hero.id);
+    const blockAmount = blockAmountOf(hero);
+    const blockCoveredEnemyIds = blockAmount > 0 ? enemyIds : [];
+    const protecting = combat.guards.find((guard) => guard.protectedHeroId === hero.id);
+    const guardian = protecting === undefined
+      ? undefined
+      : combat.combatants.find((entry) => entry.id === protecting.guardingHeroId);
+    const guardCoveredEnemyIds = protecting === undefined || guardian === undefined || guardian.downed || guardian.destroyed
+      ? []
+      : upcomingEnemiesBeforeNextTurnStart(combat, protecting.guardingHeroId);
+    const guardLabel = protecting === undefined
+      ? undefined
+      : guardLabelsFor(hero.id, combat.guards, combat.combatants).find((label) => label.startsWith("Guarded by"));
+    return {
+      heroId: hero.id,
+      enemyIds,
+      blockAmount,
+      blockCovers: blockCoveredEnemyIds.length > 0,
+      blockCoveredEnemyIds,
+      guardCovers: guardCoveredEnemyIds.length > 0,
+      guardCoveredEnemyIds,
+      guardLabel
+    };
+  });
+}
+
+function turnsPhrase(count: number): string {
+  return count === 1 ? "next 1 enemy turn" : `next ${count} enemy turns`;
+}
+
+/** Visible (not color-only) coverage copy for a hero timeline row. */
+export function heroDefenseCoverageText(window: DefenseCoverageWindow): string | undefined {
+  const parts: string[] = [];
+  if (window.blockCovers) parts.push(`Block ${window.blockAmount} covers ${turnsPhrase(window.blockCoveredEnemyIds.length)}`);
+  if (window.guardCovers) {
+    const who = window.guardLabel ?? "Guard";
+    parts.push(`${who} covers ${turnsPhrase(window.guardCoveredEnemyIds.length)}`);
+  }
+  if (parts.length === 0) return undefined;
+  return parts.join(" · ");
+}
+
+/** Visible coverage copy for an enemy timeline row covered by any hero window. */
+export function enemyDefenseCoverageText(
+  windows: readonly DefenseCoverageWindow[],
+  enemyId: string
+): string | undefined {
+  const tags: string[] = [];
+  if (windows.some((window) => window.blockCoveredEnemyIds.includes(enemyId))) tags.push("Block");
+  if (windows.some((window) => window.guardCoveredEnemyIds.includes(enemyId))) tags.push("Guard");
+  if (tags.length === 0) return undefined;
+  return `Covered by ${tags.join(" · ")}`;
+}
