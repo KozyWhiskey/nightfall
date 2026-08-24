@@ -35,7 +35,7 @@ const cards = [
   card("piercing_thrust", "Piercing Thrust", "attack", "enemy", [damage(2, "strength"), condition("exposed", "enemy")], { ap: 1, stamina: 1 }, ["iron"]),
   card("ember_lance", "Ember Lance", "spell", "enemy", [damage(3, "intellect", "enemy", "ember"), condition("burn", "enemy", 1, 2)], { ap: 1, mana: 2 }, ["ember"]),
   card("sundering_stroke", "Sundering Stroke", "attack", "enemy", [damage(1, "strength"), { kind: "removeBlock", target: "enemy", amount: 6 }], { ap: 1, stamina: 1 }, ["iron"], { learnable: true, rarity: "imbued" }),
-  card("crack_open", "Crack Open", "attack", "enemy", [damage(4, "strength", "enemy", "physical")], { ap: 1, stamina: 2 }, ["iron"], { learnable: true, rarity: "rare" }),
+  card("crack_open", "Crack Open", "attack", "enemy", [damage(4, "strength", "enemy", "physical"), { kind: "dealDamage", target: "enemy", damageType: "physical", amount: 3, scaling: "none", bypassBlock: false, condition: "exposed" }], { ap: 1, stamina: 2 }, ["iron"], { learnable: true, rarity: "rare" }),
   card("still_wall", "Still Wall", "ability", "self", [block(9)], { ap: 1, stamina: 1 }, ["bastion"], { learnable: true, rarity: "salvaged" }),
   card("oathbound_guard", "Oathbound Guard", "ability", "ally", [block(8, "ally"), { kind: "createGuard", target: "ally", block: 0 }], { ap: 1, stamina: 2 }, ["bastion"], { learnable: true, rarity: "imbued" }),
   card("aether_needle", "Aether Needle", "spell", "enemy", [damage(2, "intellect", "enemy", "aether", true)], { ap: 1, mana: 1 }, ["aether"], { learnable: true, rarity: "salvaged" }),

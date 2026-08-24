@@ -2,6 +2,7 @@ Shipped specs whose acceptance tests passed. Newest first.
 
 ### Combat rules
 
+- [crack-open-exposed-bonus.md](crack-open-exposed-bonus.md) — Crack Open Exposed +3 rider (`bug`)
 - [isolate-sim-04-condition-fixtures.md](isolate-sim-04-condition-fixtures.md) — Isolate SIM-04 Exposed, Burn, and Guard fixtures (`enhancement`)
 - [equip-item-pool-stats.md](equip-item-pool-stats.md) — Equipped max HP and max Stamina apply without refill (`bug`)
 - [combat-burn-tooltip-end-of-turn.md](combat-burn-tooltip-end-of-turn.md) — Burn standee tooltip says end-of-turn (`bug`)

@@ -595,5 +595,32 @@ describe("Build 1 combat acceptance", () => {
     const afterWeaver = snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === weaver.id)!;
     expect(beforeVanguard - afterVanguard.hp).toBe(3);
     expect(beforeWeaver - afterWeaver.hp).toBe(3);
+  it("SIM-C07 Crack Open deals +3 only when the target is Exposed", () => {
+    const playCrackOpen = (exposed: boolean): { damage: number; summary: string } => {
+      const embarked = createEmbarkedSnapshot(build1Pack, 12345);
+      const snapshot = cloneSnapshot(embarked);
+      if (snapshot.activeRun === undefined) throw new Error("Fixture failed to embark");
+      const vanguard = snapshot.activeRun.heroes.find((hero) => hero.classId === "vanguard")!;
+      vanguard.learnedCardIds = [...vanguard.learnedCardIds, "crack_open"];
+      snapshot.activeRun.phase = "combat";
+      startCombat(snapshot, build1Pack, "roadside_trail", createContext({ combatInitiative: [0.9, 0.9, 0, 0], combatIntent: [0, 0] }));
+      const combat = snapshot.activeRun.combat!;
+      const crack = combat.cards.find((card) => card.ownerId === vanguard.id && card.definitionId === "crack_open")!;
+      crack.zone = "hand";
+      const target = combat.combatants.find((entry) => entry.side === "enemies")!;
+      target.blockLayers = [];
+      if (exposed) target.conditions = [{ id: "exposed", expiresAfterCompletedTurn: 99 }];
+      setActiveHero(snapshot, vanguard.id);
+      combat.heroResources.find((entry) => entry.heroId === vanguard.id)!.stamina = 10;
+      const before = target.hp;
+      const after = accept(snapshot, command(snapshot, "playCard", { cardInstanceId: crack.cardInstanceId, targetId: target.id }, vanguard.id), build1Pack);
+      const hit = after.activeRun!.combat!.combatants.find((entry) => entry.id === target.id)!;
+      return { damage: before - hit.hp, summary: crack.presentation.summary };
+    };
+
+    const clean = playCrackOpen(false);
+    expect(clean.damage).toBe(8);
+    expect(playCrackOpen(true).damage).toBe(13);
+    expect(clean.summary).toMatch(/exposed/i);
   });
 });
