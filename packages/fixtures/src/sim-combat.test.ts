@@ -84,6 +84,40 @@ function endUntilCompleted(snapshot: MutableSnapshot, combatantId: string, compl
   return next;
 }
 
+function keepWatchThenCombat(options: {
+  runGloom: number;
+  flags?: readonly string[];
+  forcedStreams?: { combatInitiative: readonly number[]; combatIntent: readonly number[]; combatTarget?: readonly number[] };
+}): MutableSnapshot {
+  const snapshot = cloneSnapshot(createEmbarkedSnapshot(build1Pack, 12345));
+  const run = snapshot.activeRun!;
+  const restNode = run.nodes.find((entry) => entry.id === "rest");
+  if (restNode === undefined) throw new Error("Expected rest node");
+  restNode.state = "entered";
+  run.currentNodeId = "rest";
+  run.phase = "rest";
+  run.runGloom = options.runGloom;
+  if (options.flags !== undefined && options.flags.length > 0) run.flags = [...run.flags, ...options.flags];
+  run.pendingDecision = {
+    kind: "rest",
+    baseGloomReduction: 12,
+    modifier: 0,
+    optionIds: ["tend_wounds", "resupply", "keep_watch"],
+    choices: [
+      { id: "keep_watch", label: "Keep Watch", detail: "Remove one temporary injury or Strain from one hero; both heroes start the next combat with 3 Block.", needsHeroTarget: true }
+    ]
+  };
+  snapshot.view = "rest";
+  const weaver = run.heroes.find((hero) => hero.classId === "aether_weaver")!;
+  const afterRest = accept(snapshot, command(snapshot, "chooseRestOption", { optionId: "keep_watch", heroId: weaver.id }), build1Pack) as MutableSnapshot;
+  afterRest.activeRun!.phase = "combat";
+  const streams = options.forcedStreams ?? roadsideStreams;
+  const context = createContext(streams);
+  startCombat(afterRest, build1Pack, "roadside_trail", context);
+  engageFixtureCombat(afterRest, build1Pack, context);
+  return afterRest;
+}
+
 describe("Build 1 combat acceptance", () => {
 
   it("SIM-01 resolves the two-Hound opening, Basics, recovery, and Combat 1 reward", () => {
@@ -770,5 +804,29 @@ describe("Build 1 combat acceptance", () => {
     const active = after.combatants.find((entry) => entry.id === after.activeCombatantId)!;
     expect(active.side).toBe("heroes");
     expect(after.heroResources.find((entry) => entry.heroId === active.id)!.ap).toBeGreaterThan(0);
+  });
+
+  it("SIM-C15 Keep Watch removes Choir Strain before the next combat", () => {
+    const snapshot = keepWatchThenCombat({
+      runGloom: 0,
+      flags: ["next_combat_one_strain"],
+      forcedStreams: { ...roadsideStreams, combatTarget: [0] }
+    });
+    const combat = snapshot.activeRun!.combat!;
+    const heroes = combat.combatants.filter((entry) => entry.side === "heroes");
+    expect(heroes.every((hero) => !hero.conditions.some((entry) => entry.id === "strain"))).toBe(true);
+    expect(heroes.every((hero) => totalBlockForFixture(hero) === 3)).toBe(true);
+  });
+
+  it("SIM-C15 Keep Watch exempts the targeted hero from Pressing Strain after Rest", () => {
+    const snapshot = keepWatchThenCombat({
+      runGloom: 82,
+      forcedStreams: { ...roadsideStreams, combatTarget: [0] }
+    });
+    expect(snapshot.activeRun!.runGloom).toBe(70);
+    const weaver = snapshot.activeRun!.heroes.find((hero) => hero.classId === "aether_weaver")!;
+    const combatant = snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === weaver.id)!;
+    expect(combatant.conditions.some((entry) => entry.id === "strain")).toBe(false);
+    expect(totalBlockForFixture(combatant)).toBe(3);
   });
 });
