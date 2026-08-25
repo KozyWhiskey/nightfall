@@ -98,12 +98,18 @@ Cloud agents should use [`.cursor/environment.json`](.cursor/environment.json). 
 
 ### Coding agent principles
 
-1. Think before coding. Ask when unclear; never silently invent intent, architecture, or requirements. When unattended, pick the most reasonable interpretation, proceed, and record the assumption.
+Also in `.cursor/rules/agent-stance.mdc` (always apply). If these conflict with being agreeable, these win.
 
-2. Simplicity first. Smallest change that meets the need. No speculative features, extra abstractions, or flexibility that is not required yet.
+1. **Correct first.** Treat user claims as hypotheses. If they are factually or technically wrong, say so in the first sentence with evidence (code, docs, or a failing test). Do not agree to be agreeable. Do not rewrite what happened. Skip praise and hedging. Direct is required; snark is not.
 
-3. Surgical edits. Touch only files and code the task needs. Do not drive-by refactor. Surface bad code or design smells as a separate issue rather than fixing them in passing.
+2. **Root cause, not band-aids.** Never ship symptomatic workarounds, arbitrary safety buffers, or execution-order hacks to hide a logic failure (client-side HP/stamina clamps, extra Zustand copies of sim state, `setTimeout`/phase-skip to paper over `invalid_phase`, duplicate command paths). Trace to the state-machine, validation, or contract and fix that. Diagnostics and failing fixtures while investigating are fine; leaving the band-aid as the fix is not.
 
-4. Goal-driven verify loop. State acceptance criteria (or use the change-spec's) before implementing. Run the relevant checks (`pnpm check:boundaries`, `pnpm test`, or full `pnpm check` for broader work). Do not claim done until those pass. Prefer Vitest `SIM-*` / `SIM-C*` over browser for combat correctness.
+3. **Keep it simple.** Smallest change that meets the need. No speculative features, extra abstractions, or flexibility that is not required yet.
 
-5. Flag uncertainty explicitly. Prefer a small, local experiment over confident guesswork. Suggest lasting improvements when they beat a tactical patch.
+4. **Surgical fixes, not refactors.** Touch only files and code the task needs. Do not drive-by refactor. Surface bad code as a separate issue.
+
+5. **Follow existing patterns** in the touched package unless that pattern is the bug.
+
+6. **Stop when blocked.** Never silently invent intent, architecture, or requirements. If the next step requires inventing those, or a workaround for an unknown root cause: stop, state the block, and ask. Do not guess and proceed.
+
+7. **Verify.** State acceptance criteria (or use the change-spec's) before implementing. Run the relevant checks (`pnpm check:boundaries`, `pnpm test`, or full `pnpm check` for broader work). Do not claim done until those pass. Prefer Vitest `SIM-*` / `SIM-C*` over browser for combat correctness.

@@ -1,0 +1,19 @@
+---
+description: Directness, root-cause fixes, simplicity. Apply to every session.
+alwaysApply: true
+---
+
+# Agent stance
+
+Treat the user's claims as hypotheses. If they are factually or technically wrong, correct them in the first sentence with evidence (code, docs, or a failing test). Do not agree to be agreeable. Do not rewrite what happened. Skip praise and hedging. Direct is required; snark is not.
+
+## Root cause
+
+Do not ship symptomatic workarounds, arbitrary safety buffers, or execution-order hacks to hide a logic failure. In this repo that means: no client-side HP/stamina clamps, no extra Zustand copies of sim state, no `setTimeout`/phase-skip to paper over `invalid_phase`, no duplicate command paths. Find the state-machine, validation, or contract that is wrong and fix that. A diagnostic log or a failing fixture while investigating is fine; leaving the band-aid as the fix is not.
+
+## Execution
+
+- Smallest change that meets the need. No speculative abstractions.
+- Surgical edits. Do not refactor adjacent code. Do not "improve" files you were not asked to touch.
+- Follow existing patterns in the touched package unless that pattern is the bug.
+- If the next step requires inventing architecture, requirements, or a workaround for an unknown root cause: stop, state the block, and ask. Do not guess and proceed.
