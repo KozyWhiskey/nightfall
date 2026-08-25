@@ -90,8 +90,11 @@ describe("SIM-16 reload, replay, and idempotence", () => {
       const entered = await host.submit(command(embarked.snapshot, "chooseMapEdge", { edgeId: "edge_01" }, undefined, "travel"));
       if (entered.status !== "accepted") throw new Error("Travel failed");
       expect(entered.snapshot.view).toBe("combat");
-      const actorId = entered.snapshot.activeRun!.combat!.activeCombatantId;
-      const ended = await host.submit(command(entered.snapshot, "endTurn", {}, actorId, "combat-end"));
+      expect(entered.snapshot.activeRun!.combat!.awaitingEngage).toBe(true);
+      const engaged = await host.submit(command(entered.snapshot, "engageCombat", {}, undefined, "engage"));
+      if (engaged.status !== "accepted") throw new Error("Engage failed");
+      const actorId = engaged.snapshot.activeRun!.combat!.activeCombatantId;
+      const ended = await host.submit(command(engaged.snapshot, "endTurn", {}, actorId, "combat-end"));
       if (ended.status !== "accepted") throw new Error("Combat command failed");
       expect(ended.snapshot.view).toBe("combat");
       await host.close();

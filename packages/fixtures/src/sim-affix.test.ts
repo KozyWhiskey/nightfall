@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { build1Pack } from "@nightfall/content";
 import type { EquipmentSlot } from "@nightfall/contracts";
 import { cloneSnapshot, createContext, createItemInstance, deriveHeroPools, startCombat, totalBlockForFixture, type ForcedStreams, type MutableSnapshot } from "@nightfall/sim";
-import { accept, command, createEmbarkedSnapshot } from "./index.js";
+import { accept, command, createEmbarkedSnapshot, engageFixtureCombat } from "./index.js";
 
 function setActiveHero(snapshot: MutableSnapshot, heroId: string): void {
   const combat = snapshot.activeRun?.combat;
@@ -49,11 +49,13 @@ function startAffixCombat(
   hero.equipment[slot] = item.instanceId;
   run.runGloom = 0;
   run.phase = "combat";
-  startCombat(mutable, build1Pack, options.encounterId ?? "roadside_trail", createContext({
+  const context = createContext({
     combatInitiative: [0.9, 0.9, 0, 0],
     combatIntent: [0, 0],
     ...options.forcedStreams
-  }));
+  });
+  startCombat(mutable, build1Pack, options.encounterId ?? "roadside_trail", context);
+  engageFixtureCombat(mutable, build1Pack, context);
   return mutable;
 }
 

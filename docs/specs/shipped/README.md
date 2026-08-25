@@ -2,6 +2,7 @@ Shipped specs whose acceptance tests passed. Newest first.
 
 ### Combat rules
 
+- [combat-engage-open-intent.md](combat-engage-open-intent.md) — Combat waits for Engage before the first resolved action (`enhancement`)
 - [still-wall-weakened-duration.md](still-wall-weakened-duration.md) — Still Wall Weakened lasts until the absorbing enemy's next completed turn (`bug`)
 - [crack-open-exposed-bonus.md](crack-open-exposed-bonus.md) — Crack Open Exposed +3 rider (`bug`)
 - [isolate-sim-04-condition-fixtures.md](isolate-sim-04-condition-fixtures.md) — Isolate SIM-04 Exposed, Burn, and Guard fixtures (`enhancement`)

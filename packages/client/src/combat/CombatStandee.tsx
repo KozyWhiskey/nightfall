@@ -5,11 +5,33 @@ import { combatantArtSrc, silhouetteForCombatant, silhouetteForHero } from "../a
 import { titleCase } from "../decisionUi.js";
 import { burnStackCount, conditionTooltip } from "./combatUi.js";
 
-function CompactMeter({ label, value, max, tone }: { label: string; value: number; max: number; tone: string }) {
-  const pct = max === 0 ? 0 : Math.max(0, Math.min(100, value / max * 100));
-  return <div className="compact-meter" title={`${label} ${value}/${max}`}>
+function CompactMeter({
+  label,
+  value,
+  max,
+  tone,
+  spend = 0
+}: {
+  label: string;
+  value: number;
+  max: number;
+  tone: string;
+  /** Pending spend preview (mana/stamina cost of selected card). */
+  spend?: number;
+}) {
+  const clampedSpend = Math.max(0, Math.min(spend, value));
+  const keep = value - clampedSpend;
+  const keepPct = max === 0 ? 0 : Math.max(0, Math.min(100, keep / max * 100));
+  const spendPct = max === 0 ? 0 : Math.max(0, Math.min(100 - keepPct, clampedSpend / max * 100));
+  const title = clampedSpend > 0
+    ? `${label} ${value}/${max} (−${clampedSpend})`
+    : `${label} ${value}/${max}`;
+  return <div className={`compact-meter${clampedSpend > 0 ? " is-spending" : ""}`} title={title}>
     <span>{label}</span>
-    <div className="compact-meter-track" aria-hidden="true"><i className={tone} style={{ width: `${pct}%` }} /></div>
+    <div className="compact-meter-track" aria-hidden="true">
+      {keepPct > 0 && <i className={tone} style={{ width: `${keepPct}%` }} />}
+      {spendPct > 0 && <i className={`${tone} is-spend`} style={{ width: `${spendPct}%` }} />}
+    </div>
     <strong>{value}</strong>
   </div>;
 }
@@ -21,6 +43,8 @@ export function CombatStandee({
   isActive,
   isActing,
   actingIntentLabel,
+  idleIntentLabel,
+  actsBeforeHero,
   canTarget,
   targetable,
   block,
@@ -29,6 +53,8 @@ export function CombatStandee({
   resources,
   maxMana,
   maxStamina,
+  pendingManaSpend = 0,
+  pendingStaminaSpend = 0,
   carrierNote,
   guardLabels,
   queueLabel,
@@ -42,6 +68,8 @@ export function CombatStandee({
   isActive: boolean;
   isActing: boolean;
   actingIntentLabel?: string;
+  idleIntentLabel?: string;
+  actsBeforeHero?: boolean;
   canTarget: boolean;
   targetable: boolean;
   block: number;
@@ -50,6 +78,8 @@ export function CombatStandee({
   resources?: { ap: number; mana: number; stamina: number };
   maxMana?: number;
   maxStamina?: number;
+  pendingManaSpend?: number;
+  pendingStaminaSpend?: number;
   carrierNote?: string;
   guardLabels?: readonly string[];
   queueLabel?: string;
@@ -67,9 +97,10 @@ export function CombatStandee({
     : silhouetteForCombatant(combatant.kind === "entity" ? "entity" : "enemy");
   const Tag = canTarget ? "button" : "div";
   const downed = combatant.downed;
+  const showActingCallout = isActing && actingIntentLabel !== undefined;
 
   return <div
-    className={`combat-standee combat-standee-${side}${downed ? " is-downed" : ""}${isActive ? " is-active" : ""}${isActing ? " is-acting" : ""}${isLinked ? " is-linked" : ""}${canTarget ? " is-targetable" : ""}`}
+    className={`combat-standee combat-standee-${side}${downed ? " is-downed" : ""}${isActive ? " is-active" : ""}${isActing ? " is-acting" : ""}${actsBeforeHero ? " is-imminent" : ""}${isLinked ? " is-linked" : ""}${canTarget ? " is-targetable" : ""}`}
     onMouseEnter={() => {
       setHovered(true);
       onLink?.(combatant.id);
@@ -94,8 +125,8 @@ export function CombatStandee({
         facing={side === "enemies" ? "left" : "right"}
       />
       {targetable && canTarget && <span className="standee-target-ring" aria-hidden="true" />}
-      {isActing && actingIntentLabel !== undefined && (
-        <div className="standee-action-callout" role="status">{actingIntentLabel}</div>
+      {showActingCallout && (
+        <div className="standee-action-callout is-acting" role="status">{actingIntentLabel}</div>
       )}
       {isActive && side === "heroes" && resources !== undefined && (
         <div className="standee-ap-badge" aria-label={`${resources.ap} action points`}>
@@ -112,12 +143,16 @@ export function CombatStandee({
         <small>{classLabel}</small>
         <strong>{combatant.name}</strong>
         {queueLabel !== undefined && <span className="standee-queue-label">{queueLabel}</span>}
+        {actsBeforeHero && <span className="standee-imminent-label">Acts before you</span>}
       </div>
+      {!isActing && idleIntentLabel !== undefined && (
+        <p className="standee-idle-intent" role="status">{idleIntentLabel}</p>
+      )}
       <div className="standee-meters">
         <CompactMeter label="HP" value={combatant.hp} max={combatant.maxHp} tone="blood" />
         {side === "heroes" && resources !== undefined && <>
-          <CompactMeter label="MP" value={resources.mana} max={maxMana ?? resources.mana} tone="aether" />
-          <CompactMeter label="ST" value={resources.stamina} max={maxStamina ?? resources.stamina} tone="iron" />
+          <CompactMeter label="MP" value={resources.mana} max={maxMana ?? resources.mana} tone="aether" spend={pendingManaSpend} />
+          <CompactMeter label="ST" value={resources.stamina} max={maxStamina ?? resources.stamina} tone="iron" spend={pendingStaminaSpend} />
         </>}
         {block > 0 && <p className="standee-chip standee-chip-block">Block {block}</p>}
       </div>

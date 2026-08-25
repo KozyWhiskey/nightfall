@@ -89,29 +89,48 @@ export function rotatedInitiativeOrder(combat: CombatSnapshot): string[] {
 
 /** Enemies that acted between two combat snapshots (for client-side turn replay). */
 export function enemiesActedBetween(
-  previous: Pick<CombatSnapshot, "timeline" | "timelineCursor" | "activeCombatantId" | "round" | "combatants">,
-  next: Pick<CombatSnapshot, "timeline" | "timelineCursor" | "activeCombatantId" | "round" | "combatants">
+  previous: Pick<CombatSnapshot, "timeline" | "timelineCursor" | "activeCombatantId" | "round" | "combatants"> & { awaitingEngage?: boolean },
+  next: Pick<CombatSnapshot, "timeline" | "timelineCursor" | "activeCombatantId" | "round" | "combatants"> & { awaitingEngage?: boolean }
 ): string[] {
   // Host JSON always yields a new timeline array; compare turn position, not array identity.
   if (
     previous.timelineCursor === next.timelineCursor &&
     previous.activeCombatantId === next.activeCombatantId &&
-    previous.round === next.round
+    previous.round === next.round &&
+    Boolean(previous.awaitingEngage) === Boolean(next.awaitingEngage)
   ) {
     return [];
   }
   const acted: string[] = [];
-  let cursor = previous.timelineCursor;
+  // Engage opens from the current cursor inclusive; endTurn paths already moved past the prior actor.
+  const inclusiveOpen = previous.awaitingEngage === true && next.awaitingEngage !== true;
+  let cursor = inclusiveOpen ? (previous.timelineCursor - 1 + previous.timeline.length) % previous.timeline.length : previous.timelineCursor;
   for (let step = 0; step < previous.timeline.length; step += 1) {
     cursor = (cursor + 1) % previous.timeline.length;
     const id = previous.timeline[cursor]!;
     if (id === next.activeCombatantId) break;
-    const combatant = next.combatants.find((entry) => entry.id === id);
+    const combatant = next.combatants.find((entry) => entry.id === id) ?? previous.combatants.find((entry) => entry.id === id);
     if (combatant !== undefined && combatant.side === "enemies" && isTimelineCombatant(combatant)) {
       acted.push(id);
     }
   }
   return acted;
+}
+
+/** Enemy ids that act before the next hero turn, walking from the current timeline cursor. */
+export function enemyIdsBeforeNextHero(
+  combat: Pick<CombatSnapshot, "timeline" | "timelineCursor" | "combatants">
+): ReadonlySet<string> {
+  const ids = new Set<string>();
+  for (let offset = 0; offset < combat.timeline.length; offset += 1) {
+    const index = (combat.timelineCursor + offset) % combat.timeline.length;
+    const id = combat.timeline[index]!;
+    const combatant = combat.combatants.find((entry) => entry.id === id);
+    if (combatant === undefined || !isTimelineCombatant(combatant)) continue;
+    if (combatant.side === "heroes") break;
+    if (combatant.side === "enemies") ids.add(id);
+  }
+  return ids;
 }
 
 export function playbackIntentFor(

@@ -5,6 +5,7 @@ import { combatantArtSrc, intentArtSrc, silhouetteForCombatant, silhouetteForHer
 import {
   defenseCoverageWindows,
   enemyDefenseCoverageText,
+  enemyIdsBeforeNextHero,
   heroDefenseCoverageText,
   initiativeQueueLabels,
   intentGlyphChar,
@@ -41,6 +42,7 @@ function TrackerRow({
   isPlaybackFocus,
   isLinked,
   isCarrier,
+  actsBeforeHero,
   onLink
 }: {
   combatant: CombatantSnapshot;
@@ -53,6 +55,7 @@ function TrackerRow({
   isPlaybackFocus: boolean;
   isLinked: boolean;
   isCarrier: boolean;
+  actsBeforeHero: boolean;
   onLink: (combatantId: string | null) => void;
 }) {
   const portrait = portraitFor(combatant);
@@ -72,6 +75,7 @@ function TrackerRow({
       isNow ? "is-now" : "",
       isNext ? "is-next" : "",
       isPlaybackFocus ? "is-playback-focus" : "",
+      actsBeforeHero ? "is-imminent" : "",
       isLinked ? "is-linked" : "",
       isCarrier ? "is-carrier" : ""
     ].filter(Boolean).join(" ")}
@@ -92,6 +96,7 @@ function TrackerRow({
       {isCarrier && <span className="initiative-carrier-badge">Carrier</span>}
       <span className="initiative-value" title="Initiative">Init {combatant.initiative}</span>
       {queueLabel !== undefined && <span className="initiative-queue-label">{queueLabel}</span>}
+      {actsBeforeHero && <span className="initiative-imminent-label">Before your turn</span>}
       {intent !== undefined && kind !== undefined ? <span className={`initiative-intent intent-${kind}`}>
         <IntentGlyph src={intentArtSrc(kind)} textFallback={intentGlyphChar(kind)} />
         {intentSummary(intent)}
@@ -132,6 +137,7 @@ export function InitiativeTracker({
     }
     return labels;
   }, [combat, order]);
+  const imminentIds = useMemo(() => enemyIdsBeforeNextHero(combat), [combat]);
 
   return <aside className={`initiative-tracker${linkedCombatantId !== null ? " has-linked-row" : ""}`} aria-label="Initiative order">
     <header className="initiative-tracker-head">
@@ -157,6 +163,7 @@ export function InitiativeTracker({
           isPlaybackFocus={playbackFocusId !== null && id === playbackFocusId}
           isLinked={id === linkedCombatantId}
           isCarrier={isMarkedCarrier(combatant)}
+          actsBeforeHero={imminentIds.has(id)}
           onLink={onLinkCombatant}
         />;
       })}

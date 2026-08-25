@@ -2,8 +2,11 @@ import { useMemo } from "react";
 import type { CombatSnapshot, EnemyIntentSnapshot, HeroSnapshot, ItemInstance } from "@nightfall/contracts";
 import { titleCase } from "../decisionUi.js";
 import {
+  enemyIdsBeforeNextHero,
   guardLabelsFor,
   initiativeQueueLabels,
+  intentKind,
+  intentKindLabel,
   intentSummary,
   queueOrdinal,
   rotatedInitiativeOrder
@@ -18,6 +21,7 @@ export function CombatBattlefield({
   playbackIntent,
   targetMode,
   linkedCombatantId,
+  pendingResourceSpend,
   onLinkCombatant,
   onCombatantActivate
 }: {
@@ -28,6 +32,8 @@ export function CombatBattlefield({
   playbackIntent: EnemyIntentSnapshot | undefined;
   targetMode: "enemy" | "ally" | null;
   linkedCombatantId: string | null;
+  /** Mana/stamina spend preview for the active hero's selected card. */
+  pendingResourceSpend?: { heroId: string; mana: number; stamina: number };
   onLinkCombatant: (combatantId: string | null) => void;
   onCombatantActivate: (combatantId: string, side: "heroes" | "enemies", targetable: boolean) => void;
 }) {
@@ -35,6 +41,7 @@ export function CombatBattlefield({
   const heroCombatants = combat.combatants.filter((entry) => entry.side === "heroes");
   const enemies = combat.combatants.filter((entry) => entry.side === "enemies" && !entry.destroyed);
   const queueLabels = useMemo(() => initiativeQueueLabels(combat), [combat]);
+  const imminentIds = useMemo(() => enemyIdsBeforeNextHero(combat), [combat]);
   const queueOrdinals = useMemo(() => {
     const order = rotatedInitiativeOrder(combat);
     return new Map(order.map((id, index) => [id, `${queueOrdinal(index)} in queue`]));
@@ -70,6 +77,8 @@ export function CombatBattlefield({
             resources={resources}
             maxMana={hero?.maxMana}
             maxStamina={hero?.maxStamina}
+            pendingManaSpend={pendingResourceSpend?.heroId === combatant.id ? pendingResourceSpend.mana : 0}
+            pendingStaminaSpend={pendingResourceSpend?.heroId === combatant.id ? pendingResourceSpend.stamina : 0}
             guardLabels={guardLabelsFor(combatant.id, combat.guards, combat.combatants)}
             isLinked={combatant.id === linkedCombatantId}
             onLink={onLinkCombatant}
@@ -89,7 +98,11 @@ export function CombatBattlefield({
             ? undefined
             : holdings.find((item) => item.instanceId === enemy.carriedItemId);
           const acting = enemy.id === playbackActingId;
+          const intent = combat.intents.find((entry) => entry.enemyId === enemy.id);
           const actingLabel = acting && playbackIntent !== undefined ? intentSummary(playbackIntent) : undefined;
+          const idleLabel = !acting && intent !== undefined
+            ? `${intentKindLabel(intentKind(intent))} · ${intentSummary(intent)}`
+            : undefined;
           return <CombatStandee
             key={enemy.id}
             combatant={enemy}
@@ -98,6 +111,8 @@ export function CombatBattlefield({
             isActive={enemy.id === activeId}
             isActing={acting}
             actingIntentLabel={actingLabel}
+            idleIntentLabel={idleLabel}
+            actsBeforeHero={imminentIds.has(enemy.id)}
             canTarget={canTarget}
             targetable={enemy.targetable}
             block={block}

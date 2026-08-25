@@ -20,6 +20,7 @@ export const COMMAND_TYPES = [
   "nameHaven",
   "commitEmbark",
   "chooseMapEdge",
+  "engageCombat",
   "playCard",
   "useBasicAttack",
   "useBasicBlock",
@@ -391,6 +392,8 @@ export interface CombatSnapshot {
   readonly timeline: readonly string[];
   readonly timelineCursor: number;
   readonly activeCombatantId: string;
+  /** True after setup until the player acknowledges Engage; no turns have resolved yet. */
+  readonly awaitingEngage: boolean;
   readonly combatants: readonly CombatantSnapshot[];
   readonly heroResources: readonly HeroCombatResources[];
   readonly cards: readonly CardInstanceSnapshot[];

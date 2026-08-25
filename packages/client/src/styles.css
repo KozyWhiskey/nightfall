@@ -69,7 +69,14 @@ small, .stage-chrome > div > span, .page-heading > span, .meter span, .save-stat
 }
 .rail-pillars strong { font-size: 1.05rem; color: var(--ember); font-family: Palatino Linotype, Book Antiqua, Georgia, serif; font-weight: 500; }
 .rail-save { justify-content: center; }
-.lantern-mark { display: inline-block; width: 2rem; height: 2.65rem; border: 1px solid var(--brass); position: relative; background: radial-gradient(circle, rgba(217, 154, 78, .75) 0 12%, rgba(217, 154, 78, .18) 13% 42%, transparent 43%); clip-path: polygon(30% 0, 70% 0, 100% 22%, 90% 82%, 50% 100%, 10% 82%, 0 22%); }
+.lantern-mark {
+  display: block;
+  width: 2.4rem;
+  height: 2.4rem;
+  flex: 0 0 auto;
+  object-fit: contain;
+  border-radius: .2rem;
+}
 .pillar-rail { display: flex; gap: .42rem; align-items: end; min-height: 2.4rem; }
 .pillar { width: .58rem; height: 1.8rem; border: 1px solid var(--line); display: flex; align-items: end; padding: 2px; }
 .pillar i { display: block; width: 100%; }
@@ -1313,44 +1320,32 @@ button.route-node:hover:not(:disabled) {
 .terminal-ledger h3 { font-size: 1rem; margin: .8rem 0 .35rem; }
 .empty { color: var(--muted); font-style: italic; }
 .error-toast { position: fixed; right: 1rem; bottom: 1rem; background: #4b2927; border: 1px solid #b76b5f; padding: .8rem 1rem; display: flex; align-items: center; gap: 1rem; box-shadow: 0 1rem 3rem rgba(0,0,0,.4); }.error-toast button { border: 0; padding: .1rem .3rem; font-size: 1.4rem; }
-.splash { min-height: 100vh; display: grid; place-content: center; justify-items: center; gap: 1rem; color: var(--muted); }.splash .lantern-mark { width: 3rem; height: 4rem; }
+.splash { min-height: 100vh; display: grid; place-content: center; justify-items: center; gap: 1rem; color: var(--muted); }.splash .lantern-mark { width: 4.5rem; height: 4.5rem; }
 @keyframes pulse { to { opacity: .35; } }
 
 /* —— Combat stage: one-viewport turn puzzle —— */
 .app-shell.is-combat .way-lantern:not(.is-collapsed) { padding: 1.25rem 1.35rem; gap: 1.15rem; }
 .app-shell.is-combat .way-lantern:not(.is-collapsed) .lantern-body { gap: 1.15rem; }
-.app-shell.is-combat .fact-log { max-height: 26vh; overflow-y: auto; margin-top: auto; }
+/* Combat facts live under initiative; keep the Way lantern log for non-combat views. */
+.app-shell.is-combat .way-lantern .fact-log { display: none; }
 
 .combat-stage {
   height: 100%;
   min-height: 0;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  gap: .35rem;
+  grid-template-columns: minmax(0, 1fr) minmax(12rem, 14.5rem);
+  /* Chrome, then equal battlefield / dock halves. Side column spans both halves. */
+  grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: 0;
+  row-gap: 0;
   padding: .45rem .75rem .4rem;
   overflow: hidden;
 }
 .combat-stage.is-targeting-enemy .battlefield-enemies,
 .combat-stage.is-targeting-ally .battlefield-heroes { position: relative; z-index: 2; }
-.combat-field {
-  position: relative;
-  min-height: 0;
-  display: grid;
-}
-.combat-main {
-  min-height: 0;
-  overflow: hidden;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(11rem, 13.5rem);
-  gap: 0;
-  border: 1px solid var(--line);
-  background:
-    radial-gradient(ellipse at 22% 72%, rgba(169, 130, 69, .08), transparent 48%),
-    radial-gradient(ellipse at 78% 28%, rgba(119, 108, 145, .12), transparent 46%),
-    linear-gradient(180deg, rgba(13, 23, 27, .55), rgba(8, 14, 16, .82));
-}
-
 .combat-chrome {
+  grid-column: 1 / -1;
+  margin-bottom: .35rem;
   display: flex;
   flex-wrap: wrap;
   align-items: end;
@@ -1358,6 +1353,45 @@ button.route-node:hover:not(:disabled) {
   gap: 1rem;
   padding-bottom: .3rem;
   border-bottom: 1px solid var(--line);
+}
+.combat-field {
+  grid-column: 1;
+  grid-row: 2;
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-right: 0;
+  border-bottom: 0;
+  background:
+    radial-gradient(ellipse at 22% 72%, rgba(169, 130, 69, .08), transparent 48%),
+    radial-gradient(ellipse at 78% 28%, rgba(119, 108, 145, .12), transparent 46%),
+    linear-gradient(180deg, rgba(13, 23, 27, .55), rgba(8, 14, 16, .82));
+}
+.combat-side-column {
+  grid-column: 2;
+  grid-row: 2 / 4;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1.1fr) minmax(0, 1fr);
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(13, 23, 27, .72), rgba(8, 14, 16, .92));
+}
+.combat-side-column.is-log-collapsed {
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+.combat-dock {
+  grid-column: 1;
+  grid-row: 3;
+  border: 1px solid var(--line);
+  border-right: 0;
+  padding: .3rem .55rem .35rem;
+  display: grid;
+  gap: .3rem;
+  align-content: start;
+  background: linear-gradient(180deg, transparent, rgba(13, 23, 27, .94) 14%);
+  min-height: 0;
+  overflow: auto;
 }
 .combat-chrome span { display: block; color: var(--ember); margin-bottom: .2rem; }
 .combat-chrome-stats { display: flex; gap: 1.25rem; flex-shrink: 0; }
@@ -1419,6 +1453,7 @@ button.route-node:hover:not(:disabled) {
 /* —— JRPG battlefield —— */
 .combat-battlefield {
   position: relative;
+  height: 100%;
   min-height: 0;
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1569,6 +1604,33 @@ button.standee-figure { cursor: pointer; }
   animation: action-callout-in .28s ease-out, action-callout-out .35s ease-in .55s forwards;
   z-index: 2;
 }
+.standee-idle-intent {
+  margin: 0 0 .32rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #c5dce8;
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-size: .68rem;
+  line-height: 1.3;
+  letter-spacing: .03em;
+  text-transform: none;
+  text-wrap: balance;
+}
+.combat-standee.is-imminent .standee-idle-intent {
+  color: #e8b4a8;
+}
+.combat-standee.is-imminent .standee-figure {
+  box-shadow: 0 0 0 1px rgba(224, 160, 144, .55), 0 0 18px rgba(168, 93, 82, .22);
+}
+.standee-imminent-label {
+  display: inline-block;
+  margin-top: .15rem;
+  color: #e0a090;
+  font-size: .68rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
 .standee-ap-badge {
   position: absolute;
   right: -.15rem;
@@ -1661,8 +1723,8 @@ button.standee-figure { cursor: pointer; }
   min-height: 0;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  border-left: 1px solid var(--line);
-  background: linear-gradient(180deg, rgba(13, 23, 27, .72), rgba(8, 14, 16, .88));
+  border-left: 0;
+  background: transparent;
 }
 .initiative-tracker-head {
   padding: .55rem .65rem .45rem;
@@ -1724,7 +1786,16 @@ button.standee-figure { cursor: pointer; }
   transform: translateX(0);
   animation: initiative-now-in .34s ease-out;
 }
-.initiative-row.is-next { opacity: .88; }
+.initiative-row.is-imminent {
+  border-color: rgba(224, 160, 144, .45);
+  background: rgba(168, 93, 82, .12);
+}
+.initiative-imminent-label {
+  color: #e0a090;
+  font-size: .68rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
 .initiative-row:not(.is-now):not(.is-next) { opacity: .62; }
 .initiative-row.is-playback-focus {
   border-color: rgba(224, 160, 144, .65);
@@ -1996,24 +2067,142 @@ button.party-card:hover:not(:disabled) { background: linear-gradient(145deg, #1f
   color: var(--muted);
 }
 .compact-meter strong { justify-self: end; color: var(--ash); font-size: .7rem; }
-.compact-meter-track { height: .22rem; background: rgba(255, 255, 255, .08); }
-.compact-meter-track i { display: block; height: 100%; background: var(--ember); }
+.compact-meter-track {
+  display: flex;
+  height: .22rem;
+  background: rgba(255, 255, 255, .08);
+  overflow: hidden;
+}
+.compact-meter-track i { display: block; height: 100%; flex: 0 0 auto; background: var(--ember); }
 .compact-meter-track i.blood { background: var(--blood); }
 .compact-meter-track i.aether { background: var(--aether); }
 .compact-meter-track i.iron { background: var(--iron); }
 .compact-meter-track i.gloom { background: var(--gloom); }
+/* Pending card cost — trailing segment of the current fill, read as spend */
+.compact-meter-track i.is-spend.aether { background: color-mix(in srgb, var(--aether) 35%, var(--night)); box-shadow: inset 0 0 0 1px rgba(125, 169, 189, .35); }
+.compact-meter-track i.is-spend.iron { background: color-mix(in srgb, var(--iron) 35%, var(--night)); box-shadow: inset 0 0 0 1px rgba(155, 168, 161, .35); }
+.compact-meter.is-spending strong { color: var(--ember); }
 
-.combat-dock {
-  border-top: 1px solid var(--line);
-  padding-top: .3rem;
-  display: grid;
-  gap: .3rem;
-  background: linear-gradient(180deg, transparent, rgba(13, 23, 27, .94) 14%);
+.combat-dock-main {
+  min-width: 0;
   min-height: 0;
-  overflow: hidden;
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: .3rem;
+  align-content: start;
 }
 .combat-dock.is-waiting { padding-top: .3rem; }
+.combat-dock.is-engage .combat-dock-main {
+  display: grid;
+  gap: .55rem;
+  justify-items: center;
+  padding: .45rem .2rem .55rem;
+}
+.engage-prompt {
+  max-width: 36rem;
+  text-align: center;
+}
+.engage-row { display: flex; justify-content: center; }
+.engage-button {
+  min-width: 10rem;
+  padding: .7rem 1.4rem;
+  font-size: 1rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.combat-stage.is-awaiting-engage .combat-dock .hand-rail,
+.combat-stage.is-awaiting-engage .combat-dock .dock-controls { display: none; }
 .waiting-line { margin: 0; color: var(--muted); font-style: italic; }
+
+.combat-fact-log {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  border-top: 1px solid var(--line);
+  background: rgba(8, 14, 16, .35);
+}
+.combat-fact-log.is-collapsed {
+  grid-template-rows: auto;
+}
+.combat-fact-log-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  width: 100%;
+  margin: 0;
+  padding: .45rem .65rem .4rem;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, .06);
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.combat-fact-log-toggle:hover {
+  background: rgba(217, 154, 78, .08);
+  color: inherit;
+  transform: none;
+}
+.combat-fact-log.is-collapsed .combat-fact-log-toggle {
+  border-bottom: 0;
+}
+.combat-fact-log-toggle h2 {
+  margin: 0;
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-size: .68rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--ember);
+}
+.combat-fact-log-chevron {
+  flex-shrink: 0;
+  color: var(--muted);
+  font-size: .85rem;
+  line-height: 1;
+}
+.combat-fact-log-body {
+  min-height: 0;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+}
+.combat-fact-log-list {
+  list-style: none;
+  margin: 0;
+  padding: .45rem .65rem .55rem;
+  overflow-y: auto;
+  display: grid;
+  gap: .4rem;
+  align-content: start;
+}
+.combat-fact-log-list li,
+.combat-fact-log-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: .72rem;
+  line-height: 1.4;
+  border-left: 1px solid var(--brass);
+  padding-left: .55rem;
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+}
+.combat-fact-log-empty {
+  margin: 0;
+  padding: .45rem .65rem .55rem;
+  font-style: italic;
+  border-left-color: rgba(255, 255, 255, .12);
+}
+.combat-fact-log-list .fact-log-row.is-loot-notable,
+.combat-fact-log-list li.is-loot-notable { font-weight: 600; color: var(--ink); }
+.combat-fact-log-list li.is-rarity-imbued.is-loot-notable { border-left-color: #5a9e9a; border-left-width: 3px; }
+.combat-fact-log-list li.is-rarity-rare.is-loot-notable { border-left-color: #c4a35a; border-left-width: 4px; }
+.combat-fact-log-list li.is-rarity-legendary.is-loot-notable { border-left-color: var(--ember); border-left-width: 5px; }
+.combat-fact-log-list li.is-loot-cursed { border-left-style: dashed; }
 .dock-controls {
   display: flex;
   flex-wrap: wrap;
@@ -2055,12 +2244,15 @@ button.end-turn.is-urgent {
   padding: .1rem .05rem 0;
   min-height: 0;
   align-items: stretch;
+  align-self: stretch;
 }
 .hand-card {
   flex: 0 0 10.25rem;
   width: 10.25rem;
   min-height: 0;
-  max-height: 6.8rem;
+  max-height: none;
+  height: 100%;
+  max-height: 9.5rem;
   padding: .4rem .55rem .35rem;
   background:
     linear-gradient(180deg, rgba(217, 154, 78, .1), transparent 32%),
@@ -2160,14 +2352,36 @@ button.end-turn.is-urgent {
 @keyframes playback-pulse { 0%, 100% { opacity: .45; transform: scale(.85); } 50% { opacity: 1; transform: scale(1); } }
 
 @media (max-width: 960px) {
-  .combat-main {
+  .combat-stage {
     grid-template-columns: 1fr;
-    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr) auto;
+  }
+  .combat-chrome {
+    grid-column: 1;
+  }
+  .combat-field {
+    grid-column: 1;
+    grid-row: 2;
+    border-right: 1px solid var(--line);
+  }
+  .combat-dock {
+    grid-column: 1;
+    grid-row: 3;
+    border-right: 1px solid var(--line);
+  }
+  .combat-side-column {
+    grid-column: 1;
+    grid-row: 4;
+    border-left: 1px solid var(--line);
+    grid-template-rows: auto auto;
+    max-height: none;
   }
   .initiative-tracker {
     border-left: 0;
-    border-top: 1px solid var(--line);
     max-height: 9.5rem;
+  }
+  .combat-fact-log {
+    max-height: 7.5rem;
   }
   .initiative-list {
     display: flex;

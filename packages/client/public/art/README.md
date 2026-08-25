@@ -12,6 +12,7 @@ Serve from Vite `public/` (stable URL = path under this folder):
 
 ```text
 packages/client/public/art/
+  brand/nightfall-lantern-mark.webp    # Way lantern UI mark (sidebar + splash)
   heroes/{classId}.svg|png|webp
   enemies/{definitionId}.svg|png|webp
   entities/{definitionId}.svg|png|webp

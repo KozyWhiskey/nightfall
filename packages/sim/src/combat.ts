@@ -696,6 +696,7 @@ export function startCombat(snapshot: MutableSnapshot, pack: ValidatedContentPac
       supplyUsed: false,
       retainRefillUsedHeroIds: [],
       bossTurn: 0,
+      awaitingEngage: true,
       outcome: "active"
     };
     for (const enemyCombatant of sorted.filter((entry) => entry.side === "enemies")) revealIntent(snapshot, enemyCombatant, findEnemyDefinition(pack, enemyCombatant), context);
@@ -723,7 +724,6 @@ export function startCombat(snapshot: MutableSnapshot, pack: ValidatedContentPac
       if (run.flags.includes(flag)) { addBlock(snapshot, hero, 3, "rest_keep_watch", "ownerNextTurn"); run.flags = run.flags.filter((entry) => entry !== flag); }
     }
     emitFact(context, snapshot.revision, "combat_started", `${encounterId.replaceAll("_", " ")} began.`, { encounterId, timelineSize: sorted.length, markedCarrier: carrier !== undefined });
-  advanceUntilHero(snapshot, pack, context);
 }
 
 function activeHero(snapshot: MutableSnapshot, actorId: string | undefined): { actor: MutableCombatant; resource: DeepMutable<{ heroId: string; ap: number; mana: number; stamina: number }> } | ReasonCode {
@@ -766,6 +766,14 @@ function playDefinition(snapshot: MutableSnapshot, actor: MutableCombatant, reso
 export function applyCombatCommand(snapshot: MutableSnapshot, command: CommandEnvelope, pack: ValidatedContentPack, context: SimulationContext): ReasonCode | undefined {
   const combat = combatOf(snapshot);
     if (combat.outcome !== "active") return "invalid_phase";
+    if (command.type === "engageCombat") {
+      if (!combat.awaitingEngage) return "invalid_phase";
+      combat.awaitingEngage = false;
+      emitFact(context, snapshot.revision, "combat_engaged", "The expedition engaged.", { encounterId: combat.encounterId });
+      advanceUntilHero(snapshot, pack, context);
+      return undefined;
+    }
+    if (combat.awaitingEngage) return "invalid_phase";
     const active = activeHero(snapshot, command.actorId);
     if (typeof active === "string") return active;
     const targetId = typeof command.payload.targetId === "string" ? command.payload.targetId : undefined;

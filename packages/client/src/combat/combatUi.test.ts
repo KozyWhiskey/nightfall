@@ -5,6 +5,7 @@ import {
   defenseCoverageWindows,
   enemiesActedBetween,
   enemyDefenseCoverageText,
+  enemyIdsBeforeNextHero,
   guardLabelsFor,
   heroDefenseCoverageText,
   intentSummary
@@ -59,6 +60,7 @@ function snapshot(partial: Partial<CombatSnapshot> & Pick<
     supplyUsed: false,
     retainRefillUsedHeroIds: [],
     bossTurn: 0,
+    awaitingEngage: false,
     outcome: "active",
     ...partial
   };
@@ -111,6 +113,46 @@ describe("enemiesActedBetween", () => {
     };
 
     expect(enemiesActedBetween(previous, next)).toEqual(["enemy-1", "enemy-2"]);
+  });
+
+  it("includes the opening actor when Engage advances from awaitingEngage", () => {
+    const previous = {
+      timeline: ["enemy-1", "enemy-2", "hero-a", "hero-b"],
+      timelineCursor: 0,
+      activeCombatantId: "enemy-1",
+      round: 1,
+      awaitingEngage: true,
+      combatants: [...combatants]
+    };
+    const next = {
+      timeline: ["enemy-1", "enemy-2", "hero-a", "hero-b"],
+      timelineCursor: 2,
+      activeCombatantId: "hero-a",
+      round: 1,
+      awaitingEngage: false,
+      combatants: [...combatants]
+    };
+    expect(enemiesActedBetween(previous, next)).toEqual(["enemy-1", "enemy-2"]);
+  });
+});
+
+describe("enemyIdsBeforeNextHero", () => {
+  it("collects enemies from the current cursor until the next hero", () => {
+    const combat = {
+      timeline: ["enemy-1", "enemy-2", "hero-a", "hero-b"],
+      timelineCursor: 0,
+      combatants: [...combatants]
+    };
+    expect([...enemyIdsBeforeNextHero(combat)]).toEqual(["enemy-1", "enemy-2"]);
+  });
+
+  it("returns empty when a hero holds the cursor", () => {
+    const combat = {
+      timeline: [...timeline],
+      timelineCursor: 0,
+      combatants: [...combatants]
+    };
+    expect([...enemyIdsBeforeNextHero(combat)]).toEqual([]);
   });
 });
 

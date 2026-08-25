@@ -9,6 +9,7 @@ import { CombatBattlefield } from "./CombatBattlefield.js";
 import { InitiativeTracker } from "./InitiativeTracker.js";
 import { markedCarrierFieldStatus } from "./carrierChaseUi.js";
 import { useTurnPlayback } from "./useTurnPlayback.js";
+import { presentLootFact } from "../lootFactUi.js";
 
 type ViewProps = { snapshot: GameSnapshot; send: (type: CommandType, payload: Record<string, unknown>, actorId?: string) => Promise<void> };
 
@@ -32,6 +33,7 @@ export function CombatView({ snapshot, send }: ViewProps) {
   const [supplyId, setSupplyId] = useState("");
   const [pending, setPending] = useState<PendingCombatAction | null>(null);
   const [linkedCombatantId, setLinkedCombatantId] = useState<string | null>(null);
+  const [combatLogOpen, setCombatLogOpen] = useState(true);
   const linkClearTimerRef = useRef<number | null>(null);
 
   const handleLinkCombatant = (combatantId: string | null) => {
@@ -52,8 +54,9 @@ export function CombatView({ snapshot, send }: ViewProps) {
   const selectedSupplyId = supplies.some((item) => item.instanceId === supplyId) ? supplyId : (supplies[0]?.instanceId ?? "");
   const zoneCount = (zone: "draw" | "discard" | "exhaust") => combat.cards.filter((card) => card.ownerId === active.id && card.zone === zone).length;
   const heroTurn = active.side === "heroes";
+  const awaitingEngage = combat.awaitingEngage === true;
   const playback = useTurnPlayback(combat, snapshot.revision);
-  const interactionLocked = playback.busy;
+  const interactionLocked = playback.busy || awaitingEngage;
 
   useEffect(() => { setPending(null); setLinkedCombatantId(null); }, [snapshot.revision, combat.activeCombatantId]);
   useEffect(() => {
@@ -68,6 +71,16 @@ export function CombatView({ snapshot, send }: ViewProps) {
       : pending.kind === "basicAttack" || (pending.kind === "card" && pending.targetSpec === "enemy") ? "enemy"
         : pending.kind === "supply" || (pending.kind === "card" && pending.targetSpec === "ally") ? "ally"
           : null;
+
+  const pendingResourceSpend = (() => {
+    if (pending?.kind !== "card" || interactionLocked) return undefined;
+    const card = hand.find((entry) => entry.cardInstanceId === pending.cardInstanceId);
+    if (card === undefined) return undefined;
+    const mana = card.presentation.manaCost;
+    const stamina = card.presentation.staminaCost;
+    if (mana <= 0 && stamina <= 0) return undefined;
+    return { heroId: active.id, mana, stamina };
+  })();
 
   const playCardAt = (cardInstanceId: string, targetId?: string) => {
     void send("playCard", { cardInstanceId, ...(targetId === undefined ? {} : { targetId }) }, active.id);
@@ -132,22 +145,23 @@ export function CombatView({ snapshot, send }: ViewProps) {
     ? combat.combatants.find((entry) => entry.id === playback.actingCombatantId)
     : undefined;
 
-  const turnStatusLabel = playback.busy
-    ? "Enemy turn"
-    : heroTurn
-      ? "Your turn"
-      : "Resolving";
+  const turnStatusLabel = awaitingEngage
+    ? "Opening"
+    : playback.busy
+      ? "Enemy turn"
+      : heroTurn
+        ? "Your turn"
+        : "Resolving";
 
-  const recentCombatFacts = snapshot.latestFacts.slice(-3).reverse();
-  const latestFact = recentCombatFacts[0];
+  const recentCombatFacts = snapshot.latestFacts.slice(-8).reverse();
   const carrierStatus = markedCarrierFieldStatus(combat);
 
-  return <main className={`combat-stage${targetMode !== null ? ` is-targeting-${targetMode}` : ""}${playback.busy ? " is-playback" : ""}`} aria-label={`Combat: ${encounterLabel}`}>
+  return <main className={`combat-stage${targetMode !== null ? ` is-targeting-${targetMode}` : ""}${playback.busy ? " is-playback" : ""}${awaitingEngage ? " is-awaiting-engage" : ""}`} aria-label={`Combat: ${encounterLabel}`}>
     <header className="combat-chrome">
       <div><span>Combat · round {combat.round}</span><h1>{encounterLabel}</h1></div>
       <div className="combat-chrome-stats" aria-label="Turn status">
         <div><span>Run Gloom</span><strong>{run.runGloom}</strong></div>
-        <div><span>{turnStatusLabel}</span><strong>{actingCombatant?.name ?? active.name}{heroTurn && activeResources !== undefined && !playback.busy ? ` · ${activeResources.ap} AP` : ""}</strong></div>
+        <div><span>{turnStatusLabel}</span><strong>{awaitingEngage ? "Read the field" : `${actingCombatant?.name ?? active.name}${heroTurn && activeResources !== undefined && !playback.busy ? ` · ${activeResources.ap} AP` : ""}`}</strong></div>
       </div>
       {carrierStatus !== undefined && (
         <p className="combat-carrier-status" role="status">{carrierStatus}</p>
@@ -155,28 +169,66 @@ export function CombatView({ snapshot, send }: ViewProps) {
     </header>
 
     <div className="combat-field">
-      <div className="combat-main">
-        <CombatBattlefield
-          combat={combat}
-          heroes={run.heroes}
-          holdings={run.holdings}
-          playbackActingId={playback.actingCombatantId}
-          playbackIntent={playback.actingIntent}
-          targetMode={targetMode}
-          linkedCombatantId={linkedCombatantId}
-          onLinkCombatant={handleLinkCombatant}
-          onCombatantActivate={onCombatantActivate}
-        />
-        <InitiativeTracker
-          combat={combat}
-          playbackFocusId={playback.trackerFocusId}
-          linkedCombatantId={linkedCombatantId}
-          onLinkCombatant={handleLinkCombatant}
-        />
-      </div>
+      <CombatBattlefield
+        combat={combat}
+        heroes={run.heroes}
+        holdings={run.holdings}
+        playbackActingId={playback.actingCombatantId}
+        playbackIntent={playback.actingIntent}
+        targetMode={targetMode}
+        linkedCombatantId={linkedCombatantId}
+        pendingResourceSpend={pendingResourceSpend}
+        onLinkCombatant={handleLinkCombatant}
+        onCombatantActivate={onCombatantActivate}
+      />
     </div>
 
-    <footer className={`combat-dock${!heroTurn || playback.busy ? " is-waiting" : ""}${prompt !== null ? " is-prompting" : ""}`}>
+    <aside className={`combat-side-column${combatLogOpen ? "" : " is-log-collapsed"}`} aria-label="Turn order and combat log">
+      <InitiativeTracker
+        combat={combat}
+        playbackFocusId={playback.trackerFocusId}
+        linkedCombatantId={linkedCombatantId}
+        onLinkCombatant={handleLinkCombatant}
+      />
+      <section className={`combat-fact-log${combatLogOpen ? "" : " is-collapsed"}`} aria-live="polite" aria-label="Combat log">
+        <button
+          type="button"
+          className="combat-fact-log-toggle"
+          aria-expanded={combatLogOpen}
+          aria-controls="combat-fact-log-body"
+          onClick={() => setCombatLogOpen((open) => !open)}
+        >
+          <h2>Combat Log</h2>
+          <span className="combat-fact-log-chevron" aria-hidden="true">{combatLogOpen ? "▾" : "▸"}</span>
+        </button>
+        <div id="combat-fact-log-body" className="combat-fact-log-body" hidden={!combatLogOpen}>
+          {recentCombatFacts.length === 0
+            ? <p className="combat-fact-log-empty">No actions yet this fight.</p>
+            : <ol className="combat-fact-log-list">
+              {recentCombatFacts.map((fact) => {
+                const presented = presentLootFact(snapshot, fact);
+                return <li key={fact.id} className={presented.className}>
+                  {presented.glyph !== undefined && presented.rarityLabel !== undefined && (
+                    <span className="fact-log-rarity" aria-hidden="true">{presented.glyph} {presented.rarityLabel}</span>
+                  )}
+                  <span className="fact-log-message">{presented.message}</span>
+                </li>;
+              })}
+            </ol>}
+        </div>
+      </section>
+    </aside>
+
+    <footer className={`combat-dock${awaitingEngage || !heroTurn || playback.busy ? " is-waiting" : ""}${prompt !== null ? " is-prompting" : ""}${awaitingEngage ? " is-engage" : ""}`}>
+      <div className="combat-dock-main">
+      {awaitingEngage ? <>
+        <div className="dock-prompt is-active engage-prompt" role="status" aria-live="polite">
+          <span>Turn order and enemy intents are set. Engage when ready — hostiles who won initiative will act first.</span>
+        </div>
+        <div className="engage-row">
+          <button type="button" className="primary engage-button" onClick={() => void send("engageCombat", {})}>Engage</button>
+        </div>
+      </> : <>
       <div className={`dock-prompt${prompt !== null ? " is-active" : ""}`} role="status" aria-live="polite">
         {prompt !== null ? <>
           <span>{prompt}</span>
@@ -186,9 +238,7 @@ export function CombatView({ snapshot, send }: ViewProps) {
             )}
             <button type="button" className="quiet" onClick={() => setPending(null)}>Cancel · Esc</button>
           </div>
-        </> : latestFact !== undefined
-          ? <span className="dock-prompt-fact">{latestFact.message}</span>
-          : <span className="dock-prompt-idle">Play a card or Basic · click a standee when a target is needed</span>}
+        </> : <span className="dock-prompt-idle">Play a card or Basic · click a standee when a target is needed</span>}
       </div>
 
       {playback.busy && actingCombatant !== undefined ? <p className="waiting-line playback-line">
@@ -266,6 +316,8 @@ export function CombatView({ snapshot, send }: ViewProps) {
           })}
         </div>
       </>}
+      </>}
+      </div>
     </footer>
   </main>;
 }

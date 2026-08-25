@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { EquipmentSlot } from "@nightfall/contracts";
 import { build1Pack } from "@nightfall/content";
 import { applyCommand, cloneSnapshot, createContext, createInitialSnapshot, createItemInstance, finishCombatIfNeeded, refillForFixture, reviveForFixture, startCombat, totalBlockForFixture, type MutableSnapshot } from "@nightfall/sim";
-import { accept, command, createEmbarkedSnapshot, startFixtureCombat } from "./index.js";
+import { accept, command, createEmbarkedSnapshot, engageFixtureCombat, startFixtureCombat } from "./index.js";
 
 function setActiveHero(snapshot: MutableSnapshot, heroId: string): void {
   const combat = snapshot.activeRun?.combat;
@@ -38,7 +38,9 @@ function startCombatWithVessel(heroClass: "vanguard" | "aether_weaver", definiti
   if (extraLearned.length > 0) hero.learnedCardIds = [...hero.learnedCardIds, ...extraLearned];
   equipVessel(snapshot, hero.id, definitionId, slot);
   snapshot.activeRun.phase = "combat";
-  startCombat(snapshot, build1Pack, "roadside_trail", createContext({ combatInitiative: [0.9, 0.9, 0, 0], combatIntent: [0, 0] }));
+  const context = createContext({ combatInitiative: [0.9, 0.9, 0, 0], combatIntent: [0, 0] });
+  startCombat(snapshot, build1Pack, "roadside_trail", context);
+  engageFixtureCombat(snapshot, build1Pack, context);
   return snapshot;
 }
 
@@ -52,7 +54,9 @@ function startCombatWithLearned(heroClass: "vanguard" | "aether_weaver", extraLe
   const hero = snapshot.activeRun.heroes.find((entry) => entry.classId === heroClass)!;
   hero.learnedCardIds = [...hero.learnedCardIds, ...extraLearned];
   snapshot.activeRun.phase = "combat";
-  startCombat(snapshot, build1Pack, "roadside_trail", createContext(roadsideStreams));
+  const context = createContext(roadsideStreams);
+  startCombat(snapshot, build1Pack, "roadside_trail", context);
+  engageFixtureCombat(snapshot, build1Pack, context);
   return snapshot;
 }
 
@@ -608,7 +612,9 @@ describe("Build 1 combat acceptance", () => {
       const vanguard = snapshot.activeRun.heroes.find((hero) => hero.classId === "vanguard")!;
       vanguard.learnedCardIds = [...vanguard.learnedCardIds, "crack_open"];
       snapshot.activeRun.phase = "combat";
-      startCombat(snapshot, build1Pack, "roadside_trail", createContext({ combatInitiative: [0.9, 0.9, 0, 0], combatIntent: [0, 0] }));
+      const context = createContext({ combatInitiative: [0.9, 0.9, 0, 0], combatIntent: [0, 0] });
+      startCombat(snapshot, build1Pack, "roadside_trail", context);
+      engageFixtureCombat(snapshot, build1Pack, context);
       const combat = snapshot.activeRun.combat!;
       const crack = combat.cards.find((card) => card.ownerId === vanguard.id && card.definitionId === "crack_open")!;
       crack.zone = "hand";
@@ -636,10 +642,12 @@ describe("Build 1 combat acceptance", () => {
     const vanguardHero = snapshot0.activeRun.heroes.find((hero) => hero.classId === "vanguard")!;
     vanguardHero.learnedCardIds = [...vanguardHero.learnedCardIds, "still_wall"];
     snapshot0.activeRun.phase = "combat";
-    startCombat(snapshot0, build1Pack, "roadside_trail", createContext({
+    const wallContext = createContext({
       combatInitiative: [0.9, 0.9, 0, 0],
       combatIntent: [0, 0, 0, 0, 0, 0, 0, 0]
-    }));
+    });
+    startCombat(snapshot0, build1Pack, "roadside_trail", wallContext);
+    engageFixtureCombat(snapshot0, build1Pack, wallContext);
     let snapshot = snapshot0;
     const run = snapshot.activeRun!;
     const combat = run.combat!;
@@ -686,10 +694,12 @@ describe("Build 1 combat acceptance", () => {
     const vanguardHero = snapshot0.activeRun.heroes.find((hero) => hero.classId === "vanguard")!;
     vanguardHero.learnedCardIds = [...vanguardHero.learnedCardIds, "still_wall"];
     snapshot0.activeRun.phase = "combat";
-    startCombat(snapshot0, build1Pack, "roadside_trail", createContext({
+    const wallContext = createContext({
       combatInitiative: [0.9, 0.9, 0, 0],
       combatIntent: [0, 0, 0, 0, 0, 0, 0, 0]
-    }));
+    });
+    startCombat(snapshot0, build1Pack, "roadside_trail", wallContext);
+    engageFixtureCombat(snapshot0, build1Pack, wallContext);
     let snapshot = snapshot0;
     const run = snapshot.activeRun!;
     const combat = run.combat!;
@@ -723,5 +733,42 @@ describe("Build 1 combat acceptance", () => {
     expect(afterSecond.combatants.find((entry) => entry.id === vanguard.id)!.hp).toBe(20);
     expect(afterSecond.combatants.find((entry) => entry.id === hounds[0]!.id)!.conditions.some((entry) => entry.id === "weakened")).toBe(true);
     expect(afterSecond.combatants.find((entry) => entry.id === hounds[1]!.id)!.conditions.some((entry) => entry.id === "weakened")).toBe(false);
+  });
+
+  it("SIM-C13 enemy-first open pauses until Engage; opening damage waits for acknowledgement", () => {
+    const enemyFirst = { combatInitiative: [0, 0, 0.9, 0.9] as const, combatIntent: [0, 0] as const };
+    const paused = startFixtureCombat(build1Pack, "roadside_trail", { forcedStreams: enemyFirst, autoEngage: false });
+    const combat = paused.activeRun!.combat!;
+    expect(combat.awaitingEngage).toBe(true);
+    expect(combat.intents.length).toBeGreaterThanOrEqual(2);
+    const lead = combat.combatants.find((entry) => entry.id === combat.activeCombatantId)!;
+    expect(lead.side).toBe("enemies");
+    const hpBefore = Object.fromEntries(combat.combatants.filter((entry) => entry.side === "heroes").map((entry) => [entry.id, entry.hp]));
+    const rejected = applyCommand(paused, command(paused, "playCard", { cardInstanceId: "missing" }, combat.combatants.find((entry) => entry.side === "heroes")!.id), build1Pack);
+    expect(rejected.status).toBe("rejected");
+    if (rejected.status === "rejected") expect(rejected.reasonCode).toBe("invalid_phase");
+
+    const engaged = accept(paused, command(paused, "engageCombat"), build1Pack, enemyFirst) as MutableSnapshot;
+    const after = engaged.activeRun!.combat!;
+    expect(after.awaitingEngage).toBe(false);
+    expect(after.combatants.find((entry) => entry.id === after.activeCombatantId)!.side).toBe("heroes");
+    const hpChanged = after.combatants.some((entry) => entry.side === "heroes" && entry.hp !== hpBefore[entry.id]);
+    expect(hpChanged).toBe(true);
+  });
+
+  it("SIM-C14 hero-first open still requires Engage before the first hero turn begins", () => {
+    const heroFirst = { combatInitiative: [0.9, 0.9, 0, 0] as const, combatIntent: [0, 0] as const };
+    const paused = startFixtureCombat(build1Pack, "roadside_trail", { forcedStreams: heroFirst, autoEngage: false });
+    const combat = paused.activeRun!.combat!;
+    expect(combat.awaitingEngage).toBe(true);
+    expect(combat.combatants.find((entry) => entry.id === combat.activeCombatantId)!.side).toBe("heroes");
+    expect(combat.heroResources.every((entry) => entry.ap === 0)).toBe(true);
+
+    const engaged = accept(paused, command(paused, "engageCombat"), build1Pack, heroFirst) as MutableSnapshot;
+    const after = engaged.activeRun!.combat!;
+    expect(after.awaitingEngage).toBe(false);
+    const active = after.combatants.find((entry) => entry.id === after.activeCombatantId)!;
+    expect(active.side).toBe("heroes");
+    expect(after.heroResources.find((entry) => entry.heroId === active.id)!.ap).toBeGreaterThan(0);
   });
 });

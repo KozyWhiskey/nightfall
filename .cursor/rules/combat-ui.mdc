@@ -1,13 +1,13 @@
 ---
 description: Combat UI is a snapshot renderer; no local rules
-globs: packages/client/src/combat/**/*.tsx,packages/client/src/combat/**/*.ts
+globs: packages/client/src/combat/**/*.tsx, packages/client/src/combat/**/*.ts
 alwaysApply: false
 ---
 
 # Combat UI
 
-Render the authoritative combat snapshot. Submit only `playCard`, `useBasicAttack`, `useBasicBlock`, `useSupply`, and `endTurn`.
+Render the authoritative combat snapshot. Submit only `engageCombat`, `playCard`, `useBasicAttack`, `useBasicBlock`, `useSupply`, and `endTurn`.
 
-Must stay visible: current actor, AP, HP/Mana/Stamina, card costs, initiative timeline, next enemy intents, Basics, draw/discard/exhaust counts. Color is never the only signal.
+While `awaitingEngage` is true, show the Engage acknowledgement and lock other combat actions. Must stay visible: current actor, AP, HP/Mana/Stamina, card costs, initiative timeline, next enemy intents (timeline and hostile standees), Basics, draw/discard/exhaust counts. Color is never the only signal.
 
-Do not compute damage, initiative, or targeting legality locally. Interaction lock during turn playback is view state only.
+Do not compute damage, initiative, or targeting legality locally. Interaction lock during turn playback and the Engage beat is view state only.

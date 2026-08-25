@@ -42,6 +42,7 @@ function combat(combatants: CombatantSnapshot[]): CombatSnapshot {
     timeline: combatants.map((entry) => entry.id),
     timelineCursor: 0,
     activeCombatantId: combatants[0]!.id,
+    awaitingEngage: false,
     combatants,
     heroResources: [],
     cards: [],

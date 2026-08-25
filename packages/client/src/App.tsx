@@ -30,6 +30,7 @@ import {
 } from "./rewardUi.js";
 import { presentLootFact } from "./lootFactUi.js";
 import { carrierRecoveredAnnouncement } from "./combat/carrierChaseUi.js";
+import { buildingCost, canAffordBuilding, CONSTRUCTIBLE_BUILDING_IDS } from "./havenBuildUi.js";
 import { useNightfall } from "./store.js";
 
 function PillarRail({ lit }: { lit: number }) {
@@ -101,7 +102,23 @@ function HavenView({ snapshot, send }: ViewProps) {
           <h2>Stores</h2>
           <div className="resource-grid">{Object.entries(snapshot.haven.resources).map(([id, amount]) => <div key={id}><span>{titleCase(id)}</span><strong>{amount}</strong></div>)}</div>
           <h2>Haven works</h2>
-          <div className="building-list">{snapshot.haven.buildings.map((building) => <article key={building.id}><div><strong>{titleCase(building.id)}</strong><span>{titleCase(building.state)}</span></div>{building.state === "available" && ["cinder_forge", "quiet_house", "wardyard"].includes(building.id) && <button onClick={() => { if (globalThis.confirm(`Construct ${titleCase(building.id)} with returned materials?`)) void send("buildBuilding", { buildingId: building.id }); }}>Construct</button>}</article>)}</div>
+          <div className="building-list">{snapshot.haven.buildings.map((building) => {
+            const cost = building.state === "available" && CONSTRUCTIBLE_BUILDING_IDS.includes(building.id) ? buildingCost(building.id) : undefined;
+            const affordable = cost !== undefined && canAffordBuilding(snapshot.haven.resources, cost);
+            const costText = cost === undefined ? undefined : costLabel(cost);
+            return <article key={building.id}>
+              <div>
+                <strong>{titleCase(building.id)}</strong>
+                <span>{titleCase(building.state)}</span>
+                {costText !== undefined && <span>{costText}</span>}
+              </div>
+              {cost !== undefined && <button
+                disabled={!affordable}
+                title={affordable ? `Construct for ${costText}` : `Need ${costText}`}
+                onClick={() => { if (globalThis.confirm(`Construct ${titleCase(building.id)} for ${costText}?`)) void send("buildBuilding", { buildingId: building.id }); }}
+              >Construct</button>}
+            </article>;
+          })}</div>
           {snapshot.haven.litPillars < 10 && snapshot.haven.resources.ember_shard > 0 && <button className="haven-inline-action" onClick={() => { if (globalThis.confirm("Spend one Ember Shard to relight a pillar permanently?")) void send("repairPillar"); }}>Relight one pillar</button>}
         </section>
       </div>
@@ -510,7 +527,7 @@ export function App() {
   useEffect(() => { void load(); }, [load]);
   useEffect(() => { setSidebarOverride(null); }, [snapshot?.view]);
   const recentFacts = useMemo(() => facts.slice(-5).reverse(), [facts]);
-  if (loading) return <div className="splash"><span className="lantern-mark" />Reading the Pillarhouse ledger…</div>;
+  if (loading) return <div className="splash"><img className="lantern-mark" src="/art/brand/nightfall-lantern-mark.webp" alt="" />Reading the Pillarhouse ledger…</div>;
   if (snapshot === undefined) return <div className="splash error"><h1>The local host is dark</h1><p>{error}</p><button onClick={() => void load()}>Try again</button></div>;
   const inCombat = snapshot.view === "combat";
   const railCollapsed = sidebarOverride ?? (inCombat || sidebarCollapsed);
@@ -526,7 +543,7 @@ export function App() {
     <aside className={`way-lantern${railCollapsed ? " is-collapsed" : ""}`} aria-label="Way lantern">
       <div className="lantern-top">
         <div className="brand">
-          <span className="lantern-mark" aria-hidden="true" />
+          <img className="lantern-mark" src="/art/brand/nightfall-lantern-mark.webp" alt="" aria-hidden="true" />
           <div className="brand-copy"><small>Vesper field ledger</small><strong>Nightfall</strong></div>
         </div>
         <button type="button" className="rail-toggle quiet" onClick={toggleSidebar} aria-expanded={!railCollapsed} aria-controls="way-lantern-body" title={railCollapsed ? "Expand sidebar" : "Collapse sidebar"}>

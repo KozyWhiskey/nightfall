@@ -15,7 +15,12 @@ async function accepted(host: LocalGameHost, snapshot: GameSnapshot, type: Comma
 async function playCombat(host: LocalGameHost, initial: GameSnapshot): Promise<GameSnapshot> {
   let snapshot = initial; const blockedTurns = new Set<string>();
   for (let step = 0; step < 500 && snapshot.view === "combat"; step += 1) {
-    const combat = snapshot.activeRun!.combat!; const actor = combat.combatants.find((entry) => entry.id === combat.activeCombatantId)!;
+    const combat = snapshot.activeRun!.combat!;
+    if (combat.awaitingEngage) {
+      snapshot = await accepted(host, snapshot, "engageCombat");
+      continue;
+    }
+    const actor = combat.combatants.find((entry) => entry.id === combat.activeCombatantId)!;
     if (actor.side !== "heroes") throw new Error("Host returned control during an enemy turn");
     const resources = combat.heroResources.find((entry) => entry.heroId === actor.id)!;
     if (resources.ap <= 0) { snapshot = await accepted(host, snapshot, "endTurn", {}, actor.id); continue; }

@@ -32,7 +32,7 @@ function dispatch(snapshot: MutableSnapshot, command: CommandEnvelope, pack: Val
   }
   if (command.type === "commitEmbark") return commitEmbark(snapshot, pack, context);
   if (command.type === "chooseMapEdge") return chooseMapEdge(snapshot, pack, command, context);
-  if (["playCard", "useBasicAttack", "useBasicBlock", "useSupply", "endTurn"].includes(command.type)) return combatCommand(snapshot, pack, command, context);
+  if (["engageCombat", "playCard", "useBasicAttack", "useBasicBlock", "useSupply", "endTurn"].includes(command.type)) return combatCommand(snapshot, pack, command, context);
   if (command.type === "chooseReward") return chooseReward(snapshot, command, context);
   if (command.type === "leaveReward") return leaveReward(snapshot, context);
   if (command.type === "chooseEventOption") return chooseEvent(snapshot, pack, command, context);
