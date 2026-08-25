@@ -831,7 +831,7 @@ describe("Build 1 combat acceptance", () => {
     const combat = snapshot.activeRun!.combat!;
     const heroes = combat.combatants.filter((entry) => entry.side === "heroes");
     expect(heroes.every((hero) => !hero.conditions.some((entry) => entry.id === "strain"))).toBe(true);
-    expect(heroes.every((hero) => totalBlockForFixture(hero) === 3)).toBe(true);
+    expect(heroes.every((hero) => totalBlockForFixture(snapshot, hero.id) === 3)).toBe(true);
   });
 
   it("SIM-C15 Keep Watch exempts the targeted hero from Pressing Strain after Rest", () => {
@@ -843,7 +843,7 @@ describe("Build 1 combat acceptance", () => {
     const weaver = snapshot.activeRun!.heroes.find((hero) => hero.classId === "aether_weaver")!;
     const combatant = snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === weaver.id)!;
     expect(combatant.conditions.some((entry) => entry.id === "strain")).toBe(false);
-    expect(totalBlockForFixture(combatant)).toBe(3);
+    expect(totalBlockForFixture(snapshot, weaver.id)).toBe(3);
   });
 
   it("SIM-C15 Keep Watch still slices one injury on the targeted hero", () => {
@@ -869,8 +869,8 @@ describe("Build 1 combat acceptance", () => {
         forcedStreams: choirStreams
       });
       const heroes = snapshot.activeRun!.combat!.combatants.filter((entry) => entry.side === "heroes");
-      expect(heroes.some((hero) => hero.conditions.some((entry) => entry.id === "strain")), optionId).toBe(true);
-      expect(heroes.every((hero) => totalBlockForFixture(hero) === 0), optionId).toBe(true);
+      expect(heroes.some((hero) => hero.conditions.some((entry) => entry.id === "strain"))).toBe(true);
+      expect(heroes.every((hero) => totalBlockForFixture(snapshot, hero.id) === 0)).toBe(true);
     }
   });
 });
