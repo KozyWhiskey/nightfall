@@ -84,9 +84,12 @@ function endUntilCompleted(snapshot: MutableSnapshot, combatantId: string, compl
   return next;
 }
 
-function keepWatchThenCombat(options: {
+function restThenCombat(options: {
   runGloom: number;
+  optionId: "keep_watch" | "resupply" | "tend_wounds";
   flags?: readonly string[];
+  weaverInjuries?: readonly string[];
+  vanguardInjuries?: readonly string[];
   forcedStreams?: { combatInitiative: readonly number[]; combatIntent: readonly number[]; combatTarget?: readonly number[] };
 }): MutableSnapshot {
   const snapshot = cloneSnapshot(createEmbarkedSnapshot(build1Pack, 12345));
@@ -98,6 +101,10 @@ function keepWatchThenCombat(options: {
   run.phase = "rest";
   run.runGloom = options.runGloom;
   if (options.flags !== undefined && options.flags.length > 0) run.flags = [...run.flags, ...options.flags];
+  const weaver = run.heroes.find((hero) => hero.classId === "aether_weaver")!;
+  const vanguard = run.heroes.find((hero) => hero.classId === "vanguard")!;
+  if (options.weaverInjuries !== undefined) weaver.injuries = [...options.weaverInjuries];
+  if (options.vanguardInjuries !== undefined) vanguard.injuries = [...options.vanguardInjuries];
   run.pendingDecision = {
     kind: "rest",
     baseGloomReduction: 12,
@@ -108,14 +115,23 @@ function keepWatchThenCombat(options: {
     ]
   };
   snapshot.view = "rest";
-  const weaver = run.heroes.find((hero) => hero.classId === "aether_weaver")!;
-  const afterRest = accept(snapshot, command(snapshot, "chooseRestOption", { optionId: "keep_watch", heroId: weaver.id }), build1Pack) as MutableSnapshot;
+  const afterRest = accept(snapshot, command(snapshot, "chooseRestOption", { optionId: options.optionId, heroId: weaver.id }), build1Pack) as MutableSnapshot;
   afterRest.activeRun!.phase = "combat";
   const streams = options.forcedStreams ?? roadsideStreams;
   const context = createContext(streams);
   startCombat(afterRest, build1Pack, "roadside_trail", context);
   engageFixtureCombat(afterRest, build1Pack, context);
   return afterRest;
+}
+
+function keepWatchThenCombat(options: {
+  runGloom: number;
+  flags?: readonly string[];
+  weaverInjuries?: readonly string[];
+  vanguardInjuries?: readonly string[];
+  forcedStreams?: { combatInitiative: readonly number[]; combatIntent: readonly number[]; combatTarget?: readonly number[] };
+}): MutableSnapshot {
+  return restThenCombat({ ...options, optionId: "keep_watch" });
 }
 
 describe("Build 1 combat acceptance", () => {
@@ -828,5 +844,33 @@ describe("Build 1 combat acceptance", () => {
     const combatant = snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === weaver.id)!;
     expect(combatant.conditions.some((entry) => entry.id === "strain")).toBe(false);
     expect(totalBlockForFixture(combatant)).toBe(3);
+  });
+
+  it("SIM-C15 Keep Watch still slices one injury on the targeted hero", () => {
+    const snapshot = keepWatchThenCombat({
+      runGloom: 0,
+      weaverInjuries: ["injured", "wounded"],
+      vanguardInjuries: ["drained"],
+      forcedStreams: { ...roadsideStreams, combatTarget: [0] }
+    });
+    const weaver = snapshot.activeRun!.heroes.find((hero) => hero.classId === "aether_weaver")!;
+    const vanguard = snapshot.activeRun!.heroes.find((hero) => hero.classId === "vanguard")!;
+    expect(weaver.injuries).toEqual(["wounded"]);
+    expect(vanguard.injuries).toEqual(["drained"]);
+  });
+
+  it("SIM-C15 Resupply and Tend Wounds do not clear pending Choir Strain", () => {
+    const choirStreams = { ...roadsideStreams, combatTarget: [0] as const };
+    for (const optionId of ["resupply", "tend_wounds"] as const) {
+      const snapshot = restThenCombat({
+        runGloom: 0,
+        optionId,
+        flags: ["next_combat_one_strain"],
+        forcedStreams: choirStreams
+      });
+      const heroes = snapshot.activeRun!.combat!.combatants.filter((entry) => entry.side === "heroes");
+      expect(heroes.some((hero) => hero.conditions.some((entry) => entry.id === "strain")), optionId).toBe(true);
+      expect(heroes.every((hero) => totalBlockForFixture(hero) === 0), optionId).toBe(true);
+    }
   });
 });
