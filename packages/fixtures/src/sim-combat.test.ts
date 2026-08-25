@@ -120,7 +120,6 @@ function restThenCombat(options: {
   const streams = options.forcedStreams ?? roadsideStreams;
   const context = createContext(streams);
   startCombat(afterRest, build1Pack, "roadside_trail", context);
-  engageFixtureCombat(afterRest, build1Pack, context);
   return afterRest;
 }
 
@@ -823,27 +822,31 @@ describe("Build 1 combat acceptance", () => {
   });
 
   it("SIM-C15 Keep Watch removes Choir Strain before the next combat", () => {
+    const streams = { ...roadsideStreams, combatTarget: [0] };
     const snapshot = keepWatchThenCombat({
       runGloom: 0,
       flags: ["next_combat_one_strain"],
-      forcedStreams: { ...roadsideStreams, combatTarget: [0] }
+      forcedStreams: streams
     });
     const combat = snapshot.activeRun!.combat!;
     const heroes = combat.combatants.filter((entry) => entry.side === "heroes");
-    expect(heroes.every((hero) => !hero.conditions.some((entry) => entry.id === "strain"))).toBe(true);
     expect(heroes.every((hero) => totalBlockForFixture(snapshot, hero.id) === 3)).toBe(true);
+    engageFixtureCombat(snapshot, build1Pack, createContext(streams));
+    expect(heroes.every((hero) => !hero.conditions.some((entry) => entry.id === "strain"))).toBe(true);
   });
 
   it("SIM-C15 Keep Watch exempts the targeted hero from Pressing Strain after Rest", () => {
+    const streams = { ...roadsideStreams, combatTarget: [0] };
     const snapshot = keepWatchThenCombat({
       runGloom: 82,
-      forcedStreams: { ...roadsideStreams, combatTarget: [0] }
+      forcedStreams: streams
     });
     expect(snapshot.activeRun!.runGloom).toBe(70);
     const weaver = snapshot.activeRun!.heroes.find((hero) => hero.classId === "aether_weaver")!;
+    expect(totalBlockForFixture(snapshot, weaver.id)).toBe(3);
+    engageFixtureCombat(snapshot, build1Pack, createContext(streams));
     const combatant = snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === weaver.id)!;
     expect(combatant.conditions.some((entry) => entry.id === "strain")).toBe(false);
-    expect(totalBlockForFixture(snapshot, weaver.id)).toBe(3);
   });
 
   it("SIM-C15 Keep Watch still slices one injury on the targeted hero", () => {
