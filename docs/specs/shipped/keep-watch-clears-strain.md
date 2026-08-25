@@ -1,7 +1,7 @@
 # Keep Watch must remove Strain before the next combat
 
 **Kind:** bug  
-**Status:** approved  
+**Status:** shipped  
 **Last updated:** 2026-08-25  
 **Decision Register:** `run.rest`  
 **Related:** [Gloom, Light, and Rest](../../systems/gloom-and-stress.md), [Combat Simulation Contract](../../systems/combat-simulation-contract.md) (Strain row), [Interaction Contract](../../ux/interaction-contract.md) (Rest / `chooseRestOption`)
@@ -37,12 +37,12 @@ Keep Watch's Strain removal is distinct from Rest's base `-12` Run Gloom. If Glo
 
 ## Acceptance criteria
 
-- [ ] `SIM-C15` Choir flag: `runGloom: 0`, `next_combat_one_strain` set, no injuries, `chooseRestOption` `keep_watch` targeting Weaver, then `startCombat` `roadside_trail`. No hero has Strain. Both heroes still have 3 Keep Watch Block.
-- [ ] `SIM-C15` Gloom exemption: `runGloom: 82` (Rest → 70, still Pressing), Keep Watch targeting Weaver, `combatTarget` forced to Weaver. Weaver has no Strain at combat start. Keep Watch Block still applies.
-- [ ] Injury slice on the targeted hero is unchanged. Resupply / Tend Wounds do not clear Strain.
-- [ ] `pnpm test` covers the change
-- [ ] `pnpm check:boundaries` still passes
-- [ ] Out of scope listed below is untouched
+- [x] `SIM-C15` Choir flag: `runGloom: 0`, `next_combat_one_strain` set, no injuries, `chooseRestOption` `keep_watch` targeting Weaver, then `startCombat` `roadside_trail`. No hero has Strain. Both heroes still have 3 Keep Watch Block.
+- [x] `SIM-C15` Gloom exemption: `runGloom: 82` (Rest → 70, still Pressing), Keep Watch targeting Weaver, `combatTarget` forced to Weaver. Weaver has no Strain at combat start. Keep Watch Block still applies.
+- [x] Injury slice on the targeted hero is unchanged. Resupply / Tend Wounds do not clear Strain.
+- [x] `pnpm test` covers the change
+- [x] `pnpm check:boundaries` still passes
+- [x] Out of scope listed below is untouched
 
 ## Out of scope
 
