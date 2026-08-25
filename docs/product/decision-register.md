@@ -1,7 +1,7 @@
 # Decision Register
 
 **Status:** Active authority index
-**Last updated:** 2026-07-19
+**Last updated:** 2026-08-24
 
 ## Purpose and authority
 
@@ -44,6 +44,7 @@ Every approved decision that changes a rule must update this register and its ow
 | `balance.initial` | Initial tuning and completion targets | First-expedition rewards, events, crafting, temporary progression, and test ranges use the accepted tuning table; values change only through recorded playtest rationale. | [Vertical-Slice Tuning](../content/expeditions/vertical-slice-tuning.md) |
 | `content.pack` | Loadable first content pack | Build 1 loads only the accepted finite registry: starter cards, scrolls, vessels including three armor pieces, affixes, encounters, events, recipes, boss, and route IDs. Umbra scrolls are held-only. | [Build 1 Content Registry](../content/vertical-slice-content-registry.md) |
 | `build.acceptance` | Build 1 completion bar | Build 1 must satisfy the accepted deterministic scenarios, player journeys, offline terminal flows, and tuning gate before completion. | [Build 1 Acceptance Plan](build-1-acceptance-plan.md) |
+| `identity.local_profiles` | Local LAN survivor profiles | Friends-hosted LAN play uses local survivor profiles (display name, optional PIN, durable host session). Each profile has one isolated campaign. A new campaign must name the Haven before the Hub. Cloud/OAuth/email accounts, public identity, co-op lobby, friends lists, and Need/Greed remain deferred. Content/schema mismatch must not terminate the host; the save is preserved and reported. | [Local identity, campaign resume, and founding](../specs/shipped/local-identity-resume-founding.md) |
 
 ## Decision lifecycle
 

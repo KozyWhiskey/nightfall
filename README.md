@@ -23,7 +23,7 @@ pnpm check         # typecheck + lint + test + build
 
 - UI: [http://192.168.68.71:3050](http://192.168.68.71:3050) or [http://127.0.0.1:3050](http://127.0.0.1:3050)
 - Host health: [http://127.0.0.1:3051/api/health](http://127.0.0.1:3051/api/health)
-- Persistence: SQLite at `.nightfall/nightfall.sqlite` (WAL). After a content-pack change the host refuses to open a mismatched save — `rm -rf .nightfall` starts a new campaign.
+- Persistence: SQLite at `apps/local-host/.nightfall/nightfall.sqlite` (WAL). A content-pack change no longer kills the host; that profile's save is kept and explained in the UI.
 - Optional: `NIGHTFALL_SEED` for a **new** save only. Existing `.nightfall` files ignore it.
 - LAN: open Vite on `:3050` (`hermes.local` is allowed). During `pnpm dev` the host stays on loopback `:3051`; the Vite proxy forwards `/api`.
 

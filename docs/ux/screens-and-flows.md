@@ -1,7 +1,7 @@
 # Screens and Flows
 
 **Status:** Supporting screen inventory
-**Last updated:** 2026-08-20
+**Last updated:** 2026-08-24
 
 **Build 1 authority:** [Interaction Contract](interaction-contract.md) owns visible information, legal commands, confirmation, and persistence behavior. This document is a navigation inventory only; older future rows must not widen Build 1 scope. Event layout detail lives in [Readability — Event presentation](readability.md#event-presentation).
 
@@ -14,7 +14,8 @@ Define the player-facing screen map implied by the bible — independent of the 
 ## Primary flow
 
 ```text
-Boot → Haven Hub → (Intro: settler Ember gift on first leave)
+Boot → Title / Profiles → Founding (name the Haven)
+    → Haven Hub → (Intro: settler Ember gift on first leave)
     → Embark (Gate + loadout) → Leg Map ⇄ Node Screens
     → Waypoint (chest + Ember rite option) → Return / Wipe → Haven Hub
 ```
@@ -23,6 +24,10 @@ Boot → Haven Hub → (Intro: settler Ember gift on first leave)
 
 | Screen | Purpose |
 |--------|---------|
+| **Title** | Continue the bound campaign, start a new one (confirm if one exists), or manage local profiles |
+| **Profiles** | Create, select, rename, and delete local survivor identities on this LAN host |
+| **Founding** | Name the Haven before the Hub; fixed Vanguard + Aether Weaver pair |
+| **Mismatch** | Pack/schema cannot open this profile's save; file kept unless the player confirms a new campaign |
 | **Haven Hub** | Name, **pillar HP** (ring of 10), Gloom meter, buildings, roster entry, embark |
 | **World / Path Map** | Claimed waypoints, available Gates (fresh Haven: one path); can overlay Haven Hub |
 | **Building Board** | Unlock/upgrade buildings; see opportunity cost |

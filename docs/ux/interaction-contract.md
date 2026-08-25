@@ -1,7 +1,7 @@
 # Build 1 Interaction Contract
 
 **Status:** Accepted Build 1 UX contract
-**Last updated:** 2026-07-19
+**Last updated:** 2026-08-24
 **Authority:** UI presents simulation snapshots and submits commands. It never calculates a gameplay outcome.
 **Related:** [Expedition State Machine](../systems/expedition-state-machine.md), [Combat Simulation Contract](../systems/combat-simulation-contract.md), [Embark and Loadout](../systems/embark-and-loadout.md), [Post-Return Haven Flow](post-return-flow.md)
 
@@ -21,7 +21,11 @@ This is the player-facing counterpart to the simulation contracts. Every Build 1
 
 | View | Must show | May submit | Confirmation / persistence |
 |---|---|---|---|
-| Haven Hub | Haven name; lit/max pillars; Haven Gloom; building availability/cost; survivors; stored holdings; claimed waypoint count | `openEmbark`, `openBuilding`, `repairPillar`, `acknowledgeMemorial` | Pillar repair confirms its Ember Shard spend; accepted Haven action autosaves. |
+| Title | Continue (Haven name, view, revision) when a session has a campaign; New campaign; entry to profiles | Host protocol only: continue, new campaign, open profiles | New campaign confirms if a campaign already exists. |
+| Profiles | Local profile names; PIN-gated vs open; empty state | Host protocol: create, select, rename, delete | Delete confirms by typing the profile name. |
+| Founding | That this Haven is unnamed; the fixed Vanguard + Aether Weaver pair will hold it; name field | `nameHaven` | Naming founds the settlement and autosaves. |
+| Mismatch | That the save cannot be opened (pack changed or schema unmigratable); the file is still on this host | Host protocol: keep file, new campaign after confirm | Confirmed replace archives the old snapshot then founds a new Haven. |
+| Haven Hub | Haven name; lit/max pillars; Haven Gloom; building availability/cost; survivors; stored holdings; claimed waypoint count | `openEmbark`, `openBuilding`, `repairPillar`, `acknowledgeMemorial`, `nameHaven` (rename) | Pillar repair confirms its Ember Shard spend; accepted Haven action autosaves. |
 | Embark | Fixed Vanguard/Weaver pair; all nine equipment slots; committed gear/scrolls/supplies; current holdings; wipe-risk warning; route start | `equipItem`, `unequipItem`, `learnScroll`, `commitEmbark`, `cancelEmbark` | Embark confirmation shows committed possessions and creates the run. |
 | Leg Map | Current node; legal outgoing edges; visible node category; fogged-but-known category where applicable; Run Gloom and next band; route progress | `chooseMapEdge` | Edge choice acts immediately, adds +5 Gloom, and autosaves at node entry/resolution. |
 | Combat | Complete initiative timeline; active actor; AP/HP/Mana/Stamina; hand and all card costs; Basics; supply button/one-per-combat state; visible enemy intents; draw/discard/exhaust counts; condition/tooltips | `engageCombat`, `playCard`, `useBasicAttack`, `useBasicBlock`, `useSupply`, `endTurn` | Opening Engage acknowledges the timeline before the first resolved action. Combat actions act immediately afterward. Only irreversible single-use supply consumption receives a brief, dismissible warning on first use, not a blocking modal. |

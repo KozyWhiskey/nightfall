@@ -74,7 +74,7 @@ pnpm dev                  # host :3051 + Vite :3050
 pnpm check                # typecheck + lint + test + build
 ```
 
-Persistence is SQLite at `.nightfall/nightfall.sqlite`. Optional `NIGHTFALL_SEED` for a deterministic **new** save only. Host protocol, env vars, content-mismatch reset, and loot pipeline: [`docs/architecture/local-development.md`](docs/architecture/local-development.md).
+Persistence is SQLite at `apps/local-host/.nightfall/nightfall.sqlite` (not the repo-root folder; `NIGHTFALL_SAVE_PATH` overrides). Optional `NIGHTFALL_SEED` for a deterministic **new** save on a profile that has none. Host protocol, env vars, content-mismatch reporting, and loot pipeline: [`docs/architecture/local-development.md`](docs/architecture/local-development.md).
 
 ## Agent loop
 

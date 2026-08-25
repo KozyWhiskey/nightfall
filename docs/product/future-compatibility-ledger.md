@@ -11,7 +11,7 @@ Build 1 is not a disposable prototype. This ledger identifies the extension seam
 | Future area | Build 1 must preserve | Explicitly not Build 1 |
 |---|---|---|
 | Three-hero parties and recruits | Party/entity collections, targeting, initiative, rewards, and UI layouts must not assume exactly two entities even though only two are playable. | Party selection, recruitment, third class implementation. |
-| Co-op and host authority | All simulation changes enter as validated commands against authoritative state; deterministic RNG and snapshots are serializable. | Accounts, lobby, WebSocket play, ownership UI, Need/Greed. |
+| Co-op and host authority | All simulation changes enter as validated commands against authoritative state; deterministic RNG and snapshots are serializable. Local LAN profiles and session cookies are the Build 1 identity surface. | Cloud/OAuth/email accounts, lobby, WebSocket play, ownership UI, Need/Greed. |
 | Summons and Blood magic | Combat entities support owner, tags, duration, HP, initiative, targetability, declarative HP/resource costs, and conditional effects. | Summon cards, lifesteal, Blood school content, special-case rules engine. |
 | Full inventory and storage | Stable item IDs, item locations, stack quantities, ownership, and equipment-slot IDs; inventory views derive from these records. | Bag grids, weight, storage limits, sorting mechanics, trading UI. |
 | More gear and classes | Data-driven slot, class, school, card-source, affix, and effect definitions; unknown IDs fail validation safely. | Shadowblade, subclasses, broad armor catalog, every school. |
@@ -31,7 +31,7 @@ Build 1 is not a disposable prototype. This ledger identifies the extension seam
 
 ## Backlog (intentionally undesigned)
 
-- Co-op, accounts, and async Haven visibility.
+- Co-op, cloud/OAuth/email accounts, and async Haven visibility.
 - Shadowblade, recruit archetypes, subclasses, and additional schools.
 - Blood magic, lifesteal, summons, permanent auras, and advanced conditions.
 - Shops, Elites, extra regions, bosses, long greed chains, and deep crafting tiers.

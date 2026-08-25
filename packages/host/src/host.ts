@@ -68,6 +68,23 @@ export class LocalGameHost implements GameHost {
     this.#snapshot = snapshot;
   }
 
+  public static bind(store: GameStore, pack: ValidatedContentPack, snapshot: GameSnapshot): LocalGameHost {
+    return new LocalGameHost(store, pack, snapshot);
+  }
+
+  public static async tryOpen(store: GameStore, pack: ValidatedContentPack): Promise<
+    | { status: "ready"; host: LocalGameHost }
+    | { status: "empty" }
+    | { status: "content_mismatch"; snapshot: GameSnapshot }
+    | { status: "save_unmigratable"; snapshot: GameSnapshot }
+  > {
+    const loaded = await store.loadSnapshot();
+    if (loaded === undefined) return { status: "empty" };
+    if (loaded.schemaVersion !== SNAPSHOT_SCHEMA_VERSION) return { status: "save_unmigratable", snapshot: loaded };
+    if (loaded.contentVersion !== pack.contentVersion || loaded.contentHash !== pack.contentHash) return { status: "content_mismatch", snapshot: loaded };
+    return { status: "ready", host: new LocalGameHost(store, pack, loaded) };
+  }
+
   public static async open(store: GameStore, pack: ValidatedContentPack, initialSnapshot: GameSnapshot): Promise<LocalGameHost> {
     const loaded = await store.loadSnapshot();
     const snapshot = loaded ?? initialSnapshot;

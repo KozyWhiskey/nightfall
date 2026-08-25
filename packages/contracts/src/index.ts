@@ -111,6 +111,76 @@ export interface GameHost {
   subscribe(listener: SnapshotListener): Unsubscribe;
 }
 
+export const SESSION_COOKIE_NAME = "nightfall_session";
+export const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+export const PROFILE_NAME_MIN = 2;
+export const PROFILE_NAME_MAX = 40;
+export const PIN_MIN_LENGTH = 4;
+export const PIN_MAX_LENGTH = 8;
+
+export const HOST_REASON_CODES = [
+  "pin_required",
+  "pin_incorrect",
+  "profile_not_found",
+  "display_name_taken",
+  "display_name_invalid",
+  "pin_invalid",
+  "confirm_required",
+  "confirm_mismatch",
+  "unauthenticated",
+  "session_expired",
+  "campaign_unavailable"
+] as const;
+
+export type HostReasonCode = (typeof HOST_REASON_CODES)[number];
+
+export type CampaignBindStatus = "none" | "founding" | "ok" | "content_mismatch" | "save_unmigratable";
+
+export interface LocalProfileSummary {
+  readonly profileId: string;
+  readonly displayName: string;
+  readonly hasPin: boolean;
+  readonly createdAt: number;
+  readonly lastOpenedAt: number;
+  readonly campaignStatus: CampaignBindStatus;
+  readonly havenName?: string;
+  readonly view?: ViewId;
+  readonly revision?: number;
+}
+
+export interface HostHealth {
+  readonly status: "ok";
+  readonly schemaVersion: typeof SNAPSHOT_SCHEMA_VERSION;
+  readonly contentVersion: string;
+  readonly contentHash: string;
+  readonly profileId?: string;
+  readonly displayName?: string;
+  readonly campaignStatus?: CampaignBindStatus;
+  readonly revision?: number;
+  readonly havenName?: string;
+  readonly view?: ViewId;
+}
+
+export interface SessionResponse {
+  readonly authenticated: boolean;
+  readonly profile?: LocalProfileSummary;
+}
+
+export interface SaveCompatibilityReport {
+  readonly reasonCode: "content_mismatch" | "save_unmigratable";
+  readonly schemaVersion: number;
+  readonly contentVersion: string;
+  readonly contentHash: string;
+  readonly packSchemaVersion: typeof SNAPSHOT_SCHEMA_VERSION;
+  readonly packContentVersion: string;
+  readonly packContentHash: string;
+}
+
+export interface HostErrorBody {
+  readonly error: HostReasonCode | ReasonCode;
+  readonly message: string;
+}
+
 export type AttributeId = "vit" | "dex" | "str" | "int";
 
 export interface Attributes {
@@ -505,6 +575,7 @@ export interface ExpeditionRunSnapshot {
 }
 
 export type ViewId =
+  | "founding"
   | "haven"
   | "map"
   | "combat"

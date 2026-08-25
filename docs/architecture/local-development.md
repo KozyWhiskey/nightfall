@@ -14,7 +14,7 @@ This is the developer runbook. [build-1-architecture.md](build-1-architecture.md
 | `@nightfall/content` | Zod-validated Build 1 pack | `build1Pack` (`contentVersion` `nightfall.vslice.1` + SHA-256 `contentHash`) |
 | `@nightfall/sim` | Pure rules | `applyCommand`, `createInitialSnapshot`, combat/loot helpers. No React/DOM/Fastify/SQLite/`Math.random` |
 | `@nightfall/persistence` | SQLite envelopes | `SQLiteGameStore`, `InMemoryGameStore` |
-| `@nightfall/host` | Session + idempotence | `openDefaultLocalGameHost`, `LocalGameHost`, `replayAcceptedCommands` |
+| `@nightfall/host` | Session + idempotence | `openDefaultLocalGameHost`, `LocalGameHost`, `LocalSessionHost`, `replayAcceptedCommands` |
 | `@nightfall/client` | React + Zustand | Snapshots in, `CommandEnvelope` out. No `@nightfall/sim`, `@nightfall/host`, `@nightfall/persistence`, or `@nightfall/content` |
 | `@nightfall/fixtures` | Vitest harness | `startFixtureCombat`, `accept`, `command` |
 | `@nightfall/local-host` | Fastify process | HTTP adapter around `GameHost` |
@@ -27,9 +27,17 @@ Allowed import direction is enforced by `pnpm check:boundaries` (`scripts/check-
 
 | Method | Path | Success | Notes |
 |---|---|---|---|
-| `GET` | `/api/health` | 200 | `{ status, revision, schemaVersion, contentVersion, contentHash }` from the live snapshot |
-| `GET` | `/api/snapshot` | 200 | Full `GameSnapshot`. `cache-control: no-store` |
-| `POST` | `/api/commands` | 200 accepted / 409 rejected / 400 invalid body | Body must include `commandId` (string), `expectedRevision` (number), `type` (string), `payload` (object) |
+| `GET` | `/api/health` | 200 | `{ status: "ok", schemaVersion, contentVersion, contentHash, ...optional session/campaign }` — process is up even with no campaign or a mismatched save |
+| `GET` | `/api/session` | 200 | Current local profile + campaign status, or `authenticated: false` |
+| `GET` | `/api/profiles` | 200 | Local profile list (no PIN hashes) |
+| `POST` | `/api/profiles` | 200 | Create profile `{ displayName, pin? }`; sets session cookie |
+| `POST` | `/api/profiles/:id/select` | 200 | `{ pin? }`; sets session cookie |
+| `PATCH` | `/api/profiles/:id` | 200 | Rename or set/clear PIN |
+| `DELETE` | `/api/profiles/:id` | 200 | `{ confirmName }` must match display name |
+| `POST` | `/api/session/logout` | 200 | Clears session cookie |
+| `POST` | `/api/campaigns/new` | 200 | Founding snapshot; `{ confirmReplace: true }` required if a campaign already exists |
+| `GET` | `/api/snapshot` | 200 | Full `GameSnapshot`. `cache-control: no-store`. 401 without session; 409 mismatch/unmigratable (host stays up) |
+| `POST` | `/api/commands` | 200 accepted / 409 rejected / 400 invalid body | Body must include `commandId` (string), `expectedRevision` (number), `type` (string), `payload` (object). Same session gate as snapshot |
 
 The client (`packages/client/src/transport.ts`) calls relative `/api/*`. Zustand (`packages/client/src/store.ts`) stamps `commandId` and `expectedRevision` from the last snapshot.
 
@@ -43,10 +51,12 @@ Rejected commands do not mutate. Duplicate `commandId` returns the original stor
 |---|---|---|
 | `NIGHTFALL_PORT` | `3050` (`3051` under `pnpm dev`) | Listen port |
 | `NIGHTFALL_HOST` | `127.0.0.1` | Bind address |
-| `NIGHTFALL_SAVE_PATH` | `<cwd>/.nightfall/nightfall.sqlite` | SQLite file (WAL mode) |
+| `NIGHTFALL_SAVE_PATH` | `apps/local-host/.nightfall/nightfall.sqlite` (resolved from `import.meta.url`, not `process.cwd()`) | SQLite file (WAL mode) |
 | `NIGHTFALL_SEED` | unset (crypto seed) | **New save only** — ignored if a snapshot already exists at the save path |
 
-`NIGHTFALL_SEED` must be a safe integer. Invalid values are dropped and a random seed is used.
+`NIGHTFALL_SEED` must be a safe integer. Invalid values are dropped and a random seed is used. It applies only when the **bound profile** has no snapshot yet.
+
+Session cookie: `nightfall_session` (`HttpOnly`, `SameSite=Lax`, 30-day sliding TTL). Not `Secure` — LAN HTTP.
 
 ## Run modes
 
@@ -80,20 +90,13 @@ SQLite is created on first open (`packages/persistence/src/store.ts`). Schema is
 
 On each accepted command the host writes, in one transaction: campaign snapshot JSON, optional `active_run` row (replaced, not versioned), the accepted command record (facts + full result for idempotence), and a `run_record` if the run just became terminal.
 
-Resume loads the latest `active_run` snapshot if present, otherwise `campaign_save`. Build 1 is snapshot + command log, not event sourcing.
+Resume loads the latest `active_run` snapshot if present, otherwise `campaign_save`, **for the bound local profile**. Build 1 is snapshot + command log, not event sourcing. Multiple profiles share one SQLite file and isolate by `profile_id`.
 
-`LocalGameHost.open` **throws** (process will not listen) when:
+`LocalSessionHost.open` **does not throw** for `schemaVersion` ≠ `SNAPSHOT_SCHEMA_VERSION` (`save_unmigratable`) or save `contentVersion`/`contentHash` ≠ current `build1Pack` (`content_mismatch`). The process listens. The bound profile is reported to the UI. The snapshot JSON is preserved. A new campaign on that profile archives the old snapshot and writes a founding snapshot only after explicit confirm.
 
-- `schemaVersion` ≠ `SNAPSHOT_SCHEMA_VERSION` (`save_unmigratable`)
-- save `contentVersion`/`contentHash` ≠ current `build1Pack` (`content_mismatch`)
+A brand-new profile has no campaign until founding (`view: "founding"`, empty Haven name). `nameHaven` names it and enters the Hub. `createInitialSnapshot` remains a founded Haven for fixtures only.
 
-Changing authored content changes `contentHash`. Delete the save directory to start a new campaign after a pack change:
-
-```bash
-rm -rf .nightfall
-```
-
-WAL leaves `.nightfall/nightfall.sqlite-wal` and `-shm`; removing the directory is safer than deleting only the `.sqlite` file.
+If `apps/local-host/.nightfall/nightfall.sqlite` is missing and repo-root `.nightfall/nightfall.sqlite` exists, the host adopts the repo-root file once so cwd-split saves are not orphaned.
 
 ## Loot and affix pipeline
 
@@ -151,9 +154,9 @@ Fixture helpers live in `packages/fixtures/src/index.ts`. Forced named streams a
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| Host exits on boot with `content_mismatch` | Save hash ≠ current pack | `rm -rf .nightfall` (destroys the campaign) |
-| Host exits with `save_unmigratable` | Snapshot schema ≠ `1` | Preserve the file; do not overwrite. Build 1 has no auto-migrator |
-| `NIGHTFALL_SEED` did not stick | Save already exists | Seed applies only when `loadSnapshot()` is empty |
+| Host reports `content_mismatch` in UI | Save hash ≠ current pack | Keep the file. Other profiles still play. New campaign on that profile only after confirm (archives the old snapshot). Do not `rm -rf .nightfall` as the product path |
+| Host reports `save_unmigratable` | Snapshot schema ≠ current `SNAPSHOT_SCHEMA_VERSION` | Preserve the file; Build 1 has no auto-migrator for gameplay schema |
+| `NIGHTFALL_SEED` did not stick | That profile already has a snapshot | Seed applies only when `loadSnapshot()` for the profile is empty |
 | UI on LAN, `/api` fails | Hitting `:3051` from another machine during `pnpm dev` | Use Vite `:3050`; it proxies to loopback host |
 | `crypto.randomUUID is not a function` | Insecure HTTP origin without the store fallback | Already handled in `store.ts`; do not reintroduce `randomUUID()`-only IDs |
 | Client bundle pulls Node APIs | Importing `@nightfall/content` or sim | Copy the needed constants (see `mapGreedUi.ts`) |

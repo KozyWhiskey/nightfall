@@ -2718,3 +2718,144 @@ button.end-turn.is-urgent {
   height: auto;
   max-height: none;
 }
+
+.identity-shell {
+  min-height: 100vh;
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  gap: 1.6rem;
+  padding: 2.4rem 1.25rem 3rem;
+}
+.identity-brand {
+  text-align: center;
+  max-width: 38rem;
+}
+.identity-brand .lantern-mark { width: 4.5rem; height: 4.5rem; margin-bottom: .6rem; }
+.identity-brand h1 { margin-left: auto; margin-right: auto; }
+.identity-lead { color: var(--muted); max-width: 42ch; margin: 0 auto; line-height: 1.45; }
+.identity-panel {
+  width: min(42rem, 100%);
+  background: linear-gradient(180deg, rgba(23, 44, 46, .86), rgba(13, 23, 27, .96));
+  border: 1px solid var(--line);
+  padding: 1.25rem 1.3rem 1.4rem;
+  display: grid;
+  gap: .85rem;
+}
+.identity-panel h2, .identity-panel h3 { margin: 0; }
+.identity-continue strong { font-size: 1.45rem; font-family: Palatino Linotype, Book Antiqua, Georgia, serif; }
+.identity-actions { display: flex; flex-wrap: wrap; gap: .55rem; }
+.identity-profiles { list-style: none; margin: 0; padding: 0; display: grid; gap: .8rem; }
+.identity-profiles li {
+  border: 1px solid var(--line);
+  padding: .85rem .9rem;
+  display: grid;
+  gap: .7rem;
+}
+.identity-profiles li.is-bound { border-color: var(--brass); background: rgba(217, 154, 78, .08); }
+.identity-profiles p { margin: .25rem 0 0; color: var(--muted); font-size: .9rem; }
+.identity-profile-head { display: flex; flex-wrap: wrap; gap: .45rem .55rem; align-items: baseline; }
+.identity-pin-tag {
+  display: inline-block;
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-size: .62rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ember);
+}
+.identity-profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .55rem;
+  align-items: end;
+}
+.identity-confirm {
+  display: grid;
+  gap: .55rem;
+  align-items: start;
+  border-top: 1px solid var(--line);
+  padding-top: .75rem;
+}
+.identity-confirm p { margin: 0; color: var(--muted); }
+.identity-brand h1 { max-width: 18ch; }
+.identity-create {
+  display: grid;
+  gap: 1rem;
+  margin-top: .35rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--line);
+}
+.identity-found { display: grid; gap: 1rem; }
+.identity-rename-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .55rem;
+  align-items: end;
+}
+.identity-panel label, .identity-create label, .identity-found label, .identity-rename {
+  display: grid;
+  gap: .45rem;
+  color: var(--muted);
+  font-size: .78rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  font-family: Consolas, "Cascadia Mono", monospace;
+}
+.identity-confirm-check {
+  display: flex !important;
+  flex-direction: row;
+  align-items: center;
+  gap: .55rem;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-family: inherit !important;
+  font-size: 1rem !important;
+  color: var(--ash);
+  font-weight: 500;
+}
+.identity-panel input, .identity-create input, .identity-found input, .identity-confirm input {
+  min-width: 8rem;
+  padding: .5rem .65rem;
+  background: var(--deep);
+  border: 1px solid var(--line);
+  color: var(--ash);
+}
+.identity-error { color: var(--blood); max-width: 42rem; }
+.identity-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: .9rem;
+  line-height: 1.4;
+  text-transform: none;
+  letter-spacing: 0;
+  font-family: inherit;
+}
+.identity-roster {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .55rem;
+}
+.identity-roster li {
+  border: 1px solid var(--line);
+  padding: .65rem .75rem;
+  display: grid;
+  gap: .15rem;
+}
+.identity-roster span {
+  color: var(--muted);
+  font-size: .78rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  font-family: Consolas, "Cascadia Mono", monospace;
+}
+.identity-continue { box-shadow: inset 0 0 0 1px rgba(217, 154, 78, .18); }
+@media (max-width: 640px) {
+  .identity-shell { padding: 1.4rem .85rem 2rem; }
+  .identity-brand h1 { font-size: 2.6rem; }
+  .identity-profile-actions { flex-direction: column; align-items: stretch; }
+  .identity-panel input { min-width: 0; width: 100%; }
+  .identity-roster { grid-template-columns: 1fr; }
+}

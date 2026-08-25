@@ -1,6 +1,6 @@
 export { buildHeroDeckPreview } from "./deckPreview.js";
 export { applyCommand } from "./engine.js";
-export { createInitialSnapshot, createFoundingParty, createHero, deriveHeroPools } from "./state.js";
+export { createInitialSnapshot, createFoundingSnapshot, createFoundingParty, createHero, deriveHeroPools } from "./state.js";
 export { createNamedRngStates, drawInt, drawUnit, shuffle } from "./rng.js";
 export { startCombat, applyCombatCommand, refillForFixture, reviveForFixture, syncHeroesFromCombat, totalBlockForFixture } from "./combat.js";
 export { finishCombatIfNeeded, wipe } from "./expedition.js";

@@ -23,10 +23,11 @@ function assertExclusiveOwnership(snapshot: MutableSnapshot): void {
 
 function dispatch(snapshot: MutableSnapshot, command: CommandEnvelope, pack: ValidatedContentPack, context: SimulationContext): ReasonCode | undefined {
   if (command.type === "nameHaven") {
-    if (snapshot.activeRun !== undefined || snapshot.view !== "haven") return "invalid_phase";
+    if (snapshot.activeRun !== undefined || (snapshot.view !== "haven" && snapshot.view !== "founding")) return "invalid_phase";
     const name = typeof command.payload.name === "string" ? command.payload.name.trim() : "";
     if (name.length < 2 || name.length > 40) return "invalid_command";
     snapshot.haven.name = name;
+    if (snapshot.view === "founding") snapshot.view = "haven";
     emitFact(context, snapshot.revision, "haven_named", `The Haven is now named ${name}.`, { name });
     return undefined;
   }

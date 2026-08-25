@@ -91,7 +91,7 @@ export function createFoundingParty(pack: ValidatedContentPack, havenId: string,
   return { heroes, holdings };
 }
 
-export function createInitialSnapshot(pack: ValidatedContentPack, rootSeed: number, havenName = "The Last Lantern"): GameSnapshot {
+function createSliceSnapshot(pack: ValidatedContentPack, rootSeed: number, havenName: string, view: "haven" | "founding"): GameSnapshot {
   const havenId = "haven_1";
   const party = createFoundingParty(pack, havenId, 1, rootSeed);
   return {
@@ -131,9 +131,17 @@ export function createInitialSnapshot(pack: ValidatedContentPack, rootSeed: numb
       holdings: party.holdings,
       memorialAcknowledged: true
     },
-    view: "haven",
+    view,
     latestFacts: []
   };
+}
+
+export function createInitialSnapshot(pack: ValidatedContentPack, rootSeed: number, havenName = "The Last Lantern"): GameSnapshot {
+  return createSliceSnapshot(pack, rootSeed, havenName, "haven");
+}
+
+export function createFoundingSnapshot(pack: ValidatedContentPack, rootSeed: number): GameSnapshot {
+  return createSliceSnapshot(pack, rootSeed, "", "founding");
 }
 
 export function createRouteNodes(pack: ValidatedContentPack): RouteNodeSnapshot[] {

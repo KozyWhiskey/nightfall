@@ -1,7 +1,8 @@
 # Build 1 Architecture Decision
 
 **Status:** Accepted Build 1 architecture decision
-**Date:** 2026-07-19
+**Date:** 2026-07-19  
+**Amended:** 2026-08-24 (`identity.local_profiles`)
 **Supersedes:** the Build 1 stack/runtime portions of [Tech Decision](../product/tech-decision.md)
 **Related:** [Decision Register](../product/decision-register.md), [Acceptance Plan](../product/build-1-acceptance-plan.md), [Future Compatibility Ledger](../product/future-compatibility-ledger.md), [Content Data Contract](../systems/content-data-contract.md), [Combat Simulation Contract](../systems/combat-simulation-contract.md)
 
@@ -21,7 +22,7 @@ flowchart LR
   F --> H
 ```
 
-`Fastify` provides only a local Build 1 transport. It does not expose co-op, accounts, WebSockets, cloud sync, or public APIs. A future authoritative network host implements the same host protocol; it does not replace the simulation.
+`Fastify` provides only a local Build 1 transport. It does not expose co-op, cloud accounts, WebSockets, or public APIs. Local survivor profiles and `HttpOnly` session cookies on this host are in scope (`identity.local_profiles`). A future authoritative network host implements the same game command protocol; it does not replace the simulation.
 
 ## Why this architecture
 
@@ -142,7 +143,7 @@ SQLite persists durable envelopes, not a normalized relational copy of every in-
 
 An active save includes `schemaVersion`, `contentVersion`, `contentHash`, root seed, named stream states, revision, campaign/Haven references, route state, holdings, hero snapshots, optional combat snapshot, and accepted command log reference.
 
-Resume restores the latest valid snapshot. The command log supports diagnostics, idempotence, and replay verification; Build 1 is **not** a pure event-sourced system. An unmigratable save is preserved and reported rather than overwritten.
+Resume restores the latest valid snapshot for the bound local profile. The command log supports diagnostics, idempotence, and replay verification; Build 1 is **not** a pure event-sourced system. An unmigratable or content-mismatched save is preserved and reported rather than overwritten, and **the host process stays listening**.
 
 ## Testing and operational guardrails
 
@@ -157,7 +158,7 @@ Resume restores the latest valid snapshot. The command log supports diagnostics,
 
 Build 1 does not implement co-op. Later work may add a remote `GameHost` transport with identity, sessions, ownership, and WebSocket updates. It must retain the same command envelope, snapshot DTOs, simulation package, content validation, RNG ownership, and idempotence rules.
 
-No lobby, account, Need/Greed, or WebSocket code belongs in the Build 1 executable path.
+No lobby, cloud account, Need/Greed, or WebSocket code belongs in the Build 1 executable path. Local LAN profiles and session cookies do.
 
 ## Resolved pre-scaffold corrections
 
@@ -175,7 +176,7 @@ The multi-review identified six product/specification gaps. Each is now resolved
 ## Non-goals
 
 - A browser-only persistence implementation, Web Worker host, WebSocket host, or cloud backend in Build 1.
-- Co-op, accounts, lobby, ownership UI, Need/Greed, or public deployment.
+- Co-op, cloud/OAuth/email accounts, lobby, ownership UI, Need/Greed, or public deployment.
 - Game-engine shells, rollback networking, full event sourcing, or UI-owned gameplay state.
 - A general inventory grid, full armor catalog, additional regions/classes, live AI mechanics, or any deferred feature.
 

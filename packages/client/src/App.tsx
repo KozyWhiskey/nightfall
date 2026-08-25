@@ -32,6 +32,7 @@ import { presentLootFact } from "./lootFactUi.js";
 import { carrierRecoveredAnnouncement } from "./combat/carrierChaseUi.js";
 import { buildingCost, canAffordBuilding, CONSTRUCTIBLE_BUILDING_IDS } from "./havenBuildUi.js";
 import { useNightfall } from "./store.js";
+import { FoundingScreen, MismatchScreen, NewCampaignConfirm, TitleScreen } from "./IdentityScreens.js";
 
 function PillarRail({ lit }: { lit: number }) {
   return <div className="pillar-rail" aria-label={`${lit} of 10 Haven pillars lit`}>
@@ -520,15 +521,63 @@ function CurrentView(props: ViewProps) {
 }
 
 export function App() {
-  const { snapshot, loading, busy, error, facts, load, submit, clearError } = useNightfall();
+  const {
+    snapshot, loading, busy, error, facts, boot, profiles, session, mismatch, mismatchProfile,
+    load, submit, clearError, createProfile, selectProfile, renameProfile, deleteProfile, logout,
+    startNewCampaign, showTitle, continuePlay
+  } = useNightfall();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(readSidebarPreference);
   const [sidebarOverride, setSidebarOverride] = useState<boolean | null>(null);
   const [partyOpen, setPartyOpen] = useState(false);
+  const [newCampaignOpen, setNewCampaignOpen] = useState(false);
   useEffect(() => { void load(); }, [load]);
   useEffect(() => { setSidebarOverride(null); }, [snapshot?.view]);
   const recentFacts = useMemo(() => facts.slice(-5).reverse(), [facts]);
-  if (loading) return <div className="splash"><img className="lantern-mark" src="/art/brand/nightfall-lantern-mark.webp" alt="" />Reading the Pillarhouse ledger…</div>;
+  if (loading || boot === "loading") return <div className="splash"><img className="lantern-mark" src="/art/brand/nightfall-lantern-mark.webp" alt="" />Reading the Pillarhouse ledger…</div>;
+  if (boot === "host_down") return <div className="splash error"><h1>The local host is dark</h1><p>{error}</p><button onClick={() => void load()}>Try again</button></div>;
+  if (newCampaignOpen && session.profile !== undefined) {
+    return <NewCampaignConfirm
+      profile={session.profile}
+      busy={busy}
+      error={error}
+      onConfirm={() => { void startNewCampaign(true).then((ok) => { if (ok) setNewCampaignOpen(false); }); }}
+      onCancel={() => setNewCampaignOpen(false)}
+    />;
+  }
+  if (boot === "mismatch" && mismatch !== undefined && mismatchProfile !== undefined) {
+    return <MismatchScreen
+      mismatch={mismatch}
+      profile={mismatchProfile}
+      busy={busy}
+      error={error}
+      onKeep={() => { void showTitle(); }}
+      onReplace={() => { void startNewCampaign(true); }}
+      onSwitch={() => { void logout(); }}
+    />;
+  }
+  if (boot === "title") {
+    return <TitleScreen
+      profiles={profiles}
+      sessionProfile={session.profile}
+      busy={busy}
+      error={error}
+      onContinue={() => { void continuePlay(); }}
+      onNewCampaign={() => {
+        if (session.profile?.campaignStatus === "ok") setNewCampaignOpen(true);
+        else void startNewCampaign(false);
+      }}
+      onCreate={createProfile}
+      onSelect={selectProfile}
+      onRename={renameProfile}
+      onDelete={deleteProfile}
+      onLogout={() => { void logout(); }}
+      onDismissError={clearError}
+    />;
+  }
   if (snapshot === undefined) return <div className="splash error"><h1>The local host is dark</h1><p>{error}</p><button onClick={() => void load()}>Try again</button></div>;
+  if (snapshot.view === "founding") {
+    return <FoundingScreen busy={busy} error={error} onFound={(name) => { void submit("nameHaven", { name }); }} onSwitch={() => { void showTitle(); }} />;
+  }
   const inCombat = snapshot.view === "combat";
   const railCollapsed = sidebarOverride ?? (inCombat || sidebarCollapsed);
   const toggleSidebar = () => {
@@ -553,6 +602,7 @@ export function App() {
       <div id="way-lantern-body" className="lantern-body" hidden={railCollapsed}>
         <PillarRail lit={snapshot.haven.litPillars} />
         <div className="save-state"><span className={busy ? "pulse" : ""} />{busy ? "Resolving…" : `Saved · revision ${snapshot.revision}`}</div>
+        <button type="button" className="quiet survivors-launch" onClick={() => { void showTitle(); }}>Survivors</button>
         <button type="button" className={`party-launch${partyOpen ? " is-active" : ""}`} onClick={() => setPartyOpen(true)} aria-expanded={partyOpen}>
           Party & packs
         </button>
@@ -573,6 +623,7 @@ export function App() {
         <div className="save-state rail-save" title={busy ? "Resolving…" : `Saved · revision ${snapshot.revision}`}>
           <span className={busy ? "pulse" : ""} />
         </div>
+        <button type="button" className="rail-party" onClick={() => { void showTitle(); }} title="Survivors" aria-label="Open local survivors">S</button>
         <button type="button" className={`rail-party${partyOpen ? " is-active" : ""}`} onClick={() => setPartyOpen(true)} title="Party & packs" aria-label="Open party and packs" aria-expanded={partyOpen}>P</button>
       </div>}
     </aside>

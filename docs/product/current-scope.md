@@ -1,12 +1,12 @@
 # Current Product Scope
 
 **Status:** Locked implementation scope  
-**Last updated:** 2026-07-18  
+**Last updated:** 2026-08-24  
 **Authority:** This document and [Vertical-Slice Handoff](vertical-slice-handoff.md) take precedence when an older design or horizon document conflicts.
 
 ## Build now: polished solo vertical slice
 
-- One saveable, local solo Haven and one Band-1 expedition: [The Unlit Road](../content/expeditions/the-unlit-road.md).
+- One saveable Haven **per local profile** on the LAN host, and one Band-1 expedition: [The Unlit Road](../content/expeditions/the-unlit-road.md). Local profiles are named identities on this machine (optional PIN, durable session), not cloud accounts.
 - A fixed two-hero expedition party: Vanguard and Aether Weaver. Shadowblade remains a canonical follow-on class, not a playable vertical-slice kit.
 - Combat, Event, Rest, Safe Craft, Boss, Waypoint chest, and a one-choice Return leg.
 - One boss: Lantern-Smother. No Elites, Shops, Dire Craft, long greed chains, or Bands 2–3.
@@ -17,7 +17,7 @@
 
 ## Explicitly deferred
 
-- Co-op, player accounts, friend/async Haven lists, Need/Greed, and lobby ownership.
+- Co-op, cloud/OAuth/email player accounts, friend/async Haven lists, Need/Greed, and lobby ownership.
 - Shadowblade implementation, subclasses, new recruit classes, and Umbra learning.
 - Shops, Elites, alternative regions, additional bosses, deeper crafting tiers, and full Haven upgrade trees.
 - General inventory/capacity UI, equipment weight, grids, stacks, and storage logistics.

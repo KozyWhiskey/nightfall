@@ -91,7 +91,7 @@ Pillarhouse starts built. Cinder Forge, Quiet House, and Wardyard are available 
 
 ## Explicit non-goals
 
-- Co-op, player accounts, async Haven list/peek, or mixed-Haven expeditions
+- Co-op, cloud/OAuth/email player accounts, async Haven list/peek, or mixed-Haven expeditions. Local LAN profiles and founding a named Haven are in slice.
 - Shops, Elites, Dire craft, long greed chains, alternative bands, and a full settlement hub
 - Full art/audio production; UI must still be readable and tonally intentional
 - Any feature that needs a second rules engine outside the deterministic simulation path

@@ -13,7 +13,7 @@ Build 1 is complete when a player can repeatedly play the approved solo loop, sa
 
 ### Required
 
-- One local saveable Haven, fixed Vanguard/Aether Weaver pair, and The Unlit Road through boss, waypoint, Return, and Haven results.
+- One local saveable Haven per local profile, fixed Vanguard/Aether Weaver pair, a named Haven before the Hub, and The Unlit Road through boss, waypoint, Return, and Haven results.
 - All accepted Build 1 content registry definitions load and validate from data.
 - Deterministic command/revision/RNG/save behavior and the full wipe/succession path.
 - All required screens and information from the Interaction Contract.
@@ -21,7 +21,7 @@ Build 1 is complete when a player can repeatedly play the approved solo loop, sa
 
 ### Explicitly not required
 
-- Co-op, accounts, cloud sync, networking, player party selection, or recruits.
+- Co-op, cloud/OAuth/email accounts, cloud sync, networking, player party selection, or recruits. Local LAN profiles are required.
 - Shadowblade, subclasses, Umbra learning, summons, Blood magic, Shops, Elites, other regions, or a second boss.
 - Full inventory UI, armor for Legs/Feet, storage constraints, reclaim expeditions, or advanced building tiers.
 - Live OpenRouter generation. A local deterministic Chronicle is required; the optional network enhancement is not.

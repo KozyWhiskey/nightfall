@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@fastify/cookie": "^11.1.2",
     "@fastify/static": "^8.3.0",
     "@nightfall/contracts": "workspace:*",
     "@nightfall/host": "workspace:*",
