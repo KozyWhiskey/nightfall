@@ -84,6 +84,55 @@ function endUntilCompleted(snapshot: MutableSnapshot, combatantId: string, compl
   return next;
 }
 
+function restThenCombat(options: {
+  runGloom: number;
+  optionId: "keep_watch" | "resupply" | "tend_wounds";
+  flags?: readonly string[];
+  weaverInjuries?: readonly string[];
+  vanguardInjuries?: readonly string[];
+  forcedStreams?: { combatInitiative: readonly number[]; combatIntent: readonly number[]; combatTarget?: readonly number[] };
+}): MutableSnapshot {
+  const snapshot = cloneSnapshot(createEmbarkedSnapshot(build1Pack, 12345));
+  const run = snapshot.activeRun!;
+  const restNode = run.nodes.find((entry) => entry.id === "rest");
+  if (restNode === undefined) throw new Error("Expected rest node");
+  restNode.state = "entered";
+  run.currentNodeId = "rest";
+  run.phase = "rest";
+  run.runGloom = options.runGloom;
+  if (options.flags !== undefined && options.flags.length > 0) run.flags = [...run.flags, ...options.flags];
+  const weaver = run.heroes.find((hero) => hero.classId === "aether_weaver")!;
+  const vanguard = run.heroes.find((hero) => hero.classId === "vanguard")!;
+  if (options.weaverInjuries !== undefined) weaver.injuries = [...options.weaverInjuries];
+  if (options.vanguardInjuries !== undefined) vanguard.injuries = [...options.vanguardInjuries];
+  run.pendingDecision = {
+    kind: "rest",
+    baseGloomReduction: 12,
+    modifier: 0,
+    optionIds: ["tend_wounds", "resupply", "keep_watch"],
+    choices: [
+      { id: "keep_watch", label: "Keep Watch", detail: "Remove one temporary injury or Strain from one hero; both heroes start the next combat with 3 Block.", needsHeroTarget: true }
+    ]
+  };
+  snapshot.view = "rest";
+  const afterRest = accept(snapshot, command(snapshot, "chooseRestOption", { optionId: options.optionId, heroId: weaver.id }), build1Pack) as MutableSnapshot;
+  afterRest.activeRun!.phase = "combat";
+  const streams = options.forcedStreams ?? roadsideStreams;
+  const context = createContext(streams);
+  startCombat(afterRest, build1Pack, "roadside_trail", context);
+  return afterRest;
+}
+
+function keepWatchThenCombat(options: {
+  runGloom: number;
+  flags?: readonly string[];
+  weaverInjuries?: readonly string[];
+  vanguardInjuries?: readonly string[];
+  forcedStreams?: { combatInitiative: readonly number[]; combatIntent: readonly number[]; combatTarget?: readonly number[] };
+}): MutableSnapshot {
+  return restThenCombat({ ...options, optionId: "keep_watch" });
+}
+
 describe("Build 1 combat acceptance", () => {
 
   it("SIM-01 resolves the two-Hound opening, Basics, recovery, and Combat 1 reward", () => {
@@ -770,5 +819,61 @@ describe("Build 1 combat acceptance", () => {
     const active = after.combatants.find((entry) => entry.id === after.activeCombatantId)!;
     expect(active.side).toBe("heroes");
     expect(after.heroResources.find((entry) => entry.heroId === active.id)!.ap).toBeGreaterThan(0);
+  });
+
+  it("SIM-C15 Keep Watch removes Choir Strain before the next combat", () => {
+    const streams = { ...roadsideStreams, combatTarget: [0] };
+    const snapshot = keepWatchThenCombat({
+      runGloom: 0,
+      flags: ["next_combat_one_strain"],
+      forcedStreams: streams
+    });
+    const combat = snapshot.activeRun!.combat!;
+    const heroes = combat.combatants.filter((entry) => entry.side === "heroes");
+    expect(heroes.every((hero) => totalBlockForFixture(snapshot, hero.id) === 3)).toBe(true);
+    engageFixtureCombat(snapshot, build1Pack, createContext(streams));
+    expect(heroes.every((hero) => !hero.conditions.some((entry) => entry.id === "strain"))).toBe(true);
+  });
+
+  it("SIM-C15 Keep Watch exempts the targeted hero from Pressing Strain after Rest", () => {
+    const streams = { ...roadsideStreams, combatTarget: [0] };
+    const snapshot = keepWatchThenCombat({
+      runGloom: 82,
+      forcedStreams: streams
+    });
+    expect(snapshot.activeRun!.runGloom).toBe(70);
+    const weaver = snapshot.activeRun!.heroes.find((hero) => hero.classId === "aether_weaver")!;
+    expect(totalBlockForFixture(snapshot, weaver.id)).toBe(3);
+    engageFixtureCombat(snapshot, build1Pack, createContext(streams));
+    const combatant = snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === weaver.id)!;
+    expect(combatant.conditions.some((entry) => entry.id === "strain")).toBe(false);
+  });
+
+  it("SIM-C15 Keep Watch still slices one injury on the targeted hero", () => {
+    const snapshot = keepWatchThenCombat({
+      runGloom: 0,
+      weaverInjuries: ["injured", "wounded"],
+      vanguardInjuries: ["drained"],
+      forcedStreams: { ...roadsideStreams, combatTarget: [0] }
+    });
+    const weaver = snapshot.activeRun!.heroes.find((hero) => hero.classId === "aether_weaver")!;
+    const vanguard = snapshot.activeRun!.heroes.find((hero) => hero.classId === "vanguard")!;
+    expect(weaver.injuries).toEqual(["wounded"]);
+    expect(vanguard.injuries).toEqual(["drained"]);
+  });
+
+  it("SIM-C15 Resupply and Tend Wounds do not clear pending Choir Strain", () => {
+    const choirStreams = { ...roadsideStreams, combatTarget: [0] as const };
+    for (const optionId of ["resupply", "tend_wounds"] as const) {
+      const snapshot = restThenCombat({
+        runGloom: 0,
+        optionId,
+        flags: ["next_combat_one_strain"],
+        forcedStreams: choirStreams
+      });
+      const heroes = snapshot.activeRun!.combat!.combatants.filter((entry) => entry.side === "heroes");
+      expect(heroes.some((hero) => hero.conditions.some((entry) => entry.id === "strain"))).toBe(true);
+      expect(heroes.every((hero) => totalBlockForFixture(snapshot, hero.id) === 0)).toBe(true);
+    }
   });
 });

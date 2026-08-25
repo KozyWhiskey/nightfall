@@ -701,10 +701,15 @@ export function startCombat(snapshot: MutableSnapshot, pack: ValidatedContentPac
     };
     for (const enemyCombatant of sorted.filter((entry) => entry.side === "enemies")) revealIntent(snapshot, enemyCombatant, findEnemyDefinition(pack, enemyCombatant), context);
     if (run.runGloom >= 40) for (const enemyCombatant of sorted.filter((entry) => entry.side === "enemies")) addBlock(snapshot, enemyCombatant, pack.tuning.gloomTouchedBlock, "gloom_touched", "ownerSecondTurn");
-    if (run.runGloom >= 90) for (const hero of sorted.filter((entry) => entry.side === "heroes")) addCondition(hero, "strain", 1, 99);
-    else if (run.runGloom >= 70) {
+    const keepWatchExemptIds = new Set(sorted.filter((entry) => entry.side === "heroes" && run.flags.includes(`keep_watch_strain_exempt_${entry.id}`)).map((entry) => entry.id));
+    if (run.runGloom >= 90) {
+      for (const hero of sorted.filter((entry) => entry.side === "heroes")) {
+        if (!keepWatchExemptIds.has(hero.id)) addCondition(hero, "strain", 1, 99);
+      }
+    } else if (run.runGloom >= 70) {
       const heroes = sorted.filter((entry) => entry.side === "heroes");
-      addCondition(heroes[drawInt(snapshot, "combatTarget", 0, heroes.length - 1, context)]!, "strain", 1, 99);
+      const picked = heroes[drawInt(snapshot, "combatTarget", 0, heroes.length - 1, context)]!;
+      if (!keepWatchExemptIds.has(picked.id)) addCondition(picked, "strain", 1, 99);
     }
     if (run.flags.includes("next_combat_block")) {
       for (const hero of sorted.filter((entry) => entry.side === "heroes")) addBlock(snapshot, hero, 3, "event_start_block", "ownerNextTurn");
@@ -716,12 +721,14 @@ export function startCombat(snapshot: MutableSnapshot, pack: ValidatedContentPac
     }
     if (run.flags.includes("next_combat_one_strain")) {
       const heroes = sorted.filter((entry) => entry.side === "heroes");
-      addCondition(heroes[drawInt(snapshot, "combatTarget", 0, heroes.length - 1, context)]!, "strain", 1, 99);
+      const picked = heroes[drawInt(snapshot, "combatTarget", 0, heroes.length - 1, context)]!;
+      if (!keepWatchExemptIds.has(picked.id)) addCondition(picked, "strain", 1, 99);
       run.flags = run.flags.filter((flag) => flag !== "next_combat_one_strain");
     }
     for (const hero of sorted.filter((entry) => entry.side === "heroes")) {
       const flag = `next_block_${hero.id}`;
       if (run.flags.includes(flag)) { addBlock(snapshot, hero, 3, "rest_keep_watch", "ownerNextTurn"); run.flags = run.flags.filter((entry) => entry !== flag); }
+      run.flags = run.flags.filter((entry) => entry !== `keep_watch_strain_exempt_${hero.id}`);
     }
     emitFact(context, snapshot.revision, "combat_started", `${encounterId.replaceAll("_", " ")} began.`, { encounterId, timelineSize: sorted.length, markedCarrier: carrier !== undefined });
 }

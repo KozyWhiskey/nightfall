@@ -524,7 +524,15 @@ export function chooseRest(snapshot: MutableSnapshot, command: CommandEnvelope, 
   addGloom(snapshot, -(decision.baseGloomReduction - decision.modifier), "rest", context); run.flags = run.flags.filter((flag) => flag !== "courier_escorted");
   if (optionId === "resupply") for (const hero of run.heroes) { hero.mana = hero.maxMana; hero.stamina = hero.maxStamina; }
   else if (optionId === "tend_wounds") { const heroId = typeof command.payload.heroId === "string" ? command.payload.heroId : run.heroes[0]!.id; const hero = run.heroes.find((entry) => entry.id === heroId); if (hero === undefined) return "invalid_target"; hero.hp = Math.min(hero.maxHp, hero.hp + Math.ceil(hero.maxHp * 0.4)); }
-  else { for (const hero of run.heroes) uniquePush(run.flags, `next_block_${hero.id}`); const hero = run.heroes.find((entry) => entry.id === command.payload.heroId) ?? run.heroes[0]; if (hero !== undefined) { hero.injuries = hero.injuries.slice(1); } }
+  else {
+    for (const hero of run.heroes) uniquePush(run.flags, `next_block_${hero.id}`);
+    const hero = run.heroes.find((entry) => entry.id === command.payload.heroId) ?? run.heroes[0];
+    if (hero !== undefined) {
+      hero.injuries = hero.injuries.slice(1);
+      uniquePush(run.flags, `keep_watch_strain_exempt_${hero.id}`);
+    }
+    run.flags = run.flags.filter((flag) => flag !== "next_combat_one_strain");
+  }
   emitFact(context, snapshot.revision, "rest_resolved", `Rest resolved: ${optionId.replaceAll("_", " ")}.`, { optionId, effectiveGloomReduction: decision.baseGloomReduction - decision.modifier }); resolveCurrentNodeToMap(snapshot); return undefined;
 }
 
