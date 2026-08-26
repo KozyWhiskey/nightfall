@@ -153,7 +153,7 @@ export function enemyIdsBeforeNextHero(
     const id = combat.timeline[index]!;
     const combatant = combat.combatants.find((entry) => entry.id === id);
     if (combatant === undefined || !isTimelineCombatant(combatant)) continue;
-    if (combatant.side === "heroes") break;
+    if (combatant.side === "heroes" && combatant.kind === "hero" && !combatant.downed && !combatant.destroyed) break;
     if (combatant.side === "enemies") ids.add(id);
   }
   return ids;

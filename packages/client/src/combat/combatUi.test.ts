@@ -156,6 +156,20 @@ describe("enemyIdsBeforeNextHero", () => {
     };
     expect([...enemyIdsBeforeNextHero(combat)]).toEqual([]);
   });
+
+  it("walks past a Downed hero to later enemies before the next living hero", () => {
+    const combat = {
+      timeline: ["enemy-1", "hero-b", "enemy-2", "hero-a"],
+      timelineCursor: 0,
+      combatants: [
+        combatant("hero-a", "heroes"),
+        combatant("enemy-1", "enemies"),
+        combatant("enemy-2", "enemies"),
+        combatant("hero-b", "heroes", "hero", "hero-b", { downed: true, hp: 0 })
+      ]
+    };
+    expect([...enemyIdsBeforeNextHero(combat)]).toEqual(["enemy-1", "enemy-2"]);
+  });
 });
 
 describe("basicActionReadout", () => {

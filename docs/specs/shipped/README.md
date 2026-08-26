@@ -2,6 +2,7 @@ Shipped specs whose acceptance tests passed. Newest first.
 
 ### Combat rules
 
+- [downed-active-hero-cannot-advance-timeline.md](downed-active-hero-cannot-advance-timeline.md) — Downed active hero skips remaining turn (`bug`)
 - [keep-watch-clears-strain.md](keep-watch-clears-strain.md) — Keep Watch removes Strain before the next combat (`bug`)
 - [combat-engage-open-intent.md](combat-engage-open-intent.md) — Combat waits for Engage before the first resolved action (`enhancement`)
 - [still-wall-weakened-duration.md](still-wall-weakened-duration.md) — Still Wall Weakened lasts until the absorbing enemy's next completed turn (`bug`)
