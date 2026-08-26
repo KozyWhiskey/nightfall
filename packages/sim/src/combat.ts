@@ -856,7 +856,13 @@ export function applyCombatCommand(snapshot: MutableSnapshot, command: CommandEn
       moveCursor(snapshot);
       advanceUntilHero(snapshot, pack, context);
     } else return "invalid_command";
-    checkOutcome(snapshot);
+    if (checkOutcome(snapshot) === "active" && command.type !== "endTurn" && !isAlive(active.actor)) {
+      finishTurn(snapshot, active.actor, context);
+      if (checkOutcome(snapshot) === "active") {
+        moveCursor(snapshot);
+        advanceUntilHero(snapshot, pack, context);
+      }
+    }
   return undefined;
 }
 
