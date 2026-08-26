@@ -942,4 +942,26 @@ describe("Build 1 combat acceptance", () => {
     expect(totalBlockForFixture(snapshot, hound.id)).toBe(4);
     expect(snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === hound.id)!.nextDamageBonus).toBe(2);
   });
+
+  it("SIM-C18 Ash Tonic self-down skips the remaining turn and advances to the next living hero", () => {
+    let snapshot = startFixtureCombat(build1Pack, "roadside_trail", { forcedStreams: roadsideStreams });
+    const run = snapshot.activeRun!;
+    const combat = run.combat!;
+    const weaver = run.heroes.find((hero) => hero.classId === "aether_weaver")!;
+    const vanguard = run.heroes.find((hero) => hero.classId === "vanguard")!;
+    const hounds = combat.combatants.filter((entry) => entry.definitionId === "gloomfang_hound");
+    const tonic = createItemInstance(build1Pack, "ash_tonic", "salvaged", 1, "fixture:ash_tonic", { kind: "held_by_expedition", runId: run.runId });
+    run.holdings.push(tonic as never);
+    combat.timeline = [weaver.id, hounds[0]!.id, vanguard.id, hounds[1]!.id];
+    combat.combatants.find((entry) => entry.id === weaver.id)!.hp = 1;
+    setActiveHero(snapshot, weaver.id);
+    snapshot = accept(snapshot, command(snapshot, "useSupply", { itemId: tonic.instanceId, targetId: weaver.id }, weaver.id), build1Pack, roadsideStreams) as MutableSnapshot;
+    const after = snapshot.activeRun!.combat!;
+    const weaverAfter = after.combatants.find((entry) => entry.id === weaver.id)!;
+    expect(weaverAfter.downed).toBe(true);
+    expect(after.outcome).toBe("active");
+    expect(after.activeCombatantId).toBe(vanguard.id);
+    expect(after.heroResources.find((entry) => entry.heroId === vanguard.id)!.ap).toBeGreaterThan(0);
+    expect(after.combatants.find((entry) => entry.id === hounds[0]!.id)!.turnsCompleted).toBeGreaterThan(0);
+  });
 });
