@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { EquipmentSlot } from "@nightfall/contracts";
 import { build1Pack } from "@nightfall/content";
-import { applyCommand, cloneSnapshot, createContext, createInitialSnapshot, createItemInstance, finishCombatIfNeeded, refillForFixture, reviveForFixture, startCombat, totalBlockForFixture, type MutableSnapshot } from "@nightfall/sim";
+import { applyCommand, cloneSnapshot, createContext, createInitialSnapshot, createItemInstance, finishCombatIfNeeded, intentEffectSummary, refillForFixture, reviveForFixture, startCombat, totalBlockForFixture, type MutableSnapshot } from "@nightfall/sim";
 import { accept, command, createEmbarkedSnapshot, engageFixtureCombat, startFixtureCombat } from "./index.js";
 
 function setActiveHero(snapshot: MutableSnapshot, heroId: string): void {
@@ -875,5 +875,71 @@ describe("Build 1 combat acceptance", () => {
       expect(heroes.some((hero) => hero.conditions.some((entry) => entry.id === "strain"))).toBe(true);
       expect(heroes.every((hero) => totalBlockForFixture(snapshot, hero.id) === 0)).toBe(true);
     }
+  });
+
+  it("SIM-C16 Basic Attack and Block summaries include magnitudes at combat start", () => {
+    const snapshot = startFixtureCombat(build1Pack, "roadside_trail");
+    const combat = snapshot.activeRun!.combat!;
+    const weaver = snapshot.activeRun!.heroes.find((hero) => hero.classId === "aether_weaver")!;
+    const vanguard = snapshot.activeRun!.heroes.find((hero) => hero.classId === "vanguard")!;
+    const weaverBasics = combat.basicActions.find((entry) => entry.heroId === weaver.id)!;
+    const vanguardBasics = combat.basicActions.find((entry) => entry.heroId === vanguard.id)!;
+    expect(weaverBasics.attack.summary).toBe("Deal 3 physical damage");
+    expect(weaverBasics.block.summary).toBe("Gain 4 Block");
+    expect(vanguardBasics.attack.summary).toBe("Deal 5 physical damage");
+    expect(vanguardBasics.block.summary).toBe("Gain 6 Block");
+  });
+
+  it("SIM-C17 Borrowed Fury summary names +2 next hit and charges living enemies", () => {
+    let snapshot = startFixtureCombat(build1Pack, "whisperwood_threshold", {
+      forcedStreams: { combatInitiative: [0.9, 0.9, 0, 0, 0], combatIntent: [0, 0, 0] }
+    });
+    const combat = snapshot.activeRun!.combat!;
+    const hero = combat.combatants.find((entry) => entry.side === "heroes")!;
+    const otherHero = combat.combatants.find((entry) => entry.side === "heroes" && entry.id !== hero.id)!;
+    const chanter = combat.combatants.find((entry) => entry.definitionId === "mist_chanter")!;
+    combat.combatants.filter((entry) => entry.side === "enemies").forEach((entry) => {
+      entry.blockLayers = [{ id: `${entry.id}:test`, sourceId: "test", amount: 8, createdAtRevision: snapshot.revision, expiresAtOwnerTurnStart: 99, special: "normal" }];
+    });
+    const revealed = combat.intents.find((entry) => entry.enemyId === chanter.id)!;
+    revealed.intentId = "lament";
+    revealed.label = "Lament";
+    revealed.magnitude = 3;
+    combat.timeline = [hero.id, chanter.id, ...combat.timeline.filter((id) => id !== hero.id && id !== chanter.id)];
+    setActiveHero(snapshot, hero.id);
+    snapshot = accept(snapshot, command(snapshot, "endTurn", {}, hero.id), build1Pack, { combatIntent: [0] }) as MutableSnapshot;
+    const fury = snapshot.activeRun!.combat!.intents.find((entry) => entry.enemyId === chanter.id)!;
+    expect(fury.intentId).toBe("borrowed_fury");
+    expect(fury.magnitude).toBe(0);
+    expect(fury.summary).toBe("living enemies +2 next hit");
+
+    const after = snapshot.activeRun!.combat!;
+    after.timeline = [otherHero.id, chanter.id, hero.id];
+    setActiveHero(snapshot, otherHero.id);
+    snapshot = accept(snapshot, command(snapshot, "endTurn", {}, otherHero.id), build1Pack) as MutableSnapshot;
+    const livingEnemies = snapshot.activeRun!.combat!.combatants.filter((entry) => entry.side === "enemies" && !entry.destroyed);
+    expect(livingEnemies.length).toBeGreaterThan(0);
+    expect(livingEnemies.every((entry) => entry.nextDamageBonus === 2)).toBe(true);
+  });
+
+  it("SIM-C17 Circle grants Block and next-hit bonus once from the intent effects", () => {
+    const circle = build1Pack.enemies.find((entry) => entry.id === "gloomfang_hound")!.intents.find((entry) => entry.id === "circle")!;
+    expect(intentEffectSummary(circle)).toBe("Gain 4 Block; next hit +2");
+
+    let snapshot = startFixtureCombat(build1Pack, "roadside_trail", { forcedStreams: roadsideStreams });
+    const combat = snapshot.activeRun!.combat!;
+    const hero = combat.combatants.find((entry) => entry.side === "heroes")!;
+    const otherHero = combat.combatants.find((entry) => entry.side === "heroes" && entry.id !== hero.id)!;
+    const hound = combat.combatants.find((entry) => entry.side === "enemies")!;
+    const intent = combat.intents.find((entry) => entry.enemyId === hound.id)!;
+    intent.intentId = "circle";
+    intent.label = "Circle";
+    intent.magnitude = 0;
+    intent.summary = intentEffectSummary(circle);
+    combat.timeline = [hero.id, hound.id, otherHero.id];
+    setActiveHero(snapshot, hero.id);
+    snapshot = accept(snapshot, command(snapshot, "endTurn", {}, hero.id), build1Pack) as MutableSnapshot;
+    expect(totalBlockForFixture(snapshot, hound.id)).toBe(4);
+    expect(snapshot.activeRun!.combat!.combatants.find((entry) => entry.id === hound.id)!.nextDamageBonus).toBe(2);
   });
 });

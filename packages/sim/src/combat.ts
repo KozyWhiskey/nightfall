@@ -53,6 +53,31 @@ export function effectSummary(definition: CardDefinition, stats?: { strength: nu
   }).join("; ");
 }
 
+function intentEffectLine(effect: EffectDefinition): string {
+  if (effect.kind === "dealDamage") {
+    const rider = effect.condition === undefined ? "" : ` if ${effect.condition}`;
+    const bypass = effect.bypassBlock ? " (ignores Block)" : "";
+    return `Deal ${effect.amount} ${effect.damageType} damage${bypass}${rider}`;
+  }
+  if (effect.kind === "dealDirectDamage") return `Deal ${effect.amount} direct damage`;
+  if (effect.kind === "gainBlock") {
+    if (effect.target === "allAllies") return `living enemies gain ${effect.amount} Block`;
+    return `Gain ${effect.amount} Block`;
+  }
+  if (effect.kind === "grantNextDamageBonus") {
+    if (effect.target === "allAllies") return `living enemies +${effect.amount} next hit`;
+    return `next hit +${effect.amount}`;
+  }
+  if (effect.kind === "applyCondition") return `Apply ${effect.stacks} ${effect.conditionId}`;
+  if (effect.kind === "removeBlock") return `Remove ${effect.amount} Block`;
+  if (effect.kind === "changeRunGloom") return `Run Gloom ${effect.amount > 0 ? "+" : ""}${effect.amount}`;
+  return effect.kind.replaceAll(/([A-Z])/g, " $1").toLowerCase();
+}
+
+export function intentEffectSummary(definition: IntentDefinition): string {
+  return definition.effects.map(intentEffectLine).join("; ");
+}
+
 function buildHeroCards(snapshot: MutableSnapshot, pack: ValidatedContentPack, hero: HeroSnapshot, context: SimulationContext): MutableCard[] {
   const run = runOf(snapshot);
   const classDefinition = pack.classes.find((entry) => entry.id === hero.classId)!;
@@ -215,7 +240,15 @@ function revealIntent(snapshot: MutableSnapshot, actor: MutableCombatant, defini
   const combat = combatOf(snapshot);
   const selected = chooseIntent(snapshot, actor, definition, context, forcedId);
   const targetLabel = selected.targetSpec === "allEnemies" ? "all heroes" : selected.targetSpec === "self" || selected.targetSpec === "allAllies" ? "enemy side" : selected.targetSpec.replaceAll(/([A-Z])/g, " $1").toLowerCase();
-  const intent: DeepMutable<EnemyIntentSnapshot> = { enemyId: actor.id, intentId: selected.id, label: selected.label, targetLabel, magnitude: intentMagnitude(selected), revealedAtRevision: snapshot.revision };
+  const intent: DeepMutable<EnemyIntentSnapshot> = {
+    enemyId: actor.id,
+    intentId: selected.id,
+    label: selected.label,
+    targetLabel,
+    magnitude: intentMagnitude(selected),
+    summary: intentEffectSummary(selected),
+    revealedAtRevision: snapshot.revision
+  };
   combat.intents = combat.intents.filter((entry) => entry.enemyId !== actor.id);
   combat.intents.push(intent);
   combat.intents.sort((left, right) => left.enemyId.localeCompare(right.enemyId));
@@ -449,6 +482,7 @@ function dealDamage(snapshot: MutableSnapshot, actor: MutableCombatant, original
         revealed.label = "Scattered Mist";
         revealed.targetLabel = "all heroes";
         revealed.magnitude = 3;
+        revealed.summary = "Deal 3 gloom damage";
         revealed.revealedAtRevision = snapshot.revision;
       }
     }
@@ -604,7 +638,6 @@ function executeEnemyTurn(snapshot: MutableSnapshot, pack: ValidatedContentPack,
   const intentDefinition = definition.intents.find((entry) => entry.id === revealed?.intentId);
   if (intentDefinition === undefined) throw new Error(`Missing revealed intent for ${actor.id}`);
   resolveEffects(snapshot, actor, intentDefinition.effects, undefined, intentDefinition.id, context);
-  if (intentDefinition.id === "circle") actor.nextDamageBonus += 2;
   if (definition.id === "lantern_smother") {
     combat.bossTurn += 1;
     if (intentDefinition.id === "consume_the_light") {
@@ -685,10 +718,11 @@ export function startCombat(snapshot: MutableSnapshot, pack: ValidatedContentPac
         const attack = pack.cards.find((entry) => entry.id === classDefinition.basicActionIds[0])!;
         const basicBlock = pack.cards.find((entry) => entry.id === classDefinition.basicActionIds[1])!;
         const attackFlat = equippedCardDamageFlat(snapshot, hero.id, attack);
+        const blockBonus = heroModifierCount(snapshot, hero.id, "basic_block_plus_1");
         return {
           heroId: hero.id,
           attack: { definitionId: attack.id, name: attack.display.name, apCost: attack.cost.ap, targetSpec: "enemy" as const, summary: effectSummary(attack, { strength: hero.attributes.str, intellect: hero.attributes.int }, { damageDelta: attackFlat }) },
-          block: { definitionId: basicBlock.id, name: basicBlock.display.name, apCost: basicBlock.cost.ap, targetSpec: "self" as const, summary: effectSummary(basicBlock, { strength: hero.attributes.str, intellect: hero.attributes.int }) }
+          block: { definitionId: basicBlock.id, name: basicBlock.display.name, apCost: basicBlock.cost.ap, targetSpec: "self" as const, summary: effectSummary(basicBlock, { strength: hero.attributes.str, intellect: hero.attributes.int }, { blockDelta: blockBonus }) }
         };
       }),
       intents: [],

@@ -1689,6 +1689,7 @@ button.standee-figure { cursor: pointer; }
   justify-content: center;
 }
 .standee-chip-block { color: var(--aether); }
+.standee-chip-nexthit { color: var(--ember); }
 .standee-chip-burn { color: var(--ember); }
 .standee-chip-guard { color: var(--brass); }
 .standee-chip-carrier {
@@ -2219,8 +2220,37 @@ button.party-card:hover:not(:disabled) { background: linear-gradient(145deg, #1f
   align-items: end;
 }
 .supply-row label { font-size: .68rem; }
-.supply-row select { min-width: 7.5rem; padding: .35rem .5rem; }
-.supply-row button, .dock-controls .basic-row button { padding: .4rem .65rem; }
+.supply-row button { padding: .4rem .65rem; }
+.dock-controls .basic-row button { padding: .4rem .65rem; }
+.basic-action {
+  display: grid;
+  justify-items: start;
+  gap: .12rem;
+  min-width: 9.5rem;
+  text-align: left;
+  padding: .4rem .65rem .45rem;
+  line-height: 1.15;
+}
+.basic-action small {
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-size: .62rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ember);
+}
+.basic-action strong {
+  font-family: Palatino Linotype, Book Antiqua, Georgia, serif;
+  font-weight: 500;
+  font-size: .95rem;
+}
+.basic-action span {
+  color: #b8c0b8;
+  font-size: .72rem;
+  text-transform: none;
+  letter-spacing: 0;
+  font-family: inherit;
+  line-height: 1.25;
+}
 button.is-armed {
   border-color: var(--ember);
   background: rgba(217, 154, 78, .18);

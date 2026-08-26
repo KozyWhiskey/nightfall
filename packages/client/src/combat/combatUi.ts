@@ -1,4 +1,5 @@
 import type {
+  BasicActionSnapshot,
   BurnStack,
   CombatSnapshot,
   CombatantSnapshot,
@@ -23,16 +24,41 @@ export function intentKindLabel(kind: IntentArtKind): string {
   return kind === "attack" ? "Attack" : kind === "defend" ? "Defend" : kind === "buff" ? "Buff" : "Special";
 }
 
+export function basicActionReadout(action: Pick<BasicActionSnapshot, "name" | "apCost" | "summary">): {
+  readonly name: string;
+  readonly cost: string;
+  readonly effect: string;
+  readonly ariaLabel: string;
+} {
+  return {
+    name: action.name,
+    cost: `${action.apCost} AP`,
+    effect: action.summary,
+    ariaLabel: `${action.name}, ${action.apCost} AP, ${action.summary}`
+  };
+}
+
 export function intentSummary(intent: EnemyIntentSnapshot): string {
+  const effect = (intent.summary ?? "").trim();
+  const target = intent.targetLabel.trim();
+  if (effect.length > 0) {
+    const core = `${intent.label} · ${effect}`;
+    if (intent.magnitude > 0 && target.length > 0) return `${core} · ${target}`;
+    return core;
+  }
   const kind = intentKind(intent);
   const core = intent.magnitude > 0 ? `${intent.label} ${intent.magnitude}` : intent.label;
-  const target = intent.targetLabel.trim();
   if (target.length === 0) {
     if (intent.magnitude > 0) return core;
     if (kind === "defend") return intent.label;
     return intent.label;
   }
   return `${core} · ${target}`;
+}
+
+export function nextHitBonusLabel(bonus: number): string | undefined {
+  if (bonus <= 0) return undefined;
+  return `Next hit +${bonus}`;
 }
 
 export function burnStackCount(burn: readonly BurnStack[]): number {

@@ -1,6 +1,7 @@
 import type { CombatSnapshot, CombatantSnapshot, EnemyIntentSnapshot } from "@nightfall/contracts";
 import { describe, expect, it } from "vitest";
 import {
+  basicActionReadout,
   conditionTooltip,
   defenseCoverageWindows,
   enemiesActedBetween,
@@ -8,7 +9,8 @@ import {
   enemyIdsBeforeNextHero,
   guardLabelsFor,
   heroDefenseCoverageText,
-  intentSummary
+  intentSummary,
+  nextHitBonusLabel
 } from "./combatUi.js";
 
 function combatant(
@@ -156,6 +158,18 @@ describe("enemyIdsBeforeNextHero", () => {
   });
 });
 
+describe("basicActionReadout", () => {
+  it("exposes name, AP cost, and snapshot summary for the dock", () => {
+    const readout = basicActionReadout({ name: "Staff Strike", apCost: 1, summary: "Deal 3 physical damage" });
+    expect(readout).toEqual({
+      name: "Staff Strike",
+      cost: "1 AP",
+      effect: "Deal 3 physical damage",
+      ariaLabel: "Staff Strike, 1 AP, Deal 3 physical damage"
+    });
+  });
+});
+
 describe("intentSummary", () => {
   it("includes target domain with magnitude", () => {
     const intent: EnemyIntentSnapshot = {
@@ -164,9 +178,23 @@ describe("intentSummary", () => {
       label: "Lunge",
       targetLabel: "lowest hp hero",
       magnitude: 5,
+      summary: "",
       revealedAtRevision: 1
     };
     expect(intentSummary(intent)).toBe("Lunge 5 · lowest hp hero");
+  });
+
+  it("prints snapshot summary for non-damage telegraphs instead of targetLabel alone", () => {
+    const intent: EnemyIntentSnapshot = {
+      enemyId: "chanter-1",
+      intentId: "borrowed_fury",
+      label: "Borrowed Fury",
+      targetLabel: "enemy side",
+      magnitude: 0,
+      summary: "living enemies +2 next hit",
+      revealedAtRevision: 1
+    };
+    expect(intentSummary(intent)).toBe("Borrowed Fury · living enemies +2 next hit");
   });
 
   it("omits empty target labels", () => {
@@ -176,9 +204,17 @@ describe("intentSummary", () => {
       label: "Skitter",
       targetLabel: "  ",
       magnitude: 0,
+      summary: "",
       revealedAtRevision: 1
     };
     expect(intentSummary(intent)).toBe("Skitter");
+  });
+});
+
+describe("nextHitBonusLabel", () => {
+  it("prints the snapshot bonus and hides zero", () => {
+    expect(nextHitBonusLabel(2)).toBe("Next hit +2");
+    expect(nextHitBonusLabel(0)).toBeUndefined();
   });
 });
 

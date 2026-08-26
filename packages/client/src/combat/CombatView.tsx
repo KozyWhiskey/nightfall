@@ -8,6 +8,7 @@ import {
 import { CombatBattlefield } from "./CombatBattlefield.js";
 import { InitiativeTracker } from "./InitiativeTracker.js";
 import { markedCarrierFieldStatus } from "./carrierChaseUi.js";
+import { basicActionReadout } from "./combatUi.js";
 import { useTurnPlayback } from "./useTurnPlayback.js";
 import { presentLootFact } from "../lootFactUi.js";
 
@@ -27,6 +28,8 @@ export function CombatView({ snapshot, send }: ViewProps) {
   const enemies = combat.combatants.filter((entry) => entry.side === "enemies" && !entry.destroyed);
   const heroCombatants = combat.combatants.filter((entry) => entry.side === "heroes");
   const basics = combat.basicActions.find((entry) => entry.heroId === active.id);
+  const attackReadout = basics === undefined ? undefined : basicActionReadout(basics.attack);
+  const blockReadout = basics === undefined ? undefined : basicActionReadout(basics.block);
   const encounterLabel = run.nodes.find((node) => node.id === run.currentNodeId)?.label ?? titleCase(combat.encounterId);
   const supplies = run.holdings.filter((item) => item.itemKind === "supply" && item.location.kind === "held_by_expedition");
   const livingHeroes = heroCombatants.filter((entry) => !entry.downed);
@@ -247,19 +250,31 @@ export function CombatView({ snapshot, send }: ViewProps) {
       </p> : !heroTurn ? <p className="waiting-line">{active.name} is resolving…</p> : <>
         <div className="dock-controls">
           <div className="basic-row" aria-label="Basics and end turn">
-            {basics !== undefined && <>
+            {basics !== undefined && attackReadout !== undefined && blockReadout !== undefined && <>
               <button
-                className={pending?.kind === "basicAttack" ? "is-armed" : "quiet"}
+                type="button"
+                className={`basic-action${pending?.kind === "basicAttack" ? " is-armed" : ""}`}
                 onClick={() => setPending({ kind: "basicAttack", name: basics.attack.name })}
                 disabled={enemies.length === 0 || !basicAffordability(activeResources, basics.attack.apCost).ok}
                 title={basicAffordability(activeResources, basics.attack.apCost).reason}
-              >{basics.attack.name} · {basics.attack.apCost} AP</button>
+                aria-label={attackReadout.ariaLabel}
+              >
+                <small>{attackReadout.cost}</small>
+                <strong>{attackReadout.name}</strong>
+                <span>{attackReadout.effect}</span>
+              </button>
               <button
-                className="quiet"
+                type="button"
+                className="basic-action"
                 onClick={() => { setPending(null); void send("useBasicBlock", {}, active.id); }}
                 disabled={!basicAffordability(activeResources, basics.block.apCost).ok}
                 title={basicAffordability(activeResources, basics.block.apCost).reason}
-              >{basics.block.name} · {basics.block.apCost} AP</button>
+                aria-label={blockReadout.ariaLabel}
+              >
+                <small>{blockReadout.cost}</small>
+                <strong>{blockReadout.name}</strong>
+                <span>{blockReadout.effect}</span>
+              </button>
             </>}
             <button
               className={heroTurn && (activeResources?.ap ?? 0) === 0 ? "end-turn is-urgent" : "quiet"}

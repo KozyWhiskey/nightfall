@@ -452,6 +452,8 @@ export interface EnemyIntentSnapshot {
   readonly label: string;
   readonly targetLabel: string;
   readonly magnitude: number;
+  /** Sim-authored effect readout. Empty only on incomplete test doubles. */
+  readonly summary: string;
   readonly revealedAtRevision: number;
 }
 

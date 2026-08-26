@@ -3,7 +3,7 @@ import type { CombatantSnapshot, EnemyIntentSnapshot } from "@nightfall/contract
 import { CombatPortrait } from "../art/ArtImage.js";
 import { combatantArtSrc, silhouetteForCombatant, silhouetteForHero } from "../art/artMap.js";
 import { titleCase } from "../decisionUi.js";
-import { burnStackCount, conditionTooltip } from "./combatUi.js";
+import { burnStackCount, conditionTooltip, nextHitBonusLabel } from "./combatUi.js";
 
 function CompactMeter({
   label,
@@ -88,6 +88,7 @@ export function CombatStandee({
   onLink?: (combatantId: string | null) => void;
 }) {
   const burnStacks = burnStackCount(combatant.burn);
+  const nextHit = nextHitBonusLabel(combatant.nextDamageBonus);
   const panelId = useId();
   const [hovered, setHovered] = useState(false);
   const highlighted = hovered || isLinked || isActive || isActing;
@@ -155,6 +156,7 @@ export function CombatStandee({
           <CompactMeter label="ST" value={resources.stamina} max={maxStamina ?? resources.stamina} tone="iron" spend={pendingStaminaSpend} />
         </>}
         {block > 0 && <p className="standee-chip standee-chip-block">Block {block}</p>}
+        {nextHit !== undefined && <p className="standee-chip standee-chip-nexthit">{nextHit}</p>}
       </div>
       {(conditions.length > 0 || burnStacks > 0 || (injuries?.length ?? 0) > 0 || (guardLabels?.length ?? 0) > 0 || carrierNote !== undefined) && (
         <p className="standee-status">
