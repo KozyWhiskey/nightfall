@@ -1,7 +1,7 @@
 # Downed active hero cannot advance the timeline
 
 **Kind:** bug  
-**Status:** approved  
+**Status:** shipped  
 **Last updated:** 2026-08-26  
 **Decision Register:** `none — bug vs accepted contract`  
 **Related:** [Combat Simulation Contract](../../systems/combat-simulation-contract.md) (timeline skip, Downed, commands), [Build 1 Acceptance Plan](../../product/build-1-acceptance-plan.md) `SIM-04`
@@ -42,14 +42,14 @@ Draft injury −1 AP / Quiet House `treatInjury` are not this bug.
 
 ## Acceptance criteria
 
-- [ ] `SIM-C18` Ash Tonic self-down: `roadside_trail`, named streams `combatInitiative: [0.9, 0.9, 0, 0]`, `combatIntent` padded with `0`. Timeline Weaver → Hound A → Vanguard → Hound B. Weaver HP 1, `useSupply` Ash Tonic targeting Weaver. Combat stays `active`. Weaver is Downed. `activeCombatantId` is **not** Weaver. The next living hero (Vanguard) is active with AP. Hound A has completed a turn (skipped remaining Weaver actions, then advanced). A follow-up `endTurn` as Weaver is not required.
-- [ ] `SIM-C02` still holds for a **living** actor: `playCard` / `useSupply` must not advance the cursor unless that command Downs the active hero (or ends combat).
-- [ ] Wipe path unchanged: if the Ash Tonic Downs the last living hero, outcome is wipe; do not skip into empty turns.
-- [ ] `enemyIdsBeforeNextHero`: timeline `[enemy-1, downed-hero, enemy-2, living-hero]`, cursor on `enemy-1`, returns both enemy ids. A living hero still ends the window.
-- [ ] Named streams only; never `Math.random()`
-- [ ] `pnpm test` covers the change
-- [ ] `pnpm check:boundaries` still passes
-- [ ] Out of scope listed below is untouched
+- [x] `SIM-C18` Ash Tonic self-down: `roadside_trail`, named streams `combatInitiative: [0.9, 0.9, 0, 0]`, `combatIntent` padded with `0`. Timeline Weaver → Hound A → Vanguard → Hound B. Weaver HP 1, `useSupply` Ash Tonic targeting Weaver. Combat stays `active`. Weaver is Downed. `activeCombatantId` is **not** Weaver. The next living hero (Vanguard) is active with AP. Hound A has completed a turn (skipped remaining Weaver actions, then advanced). A follow-up `endTurn` as Weaver is not required.
+- [x] `SIM-C02` still holds for a **living** actor: `playCard` / `useSupply` must not advance the cursor unless that command Downs the active hero (or ends combat).
+- [x] Wipe path unchanged: if the Ash Tonic Downs the last living hero, outcome is wipe; do not skip into empty turns.
+- [x] `enemyIdsBeforeNextHero`: timeline `[enemy-1, downed-hero, enemy-2, living-hero]`, cursor on `enemy-1`, returns both enemy ids. A living hero still ends the window.
+- [x] Named streams only; never `Math.random()`
+- [x] `pnpm test` covers the change
+- [x] `pnpm check:boundaries` still passes
+- [x] Out of scope listed below is untouched
 
 ## Out of scope
 
@@ -69,7 +69,5 @@ Named streams only; never `Math.random()`. Browser is not correctness authority.
 - Add Ash Tonic with `createItemInstance` (`held_by_expedition`). Set Weaver combatant HP to 1. Use `setActiveHero` only to place the cursor before the tonic; do not use it to assert post-command AP (it overwrites AP).
 - Force timeline Weaver → Hound A → Vanguard → Hound B so skip is visible: Hound A must act before Vanguard's turn begins.
 - Client test uses snapshot combatants; no sim.
-
-CI red on `SIM-C18` and the Downed imminent-enemy case is intentional until the implementer lands.
 
 kind: bug
